@@ -128,11 +128,12 @@ component singleton {
 			var raw = input.keyExists( field.name ) && !isNull( input[ field.name ] )
 				? input[ field.name ]
 				: duplicate( field.default );
+			// result is a struct, so passed by reference on every engine (Adobe ColdFusion copies arrays)
 			var value = normalizeValue(
 				field,
 				raw,
 				fieldPath,
-				result.errors
+				result
 			);
 			if ( field.required && isEmptyValue( field, value ) ) {
 				result.errors.append(
@@ -154,7 +155,7 @@ component singleton {
 		required struct field,
 		any raw,
 		required string path,
-		required array errors
+		required struct collector
 	) {
 		var value = isNull( arguments.raw ) ? "" : arguments.raw;
 
@@ -169,7 +170,7 @@ component singleton {
 						"all"
 					),
 					arguments.path,
-					arguments.errors
+					arguments.collector
 				);
 			case "textarea":
 				return checkLength(
@@ -181,7 +182,7 @@ component singleton {
 						"all"
 					),
 					arguments.path,
-					arguments.errors
+					arguments.collector
 				);
 			case "html":
 				return toText( value );
@@ -190,7 +191,7 @@ component singleton {
 			case "number":
 				if ( !isSimpleValue( value ) || !isNumeric( value ) ) {
 					if ( isSimpleValue( value ) && len( trim( value ) ) ) {
-						arguments.errors.append(
+						arguments.collector.errors.append(
 							{
 								"field"  : arguments.path,
 								"message": "#arguments.field.label# must be a number"
@@ -200,7 +201,7 @@ component singleton {
 					return "";
 				}
 				if ( arguments.field.keyExists( "min" ) && value < arguments.field.min ) {
-					arguments.errors.append(
+					arguments.collector.errors.append(
 						{
 							"field"  : arguments.path,
 							"message": "#arguments.field.label# must be at least #arguments.field.min#"
@@ -208,7 +209,7 @@ component singleton {
 					);
 				}
 				if ( arguments.field.keyExists( "max" ) && value > arguments.field.max ) {
-					arguments.errors.append(
+					arguments.collector.errors.append(
 						{
 							"field"  : arguments.path,
 							"message": "#arguments.field.label# must be at most #arguments.field.max#"
@@ -227,7 +228,7 @@ component singleton {
 							.options
 							.some( ( option ) => compare( option.value, choice ) == 0 )
 				) {
-					arguments.errors.append(
+					arguments.collector.errors.append(
 						{
 							"field"  : arguments.path,
 							"message": "#arguments.field.label#: [#choice#] is not one of the options"
@@ -241,7 +242,7 @@ component singleton {
 				var href = toText( link.href ?: "" );
 				var safe = variables.markup.safeUrl( href );
 				if ( len( trim( href ) ) && !len( safe ) ) {
-					arguments.errors.append(
+					arguments.collector.errors.append(
 						{
 							"field"  : arguments.path,
 							"message": "#arguments.field.label#: the link [#href#] is not allowed"
@@ -257,7 +258,7 @@ component singleton {
 					arguments.field,
 					value,
 					arguments.path,
-					arguments.errors
+					arguments.collector
 				);
 			case "images":
 				var images = isArray( value ) ? value : [];
@@ -267,7 +268,7 @@ component singleton {
 						arguments.field,
 						images[ i ],
 						"#arguments.path#[#i#]",
-						arguments.errors
+						arguments.collector
 					);
 					if ( len( image.src ) ) {
 						list.append( image );
@@ -277,12 +278,12 @@ component singleton {
 					arguments.field,
 					list,
 					arguments.path,
-					arguments.errors
+					arguments.collector
 				);
 			case "contentStore":
 				var slug = trim( toText( value ) );
 				if ( len( slug ) && !reFind( variables.SLUG_PATTERN, slug ) ) {
-					arguments.errors.append(
+					arguments.collector.errors.append(
 						{
 							"field"  : arguments.path,
 							"message": "#arguments.field.label#: [#slug#] is not a valid slug"
@@ -300,14 +301,14 @@ component singleton {
 						isNull( items[ i ] ) ? {} : items[ i ],
 						"#arguments.path#[#i#]."
 					);
-					arguments.errors.append( item.errors, true );
+					arguments.collector.errors.append( item.errors, true );
 					result.append( item.data );
 				}
 				return checkItems(
 					arguments.field,
 					result,
 					arguments.path,
-					arguments.errors
+					arguments.collector
 				);
 		}
 	}
@@ -316,7 +317,7 @@ component singleton {
 		required struct field,
 		any value,
 		required string path,
-		required array errors
+		required struct collector
 	) {
 		var image = !isNull( arguments.value ) && isStruct( arguments.value )
 			? arguments.value
@@ -324,7 +325,7 @@ component singleton {
 		var src = toText( image.src ?: "" );
 		var safe = variables.markup.safeImageUrl( src );
 		if ( len( trim( src ) ) && !len( safe ) ) {
-			arguments.errors.append(
+			arguments.collector.errors.append(
 				{
 					"field"  : arguments.path,
 					"message": "#arguments.field.label#: the image URL [#src#] is not allowed"
@@ -348,10 +349,10 @@ component singleton {
 		required struct field,
 		required string value,
 		required string path,
-		required array errors
+		required struct collector
 	) {
 		if ( ( arguments.field.maxLength ?: 0 ) > 0 && len( arguments.value ) > arguments.field.maxLength ) {
-			arguments.errors.append(
+			arguments.collector.errors.append(
 				{
 					"field"  : arguments.path,
 					"message": "#arguments.field.label# is longer than #arguments.field.maxLength# characters"
@@ -365,10 +366,10 @@ component singleton {
 		required struct field,
 		required array items,
 		required string path,
-		required array errors
+		required struct collector
 	) {
 		if ( ( arguments.field.maxItems ?: 0 ) > 0 && arguments.items.len() > arguments.field.maxItems ) {
-			arguments.errors.append(
+			arguments.collector.errors.append(
 				{
 					"field"  : arguments.path,
 					"message": "#arguments.field.label# has more than #arguments.field.maxItems# items"

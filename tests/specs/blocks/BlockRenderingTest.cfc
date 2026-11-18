@@ -342,9 +342,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						var page = pageWithVersions( [ body, "<p>reformatted by CKEditor</p>" ] );
 						getInterceptor( "ClassicAdmin@contentbox-studio" ).cbadmin_prePageSave(
 							getRequestContext(),
-							{ "content": page, "isNew": false }
+							{ "content": page.content, "isNew": false }
 						);
-						expect( activeBody( page ) ).toBeWithCase( body );
+						expect( page.active.$count( "setContent" ) ).toBe( 1 );
+						expect( page.active.$callLog().setContent[ 1 ][ 1 ] ).toBeWithCase( body );
 					}
 				);
 
@@ -354,9 +355,9 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						var page = pageWithVersions( [ "<p>old</p>", "<p>new</p>" ] );
 						getInterceptor( "ClassicAdmin@contentbox-studio" ).cbadmin_prePageSave(
 							getRequestContext(),
-							{ "content": page, "isNew": false }
+							{ "content": page.content, "isNew": false }
 						);
-						expect( activeBody( page ) ).toBeWithCase( "<p>new</p>" );
+						expect( page.active.$count( "setContent" ) ).toBe( 0 );
 					}
 				);
 
@@ -404,29 +405,24 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 	}
 
 	/**
-	 * An unsaved page whose versions have the given bodies, the last one active (like the admin after posting)
+	 * Content as the classic admin leaves it before saving: the posted body is the new active version, the previous
+	 * versions are inactive. Stubs, so the test does not depend on how an engine treats unsaved ORM entities.
+	 *
+	 * @return { content, active } where active is the stub of the new version
 	 */
-	private function pageWithVersions( required array bodies ) {
-		var page = getInstance( "pageService@contentbox" ).new(
-			{
-				"title": "Studio test",
-				"slug" : "studio-test-#createUUID()#"
-			}
-		);
-		var author = getAdministrator();
-		for ( var body in arguments.bodies ) {
-			// A saved page deactivates its earlier versions itself; an unsaved one (isLoaded() false) does not
-			page.getContentVersions().each( ( version ) => version.setIsActive( false ) );
-			page.addNewContentVersion( content = body, author = author );
+	private struct function pageWithVersions( required array bodies ) {
+		var versions = [];
+		for ( var i = 1; i <= arguments.bodies.len(); i++ ) {
+			versions.append(
+				createStub()
+					.$( "getIsActive", i == arguments.bodies.len() )
+					.$( "getVersion", i )
+					.$( "getContent", arguments.bodies[ i ] )
+					.$( "setContent" )
+			);
 		}
-		return page;
-	}
-
-	private string function activeBody( required page ) {
-		return arguments
-			.page
-			.getContentVersions()
-			.filter( ( version ) => version.getIsActive() )[ 1 ].getContent();
+		var content = createStub().$( "getContentVersions", versions ).$( "getSlug", "studio-test" );
+		return { "content" : content, "active" : versions[ versions.len() ] };
 	}
 
 }
