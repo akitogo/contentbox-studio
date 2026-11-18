@@ -99,13 +99,18 @@ component extends="tests.resources.BaseTest" {
 	 * @slug          Last slug segment (the parent's slug is put in front)
 	 * @parent        Parent page or ""
 	 * @isPublished   Published flag
-	 * @publishedDate Publish date, defaults to now
+	 * @publishedDate Publish date, defaults to 5 minutes ago (MySQL rounds fractional seconds up, so "now" can be stored
+	 * as a moment in the future and the page would count as scheduled)
 	 */
 	function createTestPage(
 		required string slug,
 		any parent          = "",
 		boolean isPublished = true,
-		any publishedDate   = now(),
+		any publishedDate   = dateAdd(
+			"n",
+			-5,
+			now()
+		),
 		string body         = "<p>Studio test page</p>"
 	) {
 		var pageService = getInstance( "pageService@contentbox" );

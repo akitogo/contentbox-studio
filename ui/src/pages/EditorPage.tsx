@@ -19,6 +19,9 @@ const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   modified: 'changed outside Studio; saving renders it again from its fields and drops those changes',
 }
 
+// Stable (module-level): Studio's actions live in Studio's header, Puck's header keeps title and undo/redo
+const PUCK_OVERRIDES = { headerActions: () => <></> }
+
 interface Loaded {
   editor: EditorContent
   definitions: BlockDefinition[]
@@ -171,6 +174,27 @@ export function EditorPage() {
             {dirty ? ' · unsaved changes' : ''}
           </small>
         </span>
+        <div className="studio-editor-actions">
+          <input
+            value={changelog}
+            onChange={(event) => setChangelog(event.target.value)}
+            placeholder="What changed? (optional)"
+            aria-label="Change note"
+            disabled={!editor.canEdit}
+          />
+          {previewUrl(config, editor.content) && (
+            <button type="button" onClick={() => void preview()}>Preview</button>
+          )}
+          <button type="button" onClick={() => setShowVersions(!showVersions)} aria-pressed={showVersions}>
+            Versions
+          </button>
+          {editor.content.url && (
+            <a href={editor.content.url} target="_blank" rel="noreferrer">View live</a>
+          )}
+          <button type="button" className="studio-primary" onClick={() => void save()} disabled={!editor.canEdit || saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
       </Header>
 
       {(message || errors.length > 0 || initial.notices.length > 0 || !editor.canEdit) && (
@@ -211,31 +235,7 @@ export function EditorPage() {
             headerTitle={editor.content.title}
             headerPath={editor.content.url ? `/${editor.content.slug}` : editor.content.slug}
             permissions={{ edit: editor.canEdit, insert: editor.canEdit, delete: editor.canEdit, drag: editor.canEdit, duplicate: editor.canEdit }}
-            overrides={{
-              headerActions: () => (
-                <div className="studio-editor-actions">
-                  <input
-                    value={changelog}
-                    onChange={(event) => setChangelog(event.target.value)}
-                    placeholder="What changed? (optional)"
-                    aria-label="Change note"
-                    disabled={!editor.canEdit}
-                  />
-                  {previewUrl(config, editor.content) && (
-                    <button type="button" onClick={() => void preview()}>Preview</button>
-                  )}
-                  <button type="button" onClick={() => setShowVersions(!showVersions)} aria-pressed={showVersions}>
-                    Versions
-                  </button>
-                  {editor.content.url && (
-                    <a href={editor.content.url} target="_blank" rel="noreferrer">View live</a>
-                  )}
-                  <button type="button" className="studio-primary" onClick={() => void save()} disabled={!editor.canEdit || saving}>
-                    {saving ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              ),
-            }}
+            overrides={PUCK_OVERRIDES}
           />
         </EditorContext.Provider>
         {showVersions && (

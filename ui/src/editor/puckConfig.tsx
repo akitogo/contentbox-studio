@@ -42,18 +42,25 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
   return {
     components,
     categories,
-    root: { render: ({ children }: { children?: React.ReactNode }) => <div className="studio-canvas">{children}</div> },
+    // No root fields: page settings (title, slug, SEO) stay in ContentBox
+    root: { fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div className="studio-canvas">{children}</div> },
   } as Config
 }
 
 /** The Puck field for a block type field */
 export function toPuckField(field: FieldDefinition): Field {
   const label = fieldLabel(field)
-  const custom = (render: (props: { value: unknown; onChange: (value: unknown) => void; readOnly?: boolean }) => React.ReactElement): Field => ({
+  const custom = (
+    render: (props: { value: unknown; onChange: (value: unknown) => void; readOnly?: boolean }) => React.ReactElement,
+    contentEditable = false,
+  ): Field => ({
     type: 'custom',
     label,
+    // Puck intercepts key presses in fields unless they say they are content-editable (TipTap is)
+    contentEditable,
     render: ({ value, onChange, readOnly }) => (
-      <FieldLabel label={label}>
+      // A div, not a label: a click inside a <label> also clicks its first button (e.g. Bold in the text toolbar)
+      <FieldLabel label={label} el="div">
         {render({ value, onChange, readOnly })}
         {field.help && <p className="studio-field-help">{field.help}</p>}
       </FieldLabel>
@@ -72,7 +79,7 @@ export function toPuckField(field: FieldDefinition): Field {
     case 'select':
       return { type: 'select', label, options: field.options ?? [] }
     case 'richtext':
-      return custom(({ value, onChange, readOnly }) => <RichTextField value={value} onChange={onChange} readOnly={readOnly} />)
+      return custom(({ value, onChange, readOnly }) => <RichTextField value={value} onChange={onChange} readOnly={readOnly} />, true)
     case 'link':
       return custom(({ value, onChange, readOnly }) => <LinkField value={value} onChange={onChange} readOnly={readOnly} />)
     case 'image':

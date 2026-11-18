@@ -110,8 +110,8 @@ component singleton {
 					"createdDate": isDate( version.getCreatedDate() ?: "" )
 						? dateTimeFormat( version.getCreatedDate(), "yyyy-mm-dd'T'HH:nn:ss" )
 						: "",
-					"changelog"  : version.getChangelog() ?: "",
-					"author"     : version.hasAuthor() ? version.getAuthor().getFullName() : ""
+					"changelog": version.getChangelog() ?: "",
+					"author"   : version.hasAuthor() ? version.getAuthor().getFullName() : ""
 				}
 			);
 		}
@@ -140,7 +140,13 @@ component singleton {
 
 	private struct function describe( required content ) {
 		var item = arguments.content;
+		// ContentBox stores "Page", "Entry", "ContentStore"; the API uses page, entry, contentStore
 		var type = item.getContentType();
+		type = lCase( left( type, 1 ) ) & mid(
+			type,
+			2,
+			len( type )
+		);
 		var parent = item.hasParent() ? item.getParent() : "";
 		return {
 			"contentID"  : item.getContentID(),

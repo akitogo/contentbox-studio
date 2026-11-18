@@ -21,8 +21,8 @@ component singleton {
 		var relative = cleanFolder( arguments.folder );
 		var absolute = resolve( relative );
 		var result = {
-			"folder" : relative,
-			"parent" : listLen( relative, "/" ) > 1
+			"folder": relative,
+			"parent": listLen( relative, "/" ) > 1
 				? listDeleteAt(
 					relative,
 					listLen( relative, "/" ),
@@ -147,10 +147,10 @@ component singleton {
 	) {
 		var extension = lCase( listLast( arguments.path, "." ) );
 		return {
-			"name"    : listLast( arguments.path, "/" ),
-			"path"    : arguments.path,
+			"name": listLast( arguments.path, "/" ),
+			"path": arguments.path,
 			// Path segments: encodeForURL() writes spaces as "+", which is wrong in a path
-			"url"     : "/__media/" & arguments
+			"url" : "/__media/" & arguments
 				.path
 				.listToArray( "/" )
 				.map(
@@ -166,10 +166,13 @@ component singleton {
 			"modified": isDate( arguments.modified ?: "" )
 				? dateTimeFormat( arguments.modified, "yyyy-mm-dd'T'HH:nn:ss" )
 				: "",
-			"isImage" : listFind( variables.IMAGE_EXTENSIONS, extension ) > 0
+			"isImage": listFind( variables.IMAGE_EXTENSIONS, extension ) > 0
 		};
 	}
 
+	/**
+	 * "" is the root (checked separately: Adobe ColdFusion's reFind() finds no match in an empty string)
+	 */
 	private string function cleanFolder( string folder = "" ) {
 		var cleaned = reReplace(
 			replace(
@@ -183,7 +186,7 @@ component singleton {
 			"all"
 		);
 		if (
-			!reFind( variables.FOLDER_PATTERN, cleaned ) ||
+			( len( cleaned ) && !reFind( variables.FOLDER_PATTERN, cleaned ) ) ||
 					listFind(
 						cleaned,
 						"..",

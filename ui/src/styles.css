@@ -339,6 +339,14 @@ textarea {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* Only Puck's panels scroll, never the page, so the toolbars stay in view */
+  overflow: hidden;
+}
+
+.studio--editor .studio-header__middle {
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
 }
 
 .studio-editor-title small {
@@ -370,6 +378,7 @@ textarea {
 .studio-editor > :first-child {
   min-height: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 .studio-editor-actions {
@@ -579,4 +588,27 @@ textarea {
   display: grid;
   place-items: center;
   background: var(--studio-bg);
+}
+
+/* Studio's fields inside Puck's (light) sidebar look like Puck's own inputs, also in dark mode */
+.studio--editor .studio-field-stack input:not([type='checkbox']),
+.studio--editor .studio-field-stack select,
+.studio--editor .studio-field-stack textarea,
+.studio--editor .studio-field-stack button,
+.studio--editor .studio-richtext,
+.studio--editor .studio-richtext__toolbar button,
+.studio--editor .studio-richtext__link input,
+.studio--editor select[aria-label='Content store item'] {
+  background: #ffffff;
+  color: #1d2330;
+  border-color: #d1d5db;
+}
+
+.studio--editor .studio-richtext__toolbar .is-active {
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+.studio--editor .studio-richtext__content .tiptap {
+  color: #1d2330;
 }
