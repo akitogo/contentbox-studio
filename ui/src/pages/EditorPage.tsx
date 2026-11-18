@@ -6,7 +6,7 @@ import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
 import { CanvasStyles } from '../editor/CanvasStyles'
-import { EditorActionsContext, EditorFields, EditorHeader, type EditorActions } from '../editor/EditorActions'
+import { EditorActionsContext, EditorFields, EditorHeader, rememberedPanels, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
 import { openPreview, previewFields, previewUrl } from '../editor/preview'
 import { buildConfig } from '../editor/puckConfig'
@@ -56,6 +56,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const [showVersions, setShowVersions] = useState(false)
   const [templateDialog, setTemplateDialog] = useState(false)
   const current = useRef<PuckData | null>(null)
+  const [puckUi] = useState(rememberedPanels)
 
   const show = useCallback((blocks: ParsedBlock[], definitions: BlockDefinition[]) => {
     const converted = toPuckData(blocks, typesByName(definitions))
@@ -249,6 +250,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
                   setDirty(true)
                 }}
                 overrides={PUCK_OVERRIDES}
+                ui={puckUi}
                 iframe={PUCK_IFRAME}
                 permissions={{ edit: editor.canEdit, insert: editor.canEdit, delete: editor.canEdit, drag: editor.canEdit, duplicate: editor.canEdit }}
               />

@@ -7,6 +7,7 @@ import { createUsePuck } from '@puckeditor/core'
 import { Eye, History, LayoutTemplate, PanelLeft, PanelRight, Redo2, Save, Undo2 } from 'lucide-react'
 import { createContext, useContext, type ReactNode } from 'react'
 import type { ContentDetails } from '../types'
+import { store, stored } from '../lib/storage'
 import { Badge, Button, IconButton, Input } from '../ui'
 import { PageDetails } from './PageDetails'
 
@@ -30,6 +31,13 @@ export const EditorActionsContext = createContext<EditorActions | null>(null)
 
 const usePuck = createUsePuck()
 
+/** Remembered visibility of Puck's columns, so it stays when other content is opened */
+const PANELS = { left: 'cbstudio.blocksHidden', right: 'cbstudio.fieldsHidden' }
+
+export function rememberedPanels() {
+  return { leftSideBarVisible: stored(PANELS.left) !== '1', rightSideBarVisible: stored(PANELS.right) !== '1' }
+}
+
 /** Label that is hidden when the editor is narrow (the button keeps its accessible name through aria-label) */
 const Label = ({ children }: { children: ReactNode }) => <span className="hidden @5xl:inline">{children}</span>
 
@@ -48,7 +56,10 @@ export function EditorHeader() {
         <IconButton
           label={leftVisible ? 'Hide the blocks column' : 'Show the blocks column'}
           active={leftVisible}
-          onClick={() => dispatch({ type: 'setUi', ui: { leftSideBarVisible: !leftVisible } })}
+          onClick={() => {
+            dispatch({ type: 'setUi', ui: { leftSideBarVisible: !leftVisible } })
+            store(PANELS.left, leftVisible ? '1' : '0')
+          }}
         >
           <PanelLeft className="size-4" />
         </IconButton>
@@ -110,7 +121,10 @@ export function EditorHeader() {
           <IconButton
             label={rightVisible ? 'Hide the fields column' : 'Show the fields column'}
             active={rightVisible}
-            onClick={() => dispatch({ type: 'setUi', ui: { rightSideBarVisible: !rightVisible } })}
+            onClick={() => {
+              dispatch({ type: 'setUi', ui: { rightSideBarVisible: !rightVisible } })
+              store(PANELS.right, rightVisible ? '1' : '0')
+            }}
           >
             <PanelRight className="size-4" />
           </IconButton>

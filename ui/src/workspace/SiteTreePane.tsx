@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from 'react'
 import { NewPageDialog } from '../components/NewPageDialog'
+import { store, stored } from '../lib/storage'
 import {
   applyMove,
   buildTree,
@@ -53,23 +54,6 @@ const ROOT_END = ''
 /** Width of the column next to the editor (px) */
 const COLUMN = { default: 300, min: 220, max: 640 }
 const STORAGE = { width: 'cbstudio.treeWidth', hidden: 'cbstudio.treeHidden' }
-
-/** Per-viewer layout memory; the page works without it */
-function stored(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function store(key: string, value: string) {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // private mode or blocked storage: the layout is just not remembered
-  }
-}
 
 const clampWidth = (width: number) => Math.min(COLUMN.max, Math.max(COLUMN.min, Math.round(width)))
 
