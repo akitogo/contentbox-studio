@@ -1,0 +1,74 @@
+import { describe, expect, it } from 'vitest'
+import type { ParsedBlock } from '../blocks/format'
+import type { BlockDefinition } from '../types'
+import { fromPuckData, itemSummary, toPuckData, typesByName, withDefaults } from './blocksData'
+
+const heading: BlockDefinition = {
+  name: 'heading',
+  label: 'Heading',
+  description: '',
+  icon: 'heading',
+  category: 'text',
+  version: 1,
+  source: 'core',
+  fields: [
+    { name: 'text', type: 'text', label: 'Text', help: '', required: true, default: '' },
+    { name: 'level', type: 'select', label: 'Level', help: '', required: false, default: '2', options: [{ value: '2', label: 'H2' }] },
+  ],
+}
+const types = typesByName([heading])
+
+const block = (overrides: Partial<ParsedBlock>): ParsedBlock => ({
+  type: 'heading',
+  v: 1,
+  id: 'h1',
+  data: { text: 'Hi' },
+  html: '<h2>Hi</h2>',
+  status: 'ok',
+  ...overrides,
+})
+
+describe('toPuckData', () => {
+  it('turns blocks into Puck items with defaults for missing fields', () => {
+    const { data, notices } = toPuckData([block({})], types)
+    expect(data.content).toEqual([{ type: 'heading', props: { id: 'h1', text: 'Hi', level: '2' } }])
+    expect(notices).toEqual([])
+  })
+
+  it('loads legacy, invalid and unknown blocks as HTML and reports them', () => {
+    const { data, notices } = toPuckData(
+      [
+        block({ type: 'html', id: 'legacy-1', status: 'legacy', html: '<p>old</p>', data: { html: '<p>old</p>' } }),
+        block({ type: 'gone', id: 'g1', html: '<div>gone</div>' }),
+        block({ id: 'm1', status: 'modified', html: '<h2>edited</h2>' }),
+      ],
+      types,
+    )
+    expect(data.content.map((item) => item.type)).toEqual(['html', 'html', 'heading'])
+    expect(data.content[1]?.props).toEqual({ id: 'g1', html: '<div>gone</div>' })
+    expect(notices.map((notice) => notice.status)).toEqual(['legacy', 'modified'])
+  })
+})
+
+describe('fromPuckData', () => {
+  it('turns Puck items back into blocks for the API', () => {
+    expect(fromPuckData({ root: { props: {} }, content: [{ type: 'heading', props: { id: 'h1', text: 'Hi', level: '3' } }] })).toEqual([
+      { type: 'heading', id: 'h1', data: { text: 'Hi', level: '3' } },
+    ])
+  })
+})
+
+describe('helpers', () => {
+  it('copies defaults so items do not share them', () => {
+    const fields = [{ name: 'items', type: 'list' as const, label: 'Items', help: '', required: false, default: [] }]
+    const a = withDefaults(fields)
+    const b = withDefaults(fields)
+    expect(a.items).toEqual([])
+    expect(a.items).not.toBe(b.items)
+  })
+
+  it('summarizes list items by their first text', () => {
+    expect(itemSummary(heading.fields, { text: 'Rooms' }, 0)).toBe('Rooms')
+    expect(itemSummary(heading.fields, {}, 2)).toBe('Item 3')
+  })
+})

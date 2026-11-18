@@ -2,11 +2,14 @@ import type { Tokens } from './config'
 
 export class ApiError extends Error {
   readonly status: number
+  /** The response's data, e.g. validation errors of a 422 */
+  readonly data: unknown
 
-  constructor(status: number, messages: string[]) {
+  constructor(status: number, messages: string[], data?: unknown) {
     super(messages.join(' ') || `Request failed with status ${status}`)
     this.name = 'ApiError'
     this.status = status
+    this.data = data
   }
 }
 
@@ -53,6 +56,11 @@ export class ApiClient {
     })
   }
 
+  /** Multipart upload; the browser sets the content type with the boundary */
+  upload<T>(url: string, form: FormData): Promise<T> {
+    return this.request<T>(url, { method: 'POST', body: form })
+  }
+
   delete<T>(url: string): Promise<T> {
     return this.request<T>(url, { method: 'DELETE' })
   }
@@ -71,7 +79,7 @@ export class ApiClient {
 
     const body = (await response.json().catch(() => null)) as Envelope<T> | null
     if (!response.ok || !body || body.error) {
-      throw new ApiError(response.status, body?.messages ?? [])
+      throw new ApiError(response.status, body?.messages ?? [], body?.data)
     }
     return body.data
   }

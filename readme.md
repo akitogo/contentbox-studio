@@ -64,6 +64,21 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
   `cbstudio_language` and `cbstudio_translationGroup`.
 
+## Editor
+
+- Opening a page, blog entry or content store item from the tree loads it into the block editor (Puck): add, move,
+  duplicate and remove blocks; fields on the right. The canvas shows each block rendered by the server with the
+  theme's template, so it is what will be saved.
+- Field types get suitable inputs: rich text (TipTap, stored as a structured document), links with a page picker
+  (`page:[slug]`, resolved by ContentBox), images and galleries from ContentBox's media library (with upload),
+  content store items, lists of sub-fields, and HTML (only with `STUDIO_HTML_BLOCKS`).
+- **Save** stores a new ContentBox version (with an optional change note); history and rollback in the classic admin
+  keep working. A save based on an older version than the current one is refused, so nobody overwrites someone
+  else's changes unknowingly.
+- **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
+- **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
+- Content written in the classic editor opens as one HTML block; blocks changed outside Studio are pointed out.
+
 ## Development
 
 The module is developed inside a ContentBox 7 site, linked as `modules_app/contentbox-studio`.
@@ -80,6 +95,7 @@ npm run typecheck
   `npm run dev` in `ui/` and open `/cbstudio`.
 - **CFML tests (TestBox):** open `/modules_app/contentbox-studio/tests/runner.cfm` on the site. They reuse ContentBox's
   test application (`tests/Application.cfc` of a ContentBox source checkout) and the ORM dialect from `ORM_DIALECT`.
+- **Engine pitfalls:** see [docs/engine-notes.md](docs/engine-notes.md).
 - **CI** (`.github/workflows/ci.yml`): UI checks, then the TestBox suite in a ContentBox `development` checkout with its
   MySQL fixture on BoxLang 1 and Adobe ColdFusion 2023/2025.
 

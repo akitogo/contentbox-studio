@@ -43,12 +43,12 @@ component singleton {
 				var contentID = row[ 1 ];
 				var info = languages[ contentID ] ?: {};
 				return {
-					"contentID"       : contentID,
-					"parentID"        : row[ 4 ] ?: "",
-					"title"           : row[ 2 ],
-					"slug"            : row[ 3 ],
-					"order"           : isNumeric( row[ 5 ] ?: "" ) ? row[ 5 ] : 0,
-					"status"          : status(
+					"contentID": contentID,
+					"parentID" : row[ 4 ] ?: "",
+					"title"    : row[ 2 ],
+					"slug"     : row[ 3 ],
+					"order"    : isNumeric( row[ 5 ] ?: "" ) ? row[ 5 ] : 0,
+					"status"   : status(
 						row[ 6 ],
 						row[ 7 ] ?: "",
 						row[ 8 ] ?: "",
@@ -131,10 +131,13 @@ component singleton {
 		for ( var sibling in criteria.list( sortOrder = "order asc, title asc" ) ) {
 			siblings.append( sibling );
 		}
-		siblings.insertAt(
-			min( max( int( arguments.index ), 0 ), siblings.len() ) + 1,
-			page
-		);
+		var position = min( max( int( arguments.index ), 0 ), siblings.len() ) + 1;
+		// insertAt() past the end fails on Adobe ColdFusion 2023
+		if ( position > siblings.len() ) {
+			siblings.append( page );
+		} else {
+			siblings.insertAt( position, page );
+		}
 
 		if ( isObject( parent ) ) {
 			page.setParent( parent );

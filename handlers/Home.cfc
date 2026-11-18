@@ -20,7 +20,11 @@ component {
 			"contentboxApi": event.buildLink( "cbapi/v1" ),
 			"adminUrl"     : event.buildLink( "cbadmin" ),
 			"logoutUrl"    : event.buildLink( "cbadmin/security/doLogout" ),
-			"tokens"       : jwtAuth().fromUser( author )
+			"tokens"       : jwtAuth().fromUser( author ),
+			// ContentBox's /__page_preview and /__entry_preview check this (hash of the author id)
+			"previewHash"  : hash( author.getAuthorID() ),
+			"pagePreview"  : event.buildLink( "__page_preview" ),
+			"entryPreview" : event.buildLink( "__entry_preview" )
 		};
 
 		try {

@@ -332,3 +332,251 @@ textarea {
   display: grid;
   gap: 6px;
 }
+
+/* ---------- Editor ---------- */
+
+.studio--editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.studio-editor-title small {
+  margin-left: 6px;
+}
+
+.studio-editor-messages {
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--studio-border);
+  background: var(--studio-surface);
+}
+
+.studio-editor-messages p,
+.studio-editor-messages ul {
+  margin: 2px 0;
+}
+
+.studio-editor {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.studio-editor--with-side {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.studio-editor > :first-child {
+  min-height: 0;
+  height: 100%;
+}
+
+.studio-editor-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.studio-primary {
+  background: var(--studio-accent);
+  border-color: var(--studio-accent);
+  color: #fff;
+}
+
+.studio-versions {
+  overflow: auto;
+  border-radius: 0;
+}
+
+.studio-versions__list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.studio-versions__note {
+  margin: 4px 0;
+}
+
+.studio-canvas {
+  padding: 16px;
+}
+
+.studio-preview-block {
+  min-height: 24px;
+}
+
+.studio-preview-placeholder {
+  padding: 12px;
+  border: 1px dashed var(--studio-border);
+  color: var(--studio-muted);
+  font-size: 0.9rem;
+}
+
+.studio-preview-note {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #bf8700;
+}
+
+.studio-field-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.studio-field-help {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--studio-muted);
+}
+
+.studio-checkbox {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.studio-thumb {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border: 1px solid var(--studio-border);
+  border-radius: 4px;
+}
+
+.studio-images {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.studio-images li {
+  display: grid;
+  gap: 4px;
+}
+
+.studio-images__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.studio-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.studio-richtext {
+  border: 1px solid var(--studio-border);
+  border-radius: 6px;
+}
+
+.studio-richtext__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-bottom: 1px solid var(--studio-border);
+}
+
+.studio-richtext__toolbar button {
+  padding: 2px 6px;
+  min-width: 28px;
+}
+
+.studio-richtext__toolbar .is-active {
+  background: var(--studio-accent);
+  color: #fff;
+}
+
+.studio-richtext__link {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.studio-richtext__link input {
+  flex: 1;
+}
+
+.studio-richtext__content .tiptap {
+  min-height: 120px;
+  padding: 8px;
+  outline: none;
+}
+
+.studio-richtext__content .tiptap > :first-child {
+  margin-top: 0;
+}
+
+/* ---------- Dialog, media library ---------- */
+
+.studio-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.studio-dialog__box {
+  width: min(900px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  background: var(--studio-surface);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.studio-dialog__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.studio-dialog__head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.studio-upload {
+  border: 1px solid var(--studio-accent);
+  color: var(--studio-accent);
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.studio-media-grid {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.studio-media-grid button {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  font-size: 0.75rem;
+  text-align: left;
+  word-break: break-all;
+}
+
+.studio-media-grid img,
+.studio-media-grid__file {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--studio-bg);
+}

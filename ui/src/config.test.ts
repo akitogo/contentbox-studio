@@ -9,6 +9,9 @@ const valid = {
   adminUrl: 'http://example.test/cbadmin',
   logoutUrl: 'http://example.test/cbadmin/security/doLogout',
   tokens: { access_token: 'access', refresh_token: 'refresh' },
+  previewHash: 'ABC',
+  pagePreview: 'http://example.test/__page_preview',
+  entryPreview: 'http://example.test/__entry_preview',
 }
 
 describe('parseConfig', () => {

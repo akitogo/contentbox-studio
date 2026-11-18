@@ -1,0 +1,196 @@
+/**
+ * Loading and saving the blocks of a page, blog entry or content store item.
+ *
+ * Saving renders the blocks on the server and stores the body as a new ContentBox version, so history, diff and
+ * rollback in the classic admin keep working. Rules:
+ *
+ * - editing needs the content type's ContentBox permission (PAGES_ADMIN/EDITOR, ENTRIES_..., CONTENTSTORE_...)
+ * - HTML blocks may only be added or changed with STUDIO_HTML_BLOCKS; without it they can stay, move or be removed
+ * - a save based on an older version than the active one is refused (someone else saved in between)
+ */
+component singleton {
+	property name="format" inject="BlockFormat@contentbox-studio";
+
+	property name="renderer" inject="BlockRenderer@contentbox-studio";
+
+	property name="contentService" inject="contentService@contentbox";
+
+	property name="cbHelper" inject="provider:CBHelper@contentbox";
+	variables.EDIT_PERMISSIONS = {
+		"page"        : "PAGES_ADMIN,PAGES_EDITOR",
+		"entry"       : "ENTRIES_ADMIN,ENTRIES_EDITOR",
+		"contentStore": "CONTENTSTORE_ADMIN,CONTENTSTORE_EDITOR"
+	};
+
+	boolean function canEdit( required content, required author ) {
+		var permissions = variables.EDIT_PERMISSIONS[ arguments.content.getContentType() ] ?: "";
+		var who = arguments.author;
+		return listToArray( permissions ).some( ( permission ) => who.hasPermission( permission ) );
+	}
+
+	/**
+	 * @return { content: details, blocks: parsed blocks, canEdit, canEditHtml }
+	 */
+	struct function load( required content, required author ) {
+		return {
+			"content"    : describe( arguments.content ),
+			"blocks"     : variables.format.parse( arguments.content.getContent() ),
+			"canEdit"    : canEdit( arguments.content, arguments.author ),
+			"canEditHtml": arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" )
+		};
+	}
+
+	/**
+	 * @blocks      [ { type, id, data } ] from the editor
+	 * @changelog   Note for the new version
+	 * @baseVersion Version number the editor started from (0 to skip the check)
+	 *
+	 * @return { saved: true, ...load() } or { saved: false, errors: [ { blockID, field, message } ] }
+	 *
+	 * @throws ContentEditor.Forbidden, ContentEditor.Conflict
+	 */
+	struct function save(
+		required content,
+		required array blocks,
+		string changelog    = "",
+		required author,
+		numeric baseVersion = 0
+	) {
+		if ( !canEdit( arguments.content, arguments.author ) ) {
+			throw(
+				type    = "ContentEditor.Forbidden",
+				message = "You may not edit this content"
+			);
+		}
+		var current = activeVersion( arguments.content );
+		if ( arguments.baseVersion > 0 && arguments.baseVersion != current ) {
+			throw(
+				type    = "ContentEditor.Conflict",
+				message = "This content was saved by someone else in the meantime (version #current#). Reload it to see the changes."
+			);
+		}
+		if ( !arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" ) ) {
+			checkHtmlBlocks( arguments.content, arguments.blocks );
+		}
+
+		var result = variables.renderer.renderBlocks( arguments.content.getSite(), arguments.blocks );
+		if ( result.errors.len() ) {
+			return { "saved": false, "errors": result.errors };
+		}
+
+		transaction {
+			arguments.content.addNewContentVersion(
+				content   = result.body,
+				changelog = len( trim( arguments.changelog ) )
+					? trim( arguments.changelog )
+					: "Edited in ContentBox Studio",
+				author    = arguments.author
+			);
+			variables.contentService.save( entity = arguments.content, transactional = false );
+		}
+
+		var loaded = load( arguments.content, arguments.author );
+		loaded[ "saved" ] = true;
+		return loaded;
+	}
+
+	/**
+	 * The latest versions, newest first
+	 *
+	 * @return [ { versionID, version, isActive, createdDate, changelog, author } ]
+	 */
+	array function versions( required content, numeric max = 50 ) {
+		var list = [];
+		for ( var version in arguments.content.getContentVersions() ?: [] ) {
+			list.append(
+				{
+					"versionID"  : version.getContentVersionID(),
+					"version"    : version.getVersion(),
+					"isActive"   : version.getIsActive(),
+					"createdDate": isDate( version.getCreatedDate() ?: "" )
+						? dateTimeFormat( version.getCreatedDate(), "yyyy-mm-dd'T'HH:nn:ss" )
+						: "",
+					"changelog"  : version.getChangelog() ?: "",
+					"author"     : version.hasAuthor() ? version.getAuthor().getFullName() : ""
+				}
+			);
+		}
+		list.sort( ( a, b ) => b.version - a.version );
+		return list.len() > arguments.max ? list.slice( 1, arguments.max ) : list;
+	}
+
+	/**
+	 * The blocks of one version
+	 *
+	 * @return { version, isActive, blocks } or null if the content has no such version
+	 */
+	function version( required content, required string versionID ) {
+		for ( var version in arguments.content.getContentVersions() ?: [] ) {
+			if ( version.getContentVersionID() == arguments.versionID ) {
+				return {
+					"version" : version.getVersion(),
+					"isActive": version.getIsActive(),
+					"blocks"  : variables.format.parse( version.getContent() )
+				};
+			}
+		}
+	}
+
+	/********************************* PRIVATE *********************************/
+
+	private struct function describe( required content ) {
+		var item = arguments.content;
+		var type = item.getContentType();
+		var parent = item.hasParent() ? item.getParent() : "";
+		return {
+			"contentID"  : item.getContentID(),
+			"contentType": type,
+			"title"      : item.getTitle(),
+			"slug"       : item.getSlug(),
+			"siteID"     : item.getSite().getSiteID(),
+			"siteSlug"   : item.getSite().getSlug(),
+			"layout"     : type == "page" ? item.getLayout() : "",
+			"parentID"   : isObject( parent ) ? parent.getContentID() : "",
+			"isPublished": item.getIsPublished(),
+			"version"    : activeVersion( item ),
+			"url"        : listFindNoCase( "page,entry", type ) ? variables.cbHelper.linkContent( item ) : ""
+		};
+	}
+
+	private numeric function activeVersion( required content ) {
+		for ( var version in arguments.content.getContentVersions() ?: [] ) {
+			if ( version.getIsActive() ) {
+				return version.getVersion();
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Without STUDIO_HTML_BLOCKS every HTML block must exist unchanged (same id, same HTML) in the stored body
+	 */
+	private void function checkHtmlBlocks( required content, required array blocks ) {
+		var existing = {};
+		for ( var block in variables.format.parse( arguments.content.getContent() ) ) {
+			if ( block.type == "html" ) {
+				existing[ block.id ] = block.html;
+			}
+		}
+		for ( var block in arguments.blocks ) {
+			if ( !isStruct( block ) || ( block.type ?: "" ) != "html" ) {
+				continue;
+			}
+			var id = isSimpleValue( block.id ?: "" ) ? toString( block.id ?: "" ) : "";
+			var html = isStruct( block.data ?: "" ) && isSimpleValue( block.data.html ?: "" )
+				? toString( block.data.html ?: "" )
+				: "";
+			if ( !existing.keyExists( id ) || compare( existing[ id ], html ) != 0 ) {
+				throw(
+					type    = "ContentEditor.Forbidden",
+					message = "Adding or changing HTML blocks needs the STUDIO_HTML_BLOCKS permission"
+				);
+			}
+		}
+	}
+
+}

@@ -56,6 +56,12 @@ component singleton {
 						"every field needs a name matching #variables.NAME_PATTERN#"
 					);
 				}
+				if ( field.name == "id" ) {
+					invalidField(
+						blockName,
+						"the field name [id] is reserved for the block id"
+					);
+				}
 				if ( names.keyExists( field.name ) ) {
 					invalidField( blockName, "duplicate field [#field.name#]" );
 				}

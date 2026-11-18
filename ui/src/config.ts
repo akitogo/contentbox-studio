@@ -15,6 +15,11 @@ export interface StudioConfig {
   adminUrl: string
   logoutUrl: string
   tokens: Tokens
+  /** ContentBox's preview checks it: hash of the author id */
+  previewHash: string
+  /** ContentBox's /__page_preview and /__entry_preview */
+  pagePreview: string
+  entryPreview: string
 }
 
 const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, '')

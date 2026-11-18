@@ -55,3 +55,97 @@ export interface TranslationGroup {
   group: string
   members: TranslationMember[]
 }
+
+/** A field of a block type (block.json, normalized by the server) */
+export interface FieldDefinition {
+  name: string
+  type:
+    | 'text'
+    | 'textarea'
+    | 'richtext'
+    | 'number'
+    | 'boolean'
+    | 'select'
+    | 'link'
+    | 'image'
+    | 'images'
+    | 'html'
+    | 'contentStore'
+    | 'list'
+  label: string
+  help: string
+  required: boolean
+  default: unknown
+  options?: { value: string; label: string }[]
+  fields?: FieldDefinition[]
+  maxLength?: number
+  maxItems?: number
+  min?: number
+  max?: number
+}
+
+/** GET /blocks */
+export interface BlockDefinition {
+  name: string
+  label: string
+  description: string
+  icon: string
+  category: string
+  version: number
+  source: 'core' | 'module' | 'theme'
+  fields: FieldDefinition[]
+}
+
+export interface ContentDetails {
+  contentID: string
+  contentType: 'page' | 'entry' | 'contentStore'
+  title: string
+  slug: string
+  siteID: string
+  siteSlug: string
+  layout: string
+  parentID: string
+  isPublished: boolean
+  version: number
+  url: string
+}
+
+/** GET /content/:id and PUT /content/:id/blocks */
+export interface EditorContent {
+  content: ContentDetails
+  blocks: import('./blocks/format').ParsedBlock[]
+  canEdit: boolean
+  canEditHtml: boolean
+}
+
+export interface BlockError {
+  blockID: string
+  field: string
+  message: string
+}
+
+export interface VersionInfo {
+  versionID: string
+  version: number
+  isActive: boolean
+  createdDate: string
+  changelog: string
+  author: string
+}
+
+export interface MediaFile {
+  name: string
+  path: string
+  url: string
+  size: number
+  modified: string
+  isImage: boolean
+}
+
+/** GET /media */
+export interface MediaListing {
+  folder: string
+  parent: string
+  folders: { name: string; path: string }[]
+  files: MediaFile[]
+}
