@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
 import { buildTree, type TreeNode } from '../lib/tree'
 import { slugify } from '../lib/slug'
 import { messageOf, useStudio } from '../studio'
 import type { Site, TemplateInfo, TreePage } from '../types'
 import { Alert, Button, Dialog, Field, Input, Select } from '../ui'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 
 /**
  * Create a draft page (optionally from a content template, i.e. a block preset) and open it in the editor
@@ -21,7 +21,7 @@ export function NewPageDialog({
   onClose: () => void
 }) {
   const { config, api } = useStudio()
-  const navigate = useNavigate()
+  const { reload, openPage } = useWorkspace()
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [parentID, setParentID] = useState(initialParent)
@@ -62,7 +62,9 @@ export function NewPageDialog({
         parentID,
         templateID,
       })
-      navigate(`/content/${created.contentID}`)
+      await reload()
+      onClose()
+      openPage(created.contentID)
     } catch (e) {
       setError(messageOf(e))
       setSaving(false)

@@ -57,6 +57,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 - `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
   block content and the language. Search keeps matches in place.
+- Clicking a page opens it in the editor, and the tree becomes a column next to it: drag its edge to resize it
+  (double-click resets), hide it to a narrow strip; the wider it is, the more it shows (addresses, badges, move
+  buttons). Width and visibility are remembered per browser.
 - Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
   `PAGES_EDITOR`. Drop onto a page to make it a subpage, or on its top or bottom edge to place it before or after
   (the bottom edge of an open page makes it the first subpage); a line shows where it lands, collapsed pages open
@@ -64,7 +67,6 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   page and its subpages; ContentBox redirects the old ones.
 - **New page** (or the + of a page for a subpage) creates a draft with a title, address and parent, empty or from a
   template, and opens it in the editor. Needs `PAGES_ADMIN` or `PAGES_EDITOR`.
-- Selecting a page shows its details: edit, view, publish or unpublish, language and translations.
 - **Translation groups:** pages and blog entries in different languages, also on different sites, can be linked.
   Each page gets a language code; the public pages get `hreflang` links, and themes can build a language switcher
   from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
@@ -84,7 +86,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - The canvas loads the stylesheets of the site's theme (the `<link rel="stylesheet">` tags of the site's home page,
   plus the theme's `blocks/editor.css` if it has one), so blocks look like on the site.
 - **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`) and the status are
-  in the editor's header.
+  in the editor's header, as are buttons to hide the blocks and fields columns.
+- With no block selected, the right column shows the content's settings: address, language and translations, and
+  a link to the other settings (SEO, layout) in the classic admin.
+- Opening other content with unsaved changes asks first.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
 - **Save as template** stores the saved blocks as a ContentBox content template; new pages can start from it (block

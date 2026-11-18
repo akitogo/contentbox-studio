@@ -1,13 +1,12 @@
 import { Puck } from '@puckeditor/core'
 import '@puckeditor/core/no-external.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
-import { Header } from '../components/Header'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
 import { CanvasStyles } from '../editor/CanvasStyles'
-import { EditorActionsContext, EditorHeader, type EditorActions } from '../editor/EditorActions'
+import { EditorActionsContext, EditorFields, EditorHeader, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
 import { openPreview, previewFields, previewUrl } from '../editor/preview'
 import { buildConfig } from '../editor/puckConfig'
@@ -15,7 +14,8 @@ import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
 import type { BlockDefinition, BlockError, EditorContent, TreePage } from '../types'
-import { Alert, buttonClass, Loading } from '../ui'
+import { Alert, Button, Loading } from '../ui'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 
 const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   legacy: 'HTML written outside Studio, shown as an HTML block',
@@ -24,7 +24,7 @@ const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
 }
 
 // Stable (module-level): Puck remounts overrides whose identity changes
-const PUCK_OVERRIDES = { header: EditorHeader, iframe: CanvasStyles }
+const PUCK_OVERRIDES = { header: EditorHeader, iframe: CanvasStyles, fields: EditorFields }
 // The canvas gets the theme's CSS (CanvasStyles), not Studio's
 const PUCK_IFRAME = { enabled: true, syncHostStyles: false }
 
@@ -36,9 +36,15 @@ interface Loaded {
 
 type Message = { tone: 'danger' | 'success' | 'info'; text: string }
 
+/** Route element: a fresh editor for each content (no state carried over from the previous one) */
 export function EditorPage() {
   const { contentID = '' } = useParams()
+  return <ContentEditor key={contentID} contentID={contentID} />
+}
+
+function ContentEditor({ contentID }: { contentID: string }) {
   const { config, api } = useStudio()
+  const { setUnsaved, setSiteID, reload: reloadTree, goTo } = useWorkspace()
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [initial, setInitial] = useState<{ data: PuckData; notices: BlockNotice[]; key: number } | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -73,6 +79,8 @@ export function EditorPage() {
         // Core block styles first: the theme's CSS comes later and wins anyway (blocks.css uses :where())
         const stylesheets = [config.blockStyles, ...themeStylesheets].filter(Boolean)
         if (cancelled) return
+        // The tree shows the site of the open content
+        setSiteID(editor.content.siteID)
         setLoaded({
           editor,
           definitions,
@@ -87,9 +95,14 @@ export function EditorPage() {
     return () => {
       cancelled = true
     }
-  }, [api, config, contentID, show])
+  }, [api, config, contentID, show, setSiteID])
 
-  // Warn before leaving with unsaved changes
+  // Warn before leaving with unsaved changes: within Studio (workspace) and when closing or reloading the page
+  useEffect(() => {
+    setUnsaved(dirty)
+    return () => setUnsaved(false)
+  }, [dirty, setUnsaved])
+
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => event.preventDefault()
@@ -114,6 +127,7 @@ export function EditorPage() {
       show(result.blocks, loaded.definitions)
       setChangelog('')
       setMessage({ tone: 'success', text: `Saved as version ${result.content.version}.` })
+      void reloadTree()
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         setErrors((error.data as { errors?: BlockError[] } | undefined)?.errors ?? [])
@@ -134,6 +148,7 @@ export function EditorPage() {
       })
       setLoaded({ ...loaded, editor: { ...loaded.editor, content: result.content } })
       setMessage({ tone: 'success', text: result.content.isPublished ? 'Published.' : 'Unpublished: the page is a draft again.' })
+      void reloadTree()
     } catch (error) {
       setMessage({ tone: 'danger', text: messageOf(error) })
     }
@@ -156,25 +171,15 @@ export function EditorPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen">
-        <Header />
-        <div className="mx-auto mt-16 grid max-w-lg gap-4 px-4">
-          <Alert tone="danger">Could not open the content: {loadError}</Alert>
-          <Link to="/" className={buttonClass('secondary', 'md', 'justify-self-start')}>
-            Back to the pages
-          </Link>
-        </div>
+      <div className="mx-auto mt-16 grid max-w-lg gap-4 px-4">
+        <Alert tone="danger">Could not open the content: {loadError}</Alert>
+        <Button className="justify-self-start" onClick={() => goTo('/')}>
+          Back to the pages
+        </Button>
       </div>
     )
   }
-  if (!loaded || !initial || !puckConfig) {
-    return (
-      <div className="min-h-screen">
-        <Header />
-        <Loading>Loading the editor…</Loading>
-      </div>
-    )
-  }
+  if (!loaded || !initial || !puckConfig) return <Loading>Loading the editor…</Loading>
 
   const { editor } = loaded
   const blockLabel = (id: string) => {
@@ -230,8 +235,7 @@ export function EditorPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <Header />
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1">
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden [&>*]:h-full">
           <EditorContext.Provider value={loaded.context}>
