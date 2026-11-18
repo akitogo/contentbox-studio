@@ -16,6 +16,14 @@ component singleton {
 	property name="contentService" inject="contentService@contentbox";
 
 	property name="cbHelper" inject="provider:CBHelper@contentbox";
+
+	property name="templateService" inject="contentTemplateService@contentbox";
+	variables.ADMIN_PERMISSIONS = {
+		"page"        : "PAGES_ADMIN",
+		"entry"       : "ENTRIES_ADMIN",
+		"contentStore": "CONTENTSTORE_ADMIN"
+	};
+
 	variables.EDIT_PERMISSIONS = {
 		"page"        : "PAGES_ADMIN,PAGES_EDITOR",
 		"entry"       : "ENTRIES_ADMIN,ENTRIES_EDITOR",
@@ -136,6 +144,109 @@ component singleton {
 		}
 	}
 
+	/**
+	 * Publish or unpublish. Publishing a page whose publish date is in the future keeps it scheduled.
+	 *
+	 * @throws ContentEditor.Forbidden
+	 */
+	struct function setPublished(
+		required content,
+		required boolean isPublished,
+		required author
+	) {
+		if ( !canEdit( arguments.content, arguments.author ) ) {
+			throw(
+				type    = "ContentEditor.Forbidden",
+				message = "You may not edit this content"
+			);
+		}
+		arguments.content.setIsPublished( arguments.isPublished );
+		if ( arguments.isPublished && !isDate( arguments.content.getPublishedDate() ?: "" ) ) {
+			arguments.content.setPublishedDate( now() );
+		}
+		variables.contentService.save( arguments.content );
+		return load( arguments.content, arguments.author );
+	}
+
+	/**
+	 * Content templates of a site for a content type: ContentBox's templates, used by Studio as block presets
+	 *
+	 * @return [ { templateID, name, description, hasBlocks } ]
+	 */
+	array function templates( required site, string contentType = "page" ) {
+		var type = uCase( left( arguments.contentType, 1 ) ) & mid(
+			arguments.contentType,
+			2,
+			len( arguments.contentType )
+		);
+		return variables
+			.templateService
+			.newCriteria()
+			.isEq( "site", arguments.site )
+			.isEq( "contentType", type )
+			.list( sortOrder = "name asc" )
+			.map(
+				( template ) => {
+					var definition = template.getDefinition();
+					var body = isStruct( definition ) && isStruct( definition.content ?: "" )
+						? toString( definition.content.value ?: "" )
+						: "";
+					return {
+						"templateID" : template.getTemplateID(),
+						"name"       : template.getName(),
+						"description": template.getDescription() ?: "",
+						"hasBlocks"  : variables.format.hasBlocks( body )
+					};
+				}
+			);
+	}
+
+	/**
+	 * Store the saved body of the content as a ContentBox content template (block preset for new content)
+	 *
+	 * @throws ContentEditor.Forbidden, ContentEditor.Invalid
+	 */
+	struct function saveAsTemplate(
+		required content,
+		required string name,
+		string description = "",
+		required author
+	) {
+		var permission = variables.ADMIN_PERMISSIONS[ normalizedType( arguments.content ) ] ?: "";
+		if ( !len( permission ) || !arguments.author.hasPermission( permission ) ) {
+			throw(
+				type    = "ContentEditor.Forbidden",
+				message = "Saving templates needs the #permission# permission"
+			);
+		}
+		if ( !len( trim( arguments.name ) ) ) {
+			throw(
+				type    = "ContentEditor.Invalid",
+				message = "A template needs a name"
+			);
+		}
+		var template = variables.templateService.new(
+			{
+				"name"       : trim( arguments.name ),
+				"description": trim( arguments.description ),
+				"contentType": arguments.content.getContentType(),
+				"site"       : arguments.content.getSite(),
+				"creator"    : arguments.author,
+				"isGlobal"   : false
+			}
+		);
+		template.setDefinition(
+			serializeJSON(
+				{ "content": { "value": arguments.content.getContent() } }
+			)
+		);
+		variables.templateService.save( template );
+		return {
+			"templateID": template.getTemplateID(),
+			"name"      : template.getName()
+		};
+	}
+
 	/********************************* PRIVATE *********************************/
 
 	private struct function describe( required content ) {
@@ -161,6 +272,18 @@ component singleton {
 			"version"    : activeVersion( item ),
 			"url"        : listFindNoCase( "page,entry", type ) ? variables.cbHelper.linkContent( item ) : ""
 		};
+	}
+
+	/**
+	 * page, entry or contentStore (ContentBox stores "Page", "Entry", "ContentStore")
+	 */
+	private string function normalizedType( required content ) {
+		var type = arguments.content.getContentType();
+		return lCase( left( type, 1 ) ) & mid(
+			type,
+			2,
+			len( type )
+		);
 	}
 
 	private numeric function activeVersion( required content ) {

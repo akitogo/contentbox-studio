@@ -1,0 +1,88 @@
+/*
+ * ContentBox Studio: base styles of the core blocks (blocks/), so they look reasonable in any theme.
+ *
+ * Every selector is wrapped in :where(), which has no specificity: any rule of the theme wins.
+ * Colors: --cbs-accent if the theme sets it, else Bootstrap's --bs-primary, else a dark gray.
+ * Themes that style the blocks themselves turn this file off with the module setting coreBlockStyles = false.
+ */
+
+:where(.cbs-image, .cbs-gallery, .cbs-button, .cbs-quote) {
+	margin: 0 0 1.5rem;
+}
+
+/* Image */
+:where(.cbs-image img) {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+:where(.cbs-image figcaption) {
+	margin-top: 0.5rem;
+	font-size: 0.875em;
+	opacity: 0.75;
+}
+
+/* Gallery */
+:where(.cbs-gallery) {
+	--cbs-columns: 3;
+	display: grid;
+	grid-template-columns: repeat(var(--cbs-columns), minmax(0, 1fr));
+	gap: 1rem;
+}
+:where(.cbs-gallery--2) {
+	--cbs-columns: 2;
+}
+:where(.cbs-gallery--4) {
+	--cbs-columns: 4;
+}
+@media (max-width: 40rem) {
+	:where(.cbs-gallery) {
+		--cbs-columns: 2;
+	}
+}
+:where(.cbs-gallery__item) {
+	margin: 0;
+}
+:where(.cbs-gallery__item img) {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+
+/* Button */
+:where(.cbs-button__link) {
+	display: inline-block;
+	padding: 0.625em 1.25em;
+	border: 2px solid var(--cbs-accent, var(--bs-primary, #1f2937));
+	border-radius: 0.375em;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+}
+:where(.cbs-button__link--primary) {
+	background: var(--cbs-accent, var(--bs-primary, #1f2937));
+	color: #fff;
+}
+:where(.cbs-button__link--secondary) {
+	background: transparent;
+	color: var(--cbs-accent, var(--bs-primary, #1f2937));
+}
+:where(.cbs-button__link:hover, .cbs-button__link:focus-visible) {
+	filter: brightness(0.9);
+	text-decoration: none;
+}
+
+/* Quote */
+:where(.cbs-quote) {
+	padding: 0.25rem 0 0.25rem 1rem;
+	border-left: 4px solid var(--cbs-accent, var(--bs-primary, currentColor));
+}
+:where(.cbs-quote p) {
+	margin: 0;
+}
+:where(.cbs-quote footer) {
+	margin-top: 0.5rem;
+	font-size: 0.875em;
+	opacity: 0.75;
+}

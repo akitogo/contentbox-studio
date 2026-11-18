@@ -59,6 +59,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   block content and the language. Search keeps matches in place.
 - Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
   `PAGES_EDITOR`. Moving changes the address of the page and its subpages; ContentBox redirects the old ones.
+- **New page** (or the + of a page for a subpage) creates a draft with a title, address and parent, empty or from a
+  template, and opens it in the editor. Needs `PAGES_ADMIN` or `PAGES_EDITOR`.
+- Selecting a page shows its details: edit, view, publish or unpublish, language and translations.
 - **Translation groups:** pages and blog entries in different languages, also on different sites, can be linked.
   Each page gets a language code; the public pages get `hreflang` links, and themes can build a language switcher
   from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
@@ -75,9 +78,24 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - **Save** stores a new ContentBox version (with an optional change note); history and rollback in the classic admin
   keep working. A save based on an older version than the current one is refused, so nobody overwrites someone
   else's changes unknowingly.
+- The canvas loads the stylesheets of the site's theme (the `<link rel="stylesheet">` tags of the site's home page,
+  plus the theme's `blocks/editor.css` if it has one), so blocks look like on the site.
+- **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`) and the status are
+  in the editor's header.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
+- **Save as template** stores the saved blocks as a ContentBox content template; new pages can start from it (block
+  presets). Templates are also listed in the classic admin.
 - Content written in the classic editor opens as one HTML block; blocks changed outside Studio are pointed out.
+
+## Settings
+
+In `config/ColdBox.cfc` of the site, `moduleSettings[ "contentbox-studio" ]`:
+
+| Setting | Default | |
+|---|---|---|
+| `coreBlockStyles` | `true` | Links `includes/blocks.css` (base styles of the core blocks) on public pages with blocks and in the editor canvas. Its selectors have no specificity, so theme rules always win; set it to `false` if the theme styles the core blocks completely. |
+| `devServer` | `CBSTUDIO_DEV_SERVER` | See Development. |
 
 ## Development
 

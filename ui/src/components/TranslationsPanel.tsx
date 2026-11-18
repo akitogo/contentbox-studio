@@ -1,10 +1,12 @@
+import { ExternalLink, Pencil, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { messageOf, useStudio } from '../studio'
 import type { TranslationGroup, TreePage } from '../types'
+import { Alert, Badge, Button, buttonClass, Card, Field, IconButton, Input, Select } from '../ui'
 
 /**
- * Details of a page in the tree: language and translation group
+ * Details of the page selected in the tree: actions, publishing, language and translation group
  */
 export function TranslationsPanel({
   page,
@@ -37,14 +39,16 @@ export function TranslationsPanel({
   }, [api, config, linkSiteID])
 
   const linkable = useMemo(() => {
-    const members = new Set(group?.members.map((member) => member.contentID) ?? [page.contentID])
+    const members = new Set([page.contentID, ...(group?.members.map((member) => member.contentID) ?? [])])
     return candidates.filter((candidate) => !members.has(candidate.contentID)).sort((a, b) => a.slug.localeCompare(b.slug))
   }, [candidates, group, page.contentID])
 
-  async function run(action: () => Promise<TranslationGroup>) {
+  /** Run a change, keep a returned translation group, reload the tree */
+  async function run(action: () => Promise<unknown>) {
     setError('')
     try {
-      setGroup(await action())
+      const result = await action()
+      if (result && typeof result === 'object' && 'members' in result) setGroup(result as TranslationGroup)
       await onChanged()
     } catch (e) {
       setError(messageOf(e))
@@ -61,76 +65,116 @@ export function TranslationsPanel({
     if (linkID) void run(() => api.post<TranslationGroup>(`${base}/translations`, { translationID: linkID }))
   }
 
+  const members = group?.members ?? []
+
   return (
-    <aside className="studio-panel studio-side" aria-label={`Details of ${page.title}`}>
-      <div className="studio-side__head">
-        <h2>{page.title}</h2>
-        <button type="button" onClick={onClose} aria-label="Close details">×</button>
-      </div>
-      <p className="studio-muted">/{page.slug}</p>
-      <p>
-        <Link to={`/content/${page.contentID}`}>Edit content</Link> · <a href={page.url} target="_blank" rel="noreferrer">View</a>
-      </p>
+    <aside aria-label={`Details of ${page.title}`} className="lg:sticky lg:top-20 lg:self-start">
+      <Card>
+        <div className="flex items-start justify-between gap-2 border-b border-slate-200 px-4 py-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-slate-900">{page.title}</h2>
+            <p className="truncate font-mono text-xs text-slate-500">/{page.slug}</p>
+          </div>
+          <IconButton label="Close details" onClick={onClose}>
+            <X className="size-4" />
+          </IconButton>
+        </div>
 
-      <h3>Language</h3>
-      <form onSubmit={saveLanguage} className="studio-inline-form">
-        <input
-          value={language}
-          onChange={(event) => setLanguage(event.target.value)}
-          placeholder="e.g. de or en-GB"
-          aria-label="Language code"
-          disabled={!canEdit}
-          size={10}
-        />
-        {canEdit && <button type="submit">Save</button>}
-      </form>
+        <div className="grid gap-5 px-4 py-4">
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/content/${page.contentID}`} className={buttonClass('primary', 'sm')}>
+              <Pencil className="size-3.5" />
+              Edit content
+            </Link>
+            <a href={page.url} target="_blank" rel="noreferrer" className={buttonClass('secondary', 'sm')}>
+              <ExternalLink className="size-3.5" />
+              View
+            </a>
+            <Button
+              size="sm"
+              onClick={() => void run(() => api.put(`${base}/status`, { isPublished: !page.isPublished }))}
+            >
+              {page.isPublished ? 'Unpublish' : 'Publish'}
+            </Button>
+          </div>
 
-      <h3>Translations</h3>
-      {group && group.members.length > 1 ? (
-        <ul className="studio-list">
-          {group.members.map((member) => (
-            <li key={member.contentID}>
-              <span className="studio-badge studio-badge--language">{member.language || '?'}</span>{' '}
-              {member.isCurrent ? (
-                <strong>{member.title}</strong>
-              ) : (
-                <a href={member.url} target="_blank" rel="noreferrer">{member.title}</a>
-              )}{' '}
-              <small>{member.siteName}</small>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="studio-muted">Not linked to other languages.</p>
-      )}
-      {canEdit && group && group.members.length > 1 && (
-        <button type="button" onClick={() => void run(() => api.delete<TranslationGroup>(`${base}/translations`))}>
-          Remove from this group
-        </button>
-      )}
+          <form onSubmit={saveLanguage}>
+            <Field label="Language" htmlFor="page-language" help="A code like de, en or en-GB. Used for hreflang links.">
+              <div className="flex gap-2">
+                <Input
+                  id="page-language"
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value)}
+                  placeholder="e.g. de"
+                  disabled={!canEdit}
+                />
+                {canEdit && (
+                  <Button type="submit" disabled={language === page.language}>
+                    Save
+                  </Button>
+                )}
+              </div>
+            </Field>
+          </form>
 
-      {canEdit && (
-        <form onSubmit={link} className="studio-stack">
-          <h3>Link a translation</h3>
-          {sites.length > 1 && (
-            <select value={linkSiteID} onChange={(event) => setLinkSiteID(event.target.value)} aria-label="Site of the translation">
-              {sites.map((site) => (
-                <option key={site.siteID} value={site.siteID}>{site.name}</option>
-              ))}
-            </select>
+          <div className="grid gap-2">
+            <h3 className="text-sm font-medium text-slate-700">Translations</h3>
+            {members.length > 1 ? (
+              <ul className="grid gap-1.5">
+                {members.map((member) => (
+                  <li key={member.contentID} className="flex items-center gap-2 text-sm">
+                    <Badge tone="primary" className="uppercase">
+                      {member.language || '?'}
+                    </Badge>
+                    {member.isCurrent ? (
+                      <span className="font-medium text-slate-900">{member.title}</span>
+                    ) : (
+                      <a href={member.url} target="_blank" rel="noreferrer" className="truncate">
+                        {member.title}
+                      </a>
+                    )}
+                    <span className="ml-auto truncate text-xs text-slate-400">{member.siteName}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">Not linked to other languages.</p>
+            )}
+            {canEdit && members.length > 1 && (
+              <Button variant="danger" size="sm" className="justify-self-start" onClick={() => void run(() => api.delete<TranslationGroup>(`${base}/translations`))}>
+                Remove from this group
+              </Button>
+            )}
+          </div>
+
+          {canEdit && (
+            <form onSubmit={link} className="grid gap-2 border-t border-slate-200 pt-4">
+              <h3 className="text-sm font-medium text-slate-700">Link a translation</h3>
+              {sites.length > 1 && (
+                <Select value={linkSiteID} onChange={(event) => setLinkSiteID(event.target.value)} aria-label="Site of the translation">
+                  {sites.map((site) => (
+                    <option key={site.siteID} value={site.siteID}>
+                      {site.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+              <Select value={linkID} onChange={(event) => setLinkID(event.target.value)} aria-label="Page that is a translation">
+                <option value="">Choose a page…</option>
+                {linkable.map((candidate) => (
+                  <option key={candidate.contentID} value={candidate.contentID}>
+                    /{candidate.slug} {candidate.language ? `(${candidate.language})` : ''}
+                  </option>
+                ))}
+              </Select>
+              <Button type="submit" disabled={!linkID} className="justify-self-start">
+                Link
+              </Button>
+            </form>
           )}
-          <select value={linkID} onChange={(event) => setLinkID(event.target.value)} aria-label="Page that is a translation">
-            <option value="">Choose a page…</option>
-            {linkable.map((candidate) => (
-              <option key={candidate.contentID} value={candidate.contentID}>
-                /{candidate.slug} {candidate.language ? `(${candidate.language})` : ''}
-              </option>
-            ))}
-          </select>
-          <button type="submit" disabled={!linkID}>Link</button>
-        </form>
-      )}
-      {error && <p className="studio-error" role="alert">{error}</p>}
+          {error && <Alert tone="danger">{error}</Alert>}
+        </div>
+      </Card>
     </aside>
   )
 }

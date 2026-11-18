@@ -1,7 +1,10 @@
+import { LogOut } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useStudio } from '../studio'
+import { Button, buttonClass } from '../ui'
 
+/** Top bar of every screen; children go in the middle */
 export function Header({ children }: { children?: ReactNode }) {
   const { config, api, me } = useStudio()
 
@@ -14,20 +17,26 @@ export function Header({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <header className="studio-header">
-      <Link to="/" className="studio-brand">
-        ContentBox Studio <small>{config.version}</small>
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-slate-200 bg-white px-4">
+      <Link to="/" className="flex items-center gap-2 text-slate-900 no-underline hover:text-slate-900">
+        <span className="grid size-7 place-items-center rounded-md bg-primary-600 text-xs font-bold text-white">CB</span>
+        <span className="font-semibold">Studio</span>
+        <span className="text-xs text-slate-400">{config.version}</span>
       </Link>
-      <div className="studio-header__middle">{children}</div>
-      <nav className="studio-nav">
-        <span className="studio-user">
-          {me.name} <small>{me.role}</small>
-        </span>
-        <a href={config.adminUrl}>Classic admin</a>
-        <button type="button" onClick={logout}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">{children}</div>
+      <div className="flex items-center gap-1">
+        <div className="mr-2 hidden text-right leading-tight sm:block">
+          <div className="text-sm font-medium text-slate-900">{me.name}</div>
+          <div className="text-xs text-slate-500">{me.role}</div>
+        </div>
+        <a href={config.adminUrl} className={buttonClass('ghost', 'sm')}>
+          Classic admin
+        </a>
+        <Button variant="ghost" size="sm" onClick={() => void logout()}>
+          <LogOut className="size-3.5" />
           Log out
-        </button>
-      </nav>
+        </Button>
+      </div>
     </header>
   )
 }

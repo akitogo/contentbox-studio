@@ -13,6 +13,12 @@ component singleton {
 
 	property name="translations" inject="Translations@contentbox-studio";
 
+	property name="contentService" inject="contentService@contentbox";
+
+	property name="templateService" inject="contentTemplateService@contentbox";
+
+	property name="htmlHelper" inject="HTMLHelper@coldbox";
+
 	/**
 	 * All pages of a site as a flat list, sorted by parent order (order, then title)
 	 *
@@ -159,6 +165,99 @@ component singleton {
 		return { "slug": newSlug, "previousSlug": previousSlug };
 	}
 
+	/**
+	 * Create a draft page, last among its siblings, optionally with the body of a content template (block preset)
+	 *
+	 * @site       The site
+	 * @title      Page title
+	 * @slug       Last slug segment, or "" to make one from the title
+	 * @parentID   Parent page id or "" for the root
+	 * @templateID Content template id or ""
+	 * @author     Creator
+	 *
+	 * @return The new page
+	 *
+	 * @throws SiteTree.InvalidPage
+	 */
+	function createPage(
+		required site,
+		required string title,
+		string slug       = "",
+		string parentID   = "",
+		string templateID = "",
+		required author
+	) {
+		var pageTitle = trim( arguments.title );
+		if ( !len( pageTitle ) ) {
+			invalidPage( "A page needs a title" );
+		}
+		var segment = variables.htmlHelper.slugify(
+			len( trim( arguments.slug ) ) ? listLast( trim( arguments.slug ), "/" ) : pageTitle
+		);
+		if ( !len( segment ) ) {
+			invalidPage( "The address of the page would be empty" );
+		}
+
+		var parent = "";
+		if ( len( arguments.parentID ) ) {
+			parent = variables.pageService.get( id = arguments.parentID, returnNew = false );
+			if ( isNull( parent ) || parent.getSite().getSiteID() != arguments.site.getSiteID() ) {
+				invalidPage( "The parent page does not exist on this site" );
+			}
+		}
+		var fullSlug = ( isObject( parent ) ? parent.getSlug() & "/" : "" ) & segment;
+		if ( !variables.contentService.isSlugUnique( slug = fullSlug, siteID = arguments.site.getSiteID() ) ) {
+			invalidPage( "There is already a page at #fullSlug#" );
+		}
+
+		var body = "";
+		if ( len( arguments.templateID ) ) {
+			var template = variables.templateService.get( id = arguments.templateID, returnNew = false );
+			if ( isNull( template ) || template.getSite().getSiteID() != arguments.site.getSiteID() ) {
+				invalidPage( "The template does not exist on this site" );
+			}
+			var definition = template.getDefinition();
+			body = isStruct( definition ) && isStruct( definition.content ?: "" )
+				? toString( definition.content.value ?: "" )
+				: "";
+		}
+
+		// Last among the new siblings
+		var criteria = variables
+			.pageService
+			.newCriteria()
+			.isEq( "site", arguments.site );
+		if ( isObject( parent ) ) {
+			criteria.isEq( "parent", parent );
+		} else {
+			criteria.isNull( "parent" );
+		}
+		var order = criteria.count() + 1;
+
+		var page = variables.pageService.new(
+			{
+				"title"        : pageTitle,
+				"slug"         : fullSlug,
+				"isPublished"  : false,
+				"publishedDate": now(),
+				"layout"       : "pages",
+				"order"        : order,
+				"site"         : arguments.site,
+				"creator"      : arguments.author
+			}
+		);
+		if ( isObject( parent ) ) {
+			page.setParent( parent );
+			page.setSlug( fullSlug );
+		}
+		page.addNewContentVersion(
+			content   = body,
+			changelog = "Created in ContentBox Studio",
+			author    = arguments.author
+		);
+		return variables.pageService.save( page );
+	}
+
 	/********************************* PRIVATE *********************************/
 
 	private string function status(
@@ -181,6 +280,10 @@ component singleton {
 
 	private string function isoDate( any value ) {
 		return isDate( arguments.value ?: "" ) ? dateTimeFormat( arguments.value, "yyyy-mm-dd'T'HH:nn:ss" ) : "";
+	}
+
+	private void function invalidPage( required string message ) {
+		throw( type = "SiteTree.InvalidPage", message = arguments.message );
 	}
 
 	private void function invalidMove( required string message ) {

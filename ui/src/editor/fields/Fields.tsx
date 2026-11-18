@@ -1,7 +1,9 @@
 /**
  * Custom Puck fields for Studio's field types: link, image, images, HTML and content store item
  */
+import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { Button, Checkbox, IconButton, Input, Select, Textarea } from '../../ui'
 import { useEditorContext } from '../EditorContext'
 import { MediaPicker } from './MediaPicker'
 
@@ -33,8 +35,8 @@ export function LinkField({ value, onChange, readOnly }: { value: unknown; onCha
   const link = asLink(value)
   const pageSlug = /^page:\[(.*)\]$/.exec(link.href)?.[1] ?? ''
   return (
-    <div className="studio-field-stack">
-      <select
+    <div className="grid gap-2">
+      <Select
         value={pageSlug}
         onChange={(event) => onChange({ ...link, href: event.target.value ? `page:[${event.target.value}]` : '' })}
         disabled={readOnly}
@@ -44,25 +46,24 @@ export function LinkField({ value, onChange, readOnly }: { value: unknown; onCha
         {[...pages]
           .sort((a, b) => a.slug.localeCompare(b.slug))
           .map((page) => (
-            <option key={page.contentID} value={page.slug}>/{page.slug}</option>
+            <option key={page.contentID} value={page.slug}>
+              /{page.slug}
+            </option>
           ))}
-      </select>
-      <input
+      </Select>
+      <Input
         value={link.href}
         onChange={(event) => onChange({ ...link, href: event.target.value })}
-        placeholder="or https://… / mailto:…"
+        placeholder="or https://…, mailto:…"
         aria-label="Link address"
         readOnly={readOnly}
       />
-      <label className="studio-checkbox">
-        <input
-          type="checkbox"
-          checked={link.target === '_blank'}
-          onChange={(event) => onChange({ ...link, target: event.target.checked ? '_blank' : '' })}
-          disabled={readOnly}
-        />
-        Open in a new window
-      </label>
+      <Checkbox
+        label="Open in a new window"
+        checked={link.target === '_blank'}
+        onChange={(event) => onChange({ ...link, target: event.target.checked ? '_blank' : '' })}
+        disabled={readOnly}
+      />
     </div>
   )
 }
@@ -72,15 +73,25 @@ export function ImageField({ value, onChange, readOnly }: { value: unknown; onCh
   const [picking, setPicking] = useState(false)
   const image = asImage(value)
   return (
-    <div className="studio-field-stack">
-      {image.src && <img className="studio-thumb" src={image.src} alt="" />}
-      {!readOnly && (
-        <button type="button" onClick={() => setPicking(true)}>
-          {image.src ? 'Change image…' : 'Choose image…'}
+    <div className="grid gap-2">
+      {image.src ? (
+        <button
+          type="button"
+          disabled={readOnly}
+          onClick={() => setPicking(true)}
+          className="cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-slate-100 hover:border-primary-400"
+          title="Change image"
+        >
+          <img src={image.src} alt="" className="max-h-40 w-full object-contain" />
         </button>
+      ) : (
+        <Button disabled={readOnly} onClick={() => setPicking(true)} className="h-20 border-dashed">
+          <ImagePlus className="size-4" />
+          Choose image…
+        </Button>
       )}
-      <input value={image.src} onChange={(event) => onChange({ ...image, src: event.target.value })} placeholder="/__media/… or https://…" aria-label="Image address" readOnly={readOnly} />
-      <input value={image.alt} onChange={(event) => onChange({ ...image, alt: event.target.value })} placeholder="Alternative text (what the image shows)" aria-label="Alternative text" readOnly={readOnly} />
+      <Input value={image.src} onChange={(event) => onChange({ ...image, src: event.target.value })} placeholder="/__media/… or https://…" aria-label="Image address" readOnly={readOnly} />
+      <Input value={image.alt} onChange={(event) => onChange({ ...image, alt: event.target.value })} placeholder="Alternative text: what the image shows" aria-label="Alternative text" readOnly={readOnly} />
       {picking && (
         <MediaPicker
           onClose={() => setPicking(false)}
@@ -106,23 +117,38 @@ export function ImagesField({ value, onChange, readOnly }: { value: unknown; onC
     onChange(next)
   }
   return (
-    <div className="studio-field-stack">
-      <ol className="studio-images">
-        {images.map((image, index) => (
-          <li key={`${image.src}-${index}`}>
-            <img className="studio-thumb" src={image.src} alt="" />
-            <input value={image.alt} onChange={(event) => update(index, { ...image, alt: event.target.value })} placeholder="Alternative text" aria-label={`Alternative text of image ${index + 1}`} readOnly={readOnly} />
-            {!readOnly && (
-              <span className="studio-images__actions">
-                <button type="button" disabled={index === 0} onClick={() => move(index, -1)} aria-label="Move up">↑</button>
-                <button type="button" disabled={index === images.length - 1} onClick={() => move(index, 1)} aria-label="Move down">↓</button>
-                <button type="button" onClick={() => onChange(images.filter((_, i) => i !== index))} aria-label="Remove">×</button>
-              </span>
-            )}
-          </li>
-        ))}
-      </ol>
-      {!readOnly && <button type="button" onClick={() => setPicking(true)}>Add image…</button>}
+    <div className="grid gap-2">
+      {images.length > 0 && (
+        <ol className="grid gap-2">
+          {images.map((image, index) => (
+            <li key={`${image.src}-${index}`} className="flex gap-2 rounded-md border border-slate-200 bg-white p-1.5">
+              <img src={image.src} alt="" className="size-14 shrink-0 rounded object-cover" />
+              <div className="grid min-w-0 flex-1 gap-1">
+                <Input className="h-7 text-xs" value={image.alt} onChange={(event) => update(index, { ...image, alt: event.target.value })} placeholder="Alternative text" aria-label={`Alternative text of image ${index + 1}`} readOnly={readOnly} />
+                {!readOnly && (
+                  <div className="flex gap-0.5">
+                    <IconButton label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>
+                      <ArrowUp className="size-3.5" />
+                    </IconButton>
+                    <IconButton label="Move down" disabled={index === images.length - 1} onClick={() => move(index, 1)}>
+                      <ArrowDown className="size-3.5" />
+                    </IconButton>
+                    <IconButton label="Remove" onClick={() => onChange(images.filter((_, i) => i !== index))}>
+                      <Trash2 className="size-3.5" />
+                    </IconButton>
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+      {!readOnly && (
+        <Button onClick={() => setPicking(true)}>
+          <ImagePlus className="size-4" />
+          Add image…
+        </Button>
+      )}
       {picking && (
         <MediaPicker
           onClose={() => setPicking(false)}
@@ -140,17 +166,17 @@ export function ImagesField({ value, onChange, readOnly }: { value: unknown; onC
 export function HtmlField({ value, onChange }: { value: unknown; onChange: (value: string) => void }) {
   const { canEditHtml } = useEditorContext()
   return (
-    <div className="studio-field-stack">
-      <textarea
-        className="studio-code"
-        rows={12}
+    <div className="grid gap-1.5">
+      <Textarea
+        className="font-mono text-xs"
+        rows={14}
         value={typeof value === 'string' ? value : ''}
         onChange={(event) => onChange(event.target.value)}
         readOnly={!canEditHtml}
         spellCheck={false}
         aria-label="HTML"
       />
-      {!canEditHtml && <p className="studio-muted">Changing HTML needs the STUDIO_HTML_BLOCKS permission. You can move or remove this block.</p>}
+      {!canEditHtml && <p className="text-xs text-slate-500">Changing HTML needs the STUDIO_HTML_BLOCKS permission. You can move or remove this block.</p>}
     </div>
   )
 }
@@ -159,11 +185,13 @@ export function HtmlField({ value, onChange }: { value: unknown; onChange: (valu
 export function ContentStoreField({ value, onChange, readOnly }: { value: unknown; onChange: (value: string) => void; readOnly?: boolean }) {
   const { contentStoreItems } = useEditorContext()
   return (
-    <select value={typeof value === 'string' ? value : ''} onChange={(event) => onChange(event.target.value)} disabled={readOnly} aria-label="Content store item">
+    <Select value={typeof value === 'string' ? value : ''} onChange={(event) => onChange(event.target.value)} disabled={readOnly} aria-label="Content store item">
       <option value="">Choose an item…</option>
       {contentStoreItems.map((item) => (
-        <option key={item.slug} value={item.slug}>{item.title} ({item.slug})</option>
+        <option key={item.slug} value={item.slug}>
+          {item.title} ({item.slug})
+        </option>
       ))}
-    </select>
+    </Select>
   )
 }

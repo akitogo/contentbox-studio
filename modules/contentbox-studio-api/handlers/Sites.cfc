@@ -2,8 +2,15 @@
  * Sites for Studio's site switcher. /cbapi/v1/sites needs SITES_ADMIN, which editors do not have.
  */
 component extends="BaseHandler" {
-	property name="siteService" inject="siteService@contentbox";
-	this.allowedMethods = { "index": "GET", "contentStore": "GET" };
+	property name="contentEditor" inject="ContentEditor@contentbox-studio";
+
+	property name="themeStyles" inject="ThemeStyles@contentbox-studio";
+	this.allowedMethods = {
+		"index"       : "GET",
+		"contentStore": "GET",
+		"templates"   : "GET",
+		"styles"      : "GET"
+	};
 
 	/**
 	 * GET /cbstudio/api/sites: active sites, sorted by name
@@ -48,6 +55,29 @@ component extends="BaseHandler" {
 				}
 			)
 		);
+	}
+
+	/**
+	 * GET /cbstudio/api/sites/:site/templates?contentType=page: content templates (block presets)
+	 */
+	function templates( event, rc, prc ) {
+		var site = findSite( rc.site ?: "" );
+		if ( isNull( site ) ) {
+			return prc.response.setErrorMessage( "Site not found", 404 );
+		}
+		var contentType = listFindNoCase( "page,entry,contentStore", rc.contentType ?: "" ) ? rc.contentType : "page";
+		prc.response.setData( variables.contentEditor.templates( site, contentType ) );
+	}
+
+	/**
+	 * GET /cbstudio/api/sites/:site/styles: stylesheets of the site's theme for the editor canvas
+	 */
+	function styles( event, rc, prc ) {
+		var site = findSite( rc.site ?: "" );
+		if ( isNull( site ) ) {
+			return prc.response.setErrorMessage( "Site not found", 404 );
+		}
+		prc.response.setData( variables.themeStyles.stylesheets( site ) );
 	}
 
 }

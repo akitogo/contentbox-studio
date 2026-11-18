@@ -1,16 +1,38 @@
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  GripVertical,
+  Plus,
+  Search,
+  Settings2,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Header } from '../components/Header'
+import { NewPageDialog } from '../components/NewPageDialog'
 import { TranslationsPanel } from '../components/TranslationsPanel'
 import { applyMove, buildTree, filterPages, keyboardMove, moveFor, type DropPosition, type Move, type TreeNode } from '../lib/tree'
 import { messageOf, useStudio } from '../studio'
 import type { Site, TreePage as Page } from '../types'
+import { Alert, Badge, Button, Card, cx, IconButton, Input, Loading, Select, type BadgeTone } from '../ui'
 
-const STATUS_LABELS: Record<Page['status'], string> = {
-  published: 'Published',
-  draft: 'Draft',
-  scheduled: 'Scheduled',
-  expired: 'Expired',
+const STATUS: Record<Page['status'], { label: string; tone: BadgeTone }> = {
+  published: { label: 'Published', tone: 'success' },
+  draft: { label: 'Draft', tone: 'neutral' },
+  scheduled: { label: 'Scheduled', tone: 'warning' },
+  expired: { label: 'Expired', tone: 'danger' },
+}
+
+const DROP_CLASSES: Record<DropPosition, string> = {
+  before: 'shadow-[inset_0_2px_0_var(--color-primary-500)]',
+  after: 'shadow-[inset_0_-2px_0_var(--color-primary-500)]',
+  inside: 'bg-primary-50 ring-1 ring-primary-400 ring-inset',
 }
 
 export function TreePage() {
@@ -20,12 +42,13 @@ export function TreePage() {
 
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
+  const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null)
   const [search, setSearch] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [selectedID, setSelectedID] = useState('')
   const [dragID, setDragID] = useState('')
   const [drop, setDrop] = useState<{ id: string; position: DropPosition } | null>(null)
+  const [newPageParent, setNewPageParent] = useState<string | null>(null)
   const canMove = me.permissions.siteTree
 
   const load = useCallback(async () => {
@@ -34,7 +57,7 @@ export function TreePage() {
     try {
       setPages(await api.get<Page[]>(`${config.studioApi}/sites/${encodeURIComponent(site.siteID)}/tree`))
     } catch (error) {
-      setMessage({ kind: 'error', text: `Could not load the pages: ${messageOf(error)}` })
+      setMessage({ tone: 'danger', text: `Could not load the pages: ${messageOf(error)}` })
     } finally {
       setLoading(false)
     }
@@ -55,11 +78,11 @@ export function TreePage() {
     setPages(applyMove(pages, pageID, target))
     try {
       const result = await api.post<{ slug: string }>(`${config.studioApi}/pages/${pageID}/move`, target)
-      setMessage({ kind: 'info', text: `Moved to /${result.slug}` })
+      setMessage({ tone: 'success', text: `Moved to /${result.slug}. The old address redirects there.` })
       await load()
     } catch (error) {
       setPages(before)
-      setMessage({ kind: 'error', text: `Could not move the page: ${messageOf(error)}` })
+      setMessage({ tone: 'danger', text: `Could not move the page: ${messageOf(error)}` })
     }
   }
 
@@ -101,12 +124,17 @@ export function TreePage() {
   function renderNode(node: TreeNode) {
     const { page } = node
     const isCollapsed = collapsed.has(page.contentID) && !search
-    const dropClass = drop?.id === page.contentID ? ` studio-row--drop-${drop.position}` : ''
+    const status = STATUS[page.status]
     return (
-      <li key={page.contentID} role="treeitem" aria-expanded={node.children.length ? !isCollapsed : undefined}>
+      <li key={page.contentID} role="treeitem" aria-expanded={node.children.length ? !isCollapsed : undefined} aria-selected={selectedID === page.contentID}>
         <div
-          className={`studio-row${selectedID === page.contentID ? ' studio-row--selected' : ''}${dropClass}${dragID === page.contentID ? ' studio-row--dragging' : ''}`}
-          style={{ paddingLeft: `${8 + node.depth * 22}px` }}
+          className={cx(
+            'group flex cursor-default items-center gap-2 border-b border-slate-100 py-2 pr-3 transition-colors hover:bg-slate-50',
+            selectedID === page.contentID && 'bg-primary-50/60 hover:bg-primary-50/80',
+            dragID === page.contentID && 'opacity-40',
+            drop?.id === page.contentID && DROP_CLASSES[drop.position],
+          )}
+          style={{ paddingLeft: `${12 + node.depth * 22}px` }}
           draggable={canMove && !search}
           onDragStart={(event) => {
             event.dataTransfer.setData('text/plain', page.contentID)
@@ -122,9 +150,10 @@ export function TreePage() {
           onDrop={(event) => onDrop(event, page.contentID)}
           onClick={() => setSelectedID(page.contentID)}
         >
+          {canMove && !search && <GripVertical className="size-4 shrink-0 cursor-grab text-slate-300 group-hover:text-slate-500" aria-hidden />}
           <button
             type="button"
-            className="studio-row__toggle"
+            className={cx('grid size-5 shrink-0 place-items-center rounded text-slate-400', node.children.length ? 'cursor-pointer hover:bg-slate-200 hover:text-slate-700' : 'invisible')}
             aria-label={isCollapsed ? `Expand ${page.title}` : `Collapse ${page.title}`}
             disabled={!node.children.length}
             onClick={(event) => {
@@ -132,32 +161,61 @@ export function TreePage() {
               toggle(page.contentID)
             }}
           >
-            {node.children.length ? (isCollapsed ? '▸' : '▾') : ''}
+            {isCollapsed ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
           </button>
-          <span className="studio-row__title">
-            <Link to={`/content/${page.contentID}`} onClick={(event) => event.stopPropagation()}>
+          <FileText className="size-4 shrink-0 text-slate-400" aria-hidden />
+          <div className="flex min-w-0 flex-1 items-baseline gap-2">
+            <Link
+              to={`/content/${page.contentID}`}
+              onClick={(event) => event.stopPropagation()}
+              className="truncate font-medium text-slate-900 no-underline hover:text-primary-700 hover:underline"
+            >
               {page.title}
             </Link>
-            <small>/{page.slug}</small>
-          </span>
-          <span className="studio-row__badges">
-            <span className={`studio-badge studio-badge--${page.status}`}>{STATUS_LABELS[page.status]}</span>
-            {page.hasBlocks && <span className="studio-badge">Blocks</span>}
-            {page.language && <span className="studio-badge studio-badge--language">{page.language}</span>}
-            {!page.showInMenu && <span className="studio-badge studio-badge--muted">Not in menu</span>}
-          </span>
-          <span className="studio-row__actions" onClick={(event) => event.stopPropagation()}>
+            <span className="truncate font-mono text-xs text-slate-400">/{page.slug}</span>
+          </div>
+          <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+            <Badge tone={status.tone}>{status.label}</Badge>
+            {page.hasBlocks && <Badge tone="primary">Blocks</Badge>}
+            {page.language && (
+              <Badge tone="info" className="uppercase">
+                {page.language}
+              </Badge>
+            )}
+            {!page.showInMenu && <Badge>Hidden in menu</Badge>}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" onClick={(event) => event.stopPropagation()}>
             {canMove && !search && (
               <>
-                <button type="button" title="Move up" aria-label={`Move ${page.title} up`} onClick={() => move(page.contentID, keyboardMove(pages, page.contentID, 'up'))}>↑</button>
-                <button type="button" title="Move down" aria-label={`Move ${page.title} down`} onClick={() => move(page.contentID, keyboardMove(pages, page.contentID, 'down'))}>↓</button>
-                <button type="button" title="Make it a subpage of the page above" aria-label={`Indent ${page.title}`} onClick={() => move(page.contentID, keyboardMove(pages, page.contentID, 'indent'))}>→</button>
-                <button type="button" title="Move it up one level" aria-label={`Outdent ${page.title}`} onClick={() => move(page.contentID, keyboardMove(pages, page.contentID, 'outdent'))}>←</button>
+                <IconButton label="Move up" onClick={() => void move(page.contentID, keyboardMove(pages, page.contentID, 'up'))}>
+                  <ArrowUp className="size-3.5" />
+                </IconButton>
+                <IconButton label="Move down" onClick={() => void move(page.contentID, keyboardMove(pages, page.contentID, 'down'))}>
+                  <ArrowDown className="size-3.5" />
+                </IconButton>
+                <IconButton label="Make it a subpage of the page above" onClick={() => void move(page.contentID, keyboardMove(pages, page.contentID, 'indent'))}>
+                  <ArrowRight className="size-3.5" />
+                </IconButton>
+                <IconButton label="Move it up one level" onClick={() => void move(page.contentID, keyboardMove(pages, page.contentID, 'outdent'))}>
+                  <ArrowLeft className="size-3.5" />
+                </IconButton>
               </>
             )}
-            <a href={page.url} target="_blank" rel="noreferrer">View</a>
-            <a href={`${config.adminUrl}/pages/editor/contentID/${page.contentID}`}>Classic</a>
-          </span>
+            <IconButton label="Add a subpage" onClick={() => setNewPageParent(page.contentID)}>
+              <Plus className="size-3.5" />
+            </IconButton>
+            <a href={page.url} target="_blank" rel="noreferrer" title="View" aria-label={`View ${page.title}`} className="inline-flex size-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+              <ExternalLink className="size-3.5" />
+            </a>
+            <a
+              href={`${config.adminUrl}/pages/editor/contentID/${page.contentID}`}
+              title="Settings in the classic admin"
+              aria-label={`Settings of ${page.title} in the classic admin`}
+              className="inline-flex size-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            >
+              <Settings2 className="size-3.5" />
+            </a>
+          </div>
         </div>
         {node.children.length > 0 && !isCollapsed && <ul role="group">{node.children.map(renderNode)}</ul>}
       </li>
@@ -165,59 +223,76 @@ export function TreePage() {
   }
 
   return (
-    <div className="studio">
+    <div className="min-h-screen">
       <Header>
         {sites.length > 1 && (
-          <label className="studio-site-switcher">
-            Site{' '}
-            <select value={site?.slug ?? ''} onChange={(event) => setParams({ site: event.target.value })}>
-              {sites.map((item) => (
-                <option key={item.siteID} value={item.slug}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select className="h-8 w-56" value={site?.slug ?? ''} onChange={(event) => setParams({ site: event.target.value })} aria-label="Site">
+            {sites.map((item) => (
+              <option key={item.siteID} value={item.slug}>
+                {item.name}
+              </option>
+            ))}
+          </Select>
         )}
       </Header>
 
-      <main className="studio-workspace">
-        <section className="studio-panel studio-tree">
-          <div className="studio-toolbar">
-            <h1>Pages{site ? ` of ${site.name}` : ''}</h1>
-            <input
-              type="search"
-              placeholder="Find a page"
-              aria-label="Find a page"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <button type="button" onClick={() => setCollapsed(new Set())}>Expand all</button>
-            <button type="button" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>Collapse all</button>
+      <main className={cx('mx-auto grid max-w-7xl gap-6 px-6 py-6', selected && 'lg:grid-cols-[minmax(0,1fr)_22rem]')}>
+        <div className="grid min-w-0 content-start gap-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="mr-auto">
+              <h1 className="text-xl font-semibold text-slate-900">Pages</h1>
+              <p className="text-sm text-slate-500">
+                {site?.name} · {pages.length} {pages.length === 1 ? 'page' : 'pages'}
+              </p>
+            </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+              <Input type="search" className="w-64 pl-8" placeholder="Find a page" aria-label="Find a page" value={search} onChange={(event) => setSearch(event.target.value)} />
+            </div>
+            <Button variant="ghost" onClick={() => setCollapsed(new Set())}>
+              Expand all
+            </Button>
+            <Button variant="ghost" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>
+              Collapse all
+            </Button>
+            <Button variant="primary" onClick={() => setNewPageParent('')}>
+              <Plus className="size-4" />
+              New page
+            </Button>
           </div>
-          <p className="studio-message" role="status" aria-live="polite">
-            {message && <span className={message.kind === 'error' ? 'studio-error' : 'studio-muted'}>{message.text}</span>}
-          </p>
-          {canMove ? (
-            <p className="studio-muted studio-hint">Drag a page onto another to make it a subpage, or above/below it to reorder. Moving changes the address; the old one redirects.</p>
-          ) : (
-            <p className="studio-muted studio-hint">You can view the tree; moving pages needs the STUDIO_SITE_TREE permission.</p>
-          )}
-          {loading && !pages.length ? (
-            <p className="studio-muted">Loading…</p>
-          ) : tree.length ? (
-            <ul className="studio-tree__list" role="tree" aria-label="Pages">
-              {tree.map(renderNode)}
-            </ul>
-          ) : (
-            <p className="studio-muted">{search ? 'No page matches.' : 'This site has no pages yet.'}</p>
-          )}
-        </section>
 
-        {selected && (
-          <TranslationsPanel key={selected.contentID} page={selected} onChanged={load} onClose={() => setSelectedID('')} />
-        )}
+          {message && (
+            <Alert tone={message.tone} onClose={() => setMessage(null)}>
+              {message.text}
+            </Alert>
+          )}
+
+          <Card className="overflow-hidden">
+            {loading && !pages.length ? (
+              <Loading />
+            ) : tree.length ? (
+              <ul role="tree" aria-label="Pages" className="-mb-px">
+                {tree.map(renderNode)}
+              </ul>
+            ) : (
+              <div className="px-6 py-16 text-center">
+                <p className="text-sm text-slate-500">{search ? 'No page matches.' : 'This site has no pages yet.'}</p>
+              </div>
+            )}
+          </Card>
+          <p className="text-xs text-slate-500">
+            {canMove
+              ? 'Drag a page onto another to make it a subpage, or above or below it to reorder. Moving changes the address; the old one redirects.'
+              : 'Moving pages needs the STUDIO_SITE_TREE permission.'}
+          </p>
+        </div>
+
+        {selected && <TranslationsPanel key={selected.contentID} page={selected} onChanged={load} onClose={() => setSelectedID('')} />}
       </main>
+
+      {site && newPageParent !== null && (
+        <NewPageDialog site={site} pages={pages} parentID={newPageParent} onClose={() => setNewPageParent(null)} />
+      )}
     </div>
   )
 }

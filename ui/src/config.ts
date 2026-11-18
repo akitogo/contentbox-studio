@@ -20,6 +20,8 @@ export interface StudioConfig {
   /** ContentBox's /__page_preview and /__entry_preview */
   pagePreview: string
   entryPreview: string
+  /** Base styles of the core blocks for the editor canvas; "" when the theme styles them (coreBlockStyles) */
+  blockStyles: string
 }
 
 const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, '')
@@ -34,6 +36,7 @@ export function parseConfig(json: string): StudioConfig {
     appBase: withoutTrailingSlash(config.appBase ?? ''),
     studioApi: withoutTrailingSlash(config.studioApi),
     contentboxApi: withoutTrailingSlash(config.contentboxApi),
+    blockStyles: config.blockStyles ?? '',
   }
 }
 

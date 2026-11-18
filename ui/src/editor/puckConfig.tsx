@@ -26,7 +26,7 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
       fields: Object.fromEntries(definition.fields.map((field) => [field.name, toPuckField(field)])),
       defaultProps: withDefaults(definition.fields),
       render: ({ puck: _puck, editMode: _editMode, id, ...data }: Record<string, unknown>) => (
-        <BlockPreview type={definition.name} id={String(id ?? '')} data={data} />
+        <BlockPreview type={definition.name} label={definition.label} id={String(id ?? '')} data={data} />
       ),
     }
     // Without STUDIO_HTML_BLOCKS, new HTML blocks cannot be added (existing ones still load and can be removed)
@@ -43,7 +43,8 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
     components,
     categories,
     // No root fields: page settings (title, slug, SEO) stay in ContentBox
-    root: { fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div className="studio-canvas">{children}</div> },
+    // Inline style: the canvas only has the theme's CSS
+    root: { fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div style={{ padding: 24 }}>{children}</div> },
   } as Config
 }
 
@@ -62,7 +63,7 @@ export function toPuckField(field: FieldDefinition): Field {
       // A div, not a label: a click inside a <label> also clicks its first button (e.g. Bold in the text toolbar)
       <FieldLabel label={label} el="div">
         {render({ value, onChange, readOnly })}
-        {field.help && <p className="studio-field-help">{field.help}</p>}
+        {field.help && <p className="mt-1.5 text-xs text-slate-500">{field.help}</p>}
       </FieldLabel>
     ),
   })

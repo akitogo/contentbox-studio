@@ -22,8 +22,11 @@ component {
 	function configure() {
 		settings = {
 			// URL of the Vite dev server (e.g. http://localhost:5173) to load the app with hot reload instead of dist/
-			"devServer" : getSystemSetting( "CBSTUDIO_DEV_SERVER", "" ),
-			"cbsecurity": {
+			"devServer"      : getSystemSetting( "CBSTUDIO_DEV_SERVER", "" ),
+			// includes/blocks.css on public pages with blocks and in the editor canvas; false if the theme styles
+			// the core blocks itself
+			"coreBlockStyles": true,
+			"cbsecurity"     : {
 				"firewall": {
 					// Not logged in: classic admin login, which returns to Studio afterwards
 					"invalidAuthenticationEvent" : "cbadmin/security/login",

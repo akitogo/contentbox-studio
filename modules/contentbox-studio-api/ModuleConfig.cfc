@@ -38,6 +38,9 @@ component {
 		router.route( "/me" ).to( "me.index" );
 		router.route( "/sites/:site/tree" ).to( "tree.index" );
 		router.route( "/sites/:site/contentstore" ).to( "sites.contentStore" );
+		router.route( "/sites/:site/templates" ).to( "sites.templates" );
+		router.route( "/sites/:site/styles" ).to( "sites.styles" );
+		router.route( "/sites/:site/pages" ).to( "tree.create" );
 		router.route( "/sites" ).to( "sites.index" );
 		router.route( "/pages/:contentID/move" ).to( "tree.move" );
 		router.route( "/content/:contentID/language" ).to( "translations.setLanguage" );
@@ -46,6 +49,8 @@ component {
 			.withAction( { "GET": "show", "POST": "link", "DELETE": "unlink" } )
 			.toHandler( "translations" );
 		router.route( "/content/:contentID/blocks" ).to( "editor.save" );
+		router.route( "/content/:contentID/status" ).to( "editor.status" );
+		router.route( "/content/:contentID/template" ).to( "editor.template" );
 		router.route( "/content/:contentID/versions/:versionID" ).to( "editor.version" );
 		router.route( "/content/:contentID/versions" ).to( "editor.versions" );
 		router.route( "/content/:contentID" ).to( "editor.show" );

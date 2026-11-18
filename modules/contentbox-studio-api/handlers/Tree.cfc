@@ -5,7 +5,7 @@ component extends="BaseHandler" {
 	property name="siteTree" inject="SiteTree@contentbox-studio";
 
 	property name="pageService" inject="pageService@contentbox";
-	this.allowedMethods = { "index": "GET", "move": "POST" };
+	this.allowedMethods = { "index": "GET", "move": "POST", "create": "POST" };
 
 	/**
 	 * GET /cbstudio/api/sites/:site/tree: all pages of the site, flat, with parentID, order and status
@@ -40,6 +40,41 @@ component extends="BaseHandler" {
 				)
 			);
 		} catch (SiteTree.InvalidMove e) {
+			prc.response.setErrorMessage( e.message, 409 );
+		}
+	}
+
+	/**
+	 * POST /cbstudio/api/sites/:site/pages with JSON { title, slug, parentID, templateID }: a new draft page.
+	 * Needs PAGES_ADMIN or PAGES_EDITOR. Returns { contentID, slug }.
+	 */
+	function create( event, rc, prc ) {
+		if ( !hasAnyPermission( "PAGES_ADMIN,PAGES_EDITOR" ) ) {
+			return prc.response.setErrorMessage( "Creating pages needs PAGES_ADMIN or PAGES_EDITOR", 403 );
+		}
+		var site = findSite( rc.site ?: "" );
+		if ( isNull( site ) ) {
+			return prc.response.setErrorMessage( "Site not found", 404 );
+		}
+		try {
+			var page = variables.siteTree.createPage(
+				site       = site,
+				title      = toString( rc.title ?: "" ),
+				slug       = toString( rc.slug ?: "" ),
+				parentID   = toString( rc.parentID ?: "" ),
+				templateID = toString( rc.templateID ?: "" ),
+				author     = jwtAuth().getUser()
+			);
+			prc
+				.response
+				.setData(
+					{
+						"contentID": page.getContentID(),
+						"slug"     : page.getSlug()
+					}
+				)
+				.setStatusCode( 201 );
+		} catch (SiteTree.InvalidPage e) {
 			prc.response.setErrorMessage( e.message, 409 );
 		}
 	}

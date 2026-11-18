@@ -7,7 +7,9 @@ component extends="BaseHandler" {
 		"show"    : "GET",
 		"save"    : "PUT",
 		"versions": "GET",
-		"version" : "GET"
+		"version" : "GET",
+		"status"  : "PUT",
+		"template": "POST"
 	};
 
 	/**
@@ -80,6 +82,58 @@ component extends="BaseHandler" {
 			return prc.response.setErrorMessage( "Version not found", 404 );
 		}
 		prc.response.setData( result );
+	}
+
+	/**
+	 * PUT /cbstudio/api/content/:contentID/status with JSON { isPublished }
+	 */
+	function status( event, rc, prc ) {
+		var content = findContent( rc.contentID ?: "" );
+		if ( isNull( content ) ) {
+			return prc.response.setErrorMessage( "Content not found", 404 );
+		}
+		if ( !isBoolean( rc.isPublished ?: "" ) ) {
+			return prc.response.setErrorMessage( "isPublished must be true or false", 400 );
+		}
+		try {
+			prc.response.setData(
+				variables.editor.setPublished(
+					content,
+					rc.isPublished,
+					jwtAuth().getUser()
+				)
+			);
+		} catch (ContentEditor.Forbidden e) {
+			prc.response.setErrorMessage( e.message, 403 );
+		}
+	}
+
+	/**
+	 * POST /cbstudio/api/content/:contentID/template with JSON { name, description }: the saved body as a content
+	 * template (block preset for new pages)
+	 */
+	function template( event, rc, prc ) {
+		var content = findContent( rc.contentID ?: "" );
+		if ( isNull( content ) ) {
+			return prc.response.setErrorMessage( "Content not found", 404 );
+		}
+		try {
+			prc
+				.response
+				.setData(
+					variables.editor.saveAsTemplate(
+						content     = content,
+						name        = toString( rc.name ?: "" ),
+						description = toString( rc.description ?: "" ),
+						author      = jwtAuth().getUser()
+					)
+				)
+				.setStatusCode( 201 );
+		} catch (ContentEditor.Forbidden e) {
+			prc.response.setErrorMessage( e.message, 403 );
+		} catch (ContentEditor.Invalid e) {
+			prc.response.setErrorMessage( e.message, 400 );
+		}
 	}
 
 }

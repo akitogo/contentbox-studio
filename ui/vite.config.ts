@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 // The app is served by the ColdBox module, not by an index.html:
 // - build: ../dist plus a manifest that models/StudioAssets.cfc reads
 // - dev: set CBSTUDIO_DEV_SERVER=http://localhost:5173 in ContentBox's .env, run `npm run dev`, open /cbstudio
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   base: './',
   build: {
     outDir: '../dist',

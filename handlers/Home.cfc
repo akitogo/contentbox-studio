@@ -12,9 +12,17 @@ component {
 
 		var author = variables.securityService.getAuthorSession();
 
+		var studioModule = getModuleConfig( "contentbox-studio" );
+		var moduleRoot = event.getModuleRoot( "contentbox-studio" );
+		var blockStyles = studioModule.settings.coreBlockStyles
+			? moduleRoot & "/includes/blocks.css?v=" & studioModule.version
+			: "";
+
 		// Read by ui/src/config.ts
 		prc.studioConfig = {
-			"version"      : getModuleConfig( "contentbox-studio" ).version,
+			"version"      : studioModule.version,
+			// Base styles of the core blocks for the editor canvas ("" when the theme styles them)
+			"blockStyles"  : blockStyles,
 			"appBase"      : event.buildLink( "cbstudio" ),
 			"studioApi"    : event.buildLink( "cbstudio/api" ),
 			"contentboxApi": event.buildLink( "cbapi/v1" ),
@@ -28,7 +36,7 @@ component {
 		};
 
 		try {
-			prc.assetTags = variables.assets.getTags( event.getModuleRoot( "contentbox-studio" ) );
+			prc.assetTags = variables.assets.getTags( moduleRoot );
 		} catch (StudioNotBuilt e) {
 			event.setHTTPHeader( statusCode = 503 );
 			return "<h1>ContentBox Studio is not built</h1><p>#encodeForHTML( e.message )#</p>";

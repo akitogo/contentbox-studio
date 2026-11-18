@@ -4,6 +4,7 @@ import type { ApiClient } from './api'
 import { basePath, type StudioConfig } from './config'
 import { TreePage } from './pages/TreePage'
 import { StudioProvider } from './studio'
+import { Loading } from './ui'
 
 // The editor (Puck, TipTap) is large: load it only when content is opened
 const EditorPage = lazy(() => import('./pages/EditorPage').then((module) => ({ default: module.EditorPage })))
@@ -12,7 +13,7 @@ export function App({ config, api }: { config: StudioConfig; api: ApiClient }) {
   return (
     <StudioProvider config={config} api={api}>
       <BrowserRouter basename={basePath(config)}>
-        <Suspense fallback={<p className="studio-muted studio-center">Loading the editor…</p>}>
+        <Suspense fallback={<Loading>Loading the editor…</Loading>}>
           <Routes>
             <Route path="/" element={<TreePage />} />
             <Route path="/content/:contentID" element={<EditorPage />} />

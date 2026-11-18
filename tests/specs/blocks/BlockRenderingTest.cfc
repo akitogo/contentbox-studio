@@ -337,6 +337,35 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"links the core block styles on pages with blocks",
+					() => {
+						var interceptor = getInterceptor( "BlockOutput@contentbox-studio" );
+						var event = getRequestContext();
+						var buffer = createObject( "java", "java.lang.StringBuilder" ).init();
+
+						event.setPrivateValue(
+							"page",
+							createStub().$( "isLoaded", true ).$( "getContent", "<p>no blocks</p>" )
+						);
+						interceptor.cbui_beforeHeadEnd(
+							event,
+							{},
+							buffer
+						);
+						expect( buffer.toString() ).toBe( "" );
+
+						event.setPrivateValue( "page", createStub().$( "isLoaded", true ).$( "getContent", body ) );
+						interceptor.cbui_beforeHeadEnd(
+							event,
+							{},
+							buffer
+						);
+						expect( buffer.toString() ).toInclude( "/includes/blocks.css?v=" );
+						expect( buffer.toString() ).toInclude( "rel=""stylesheet""" );
+					}
+				);
+
+				it(
 					"keeps the block body when the classic editor saves",
 					() => {
 						var page = pageWithVersions( [ body, "<p>reformatted by CKEditor</p>" ] );

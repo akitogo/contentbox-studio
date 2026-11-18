@@ -149,3 +149,11 @@ export interface MediaListing {
   folders: { name: string; path: string }[]
   files: MediaFile[]
 }
+
+/** GET /sites/:site/templates */
+export interface TemplateInfo {
+  templateID: string
+  name: string
+  description: string
+  hasBlocks: boolean
+}

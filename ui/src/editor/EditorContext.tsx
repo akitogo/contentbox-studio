@@ -10,6 +10,8 @@ export interface EditorContextValue {
   canEdit: boolean
   contentStoreItems: { slug: string; title: string }[]
   pages: TreePage[]
+  /** Stylesheets of the site's theme for the canvas (GET /sites/:site/styles) */
+  stylesheets: string[]
 }
 
 export const EditorContext = createContext<EditorContextValue>({
@@ -18,6 +20,7 @@ export const EditorContext = createContext<EditorContextValue>({
   canEdit: false,
   contentStoreItems: [],
   pages: [],
+  stylesheets: [],
 })
 
 export const useEditorContext = () => useContext(EditorContext)

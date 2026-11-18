@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { ApiClient } from './api'
 import type { StudioConfig } from './config'
 import type { Me, Site } from './types'
+import { Alert, Loading } from './ui'
 
 export interface Studio {
   config: StudioConfig
@@ -23,7 +24,7 @@ export function useStudio(): Studio {
   return studio
 }
 
-type Loading = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; me: Me; sites: Site[] }
+type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; me: Me; sites: Site[] }
 
 export function StudioProvider({
   config,
@@ -34,7 +35,7 @@ export function StudioProvider({
   api: ApiClient
   children: ReactNode
 }) {
-  const [state, setState] = useState<Loading>({ status: 'loading' })
+  const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
@@ -48,12 +49,12 @@ export function StudioProvider({
     }
   }, [api, config])
 
-  if (state.status === 'loading') return <p className="studio-muted studio-center">Loading…</p>
+  if (state.status === 'loading') return <Loading>Loading Studio…</Loading>
   if (state.status === 'error') {
     return (
-      <p className="studio-error studio-center" role="alert">
-        Could not load Studio: {state.message}
-      </p>
+      <div className="mx-auto mt-24 max-w-lg px-4">
+        <Alert tone="danger">Could not load Studio: {state.message}</Alert>
+      </div>
     )
   }
   return (

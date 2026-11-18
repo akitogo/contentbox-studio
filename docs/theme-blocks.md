@@ -107,6 +107,16 @@ Rules:
 - The template runs when the page is saved, not on every view. After changing a template, re-render the pages
   that use it.
 
+## Styles
+
+- Blocks are styled by the theme's normal CSS. The editor canvas loads the stylesheets of the site's home page, so it
+  shows blocks the way the site does.
+- `blocks/editor.css` in the theme is loaded in the canvas only, after the theme's stylesheets: for adjustments
+  that only the editor needs (e.g. spacing between blocks, or content that scripts would normally reveal).
+- The core blocks (`cbs-*` classes) come with base styles (`includes/blocks.css` of the module). All its selectors
+  use `:where()`, so they have no specificity and any theme rule overrides them. Accent color: `--cbs-accent`, else
+  Bootstrap's `--bs-primary`. Turn the file off with the module setting `coreBlockStyles = false`.
+
 ## Blocks from modules
 
 A ColdBox module can add block types too, from its `onLoad()` or by listening to `cbstudio_onBlockRegistration`

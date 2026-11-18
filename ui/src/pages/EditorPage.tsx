@@ -6,12 +6,16 @@ import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
 import { Header } from '../components/Header'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
+import { CanvasStyles } from '../editor/CanvasStyles'
+import { EditorActionsContext, EditorHeader, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
 import { openPreview, previewFields, previewUrl } from '../editor/preview'
 import { buildConfig } from '../editor/puckConfig'
+import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
 import type { BlockDefinition, BlockError, EditorContent, TreePage } from '../types'
+import { Alert, buttonClass, Loading } from '../ui'
 
 const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   legacy: 'HTML written outside Studio, shown as an HTML block',
@@ -19,8 +23,10 @@ const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   modified: 'changed outside Studio; saving renders it again from its fields and drops those changes',
 }
 
-// Stable (module-level): Studio's actions live in Studio's header, Puck's header keeps title and undo/redo
-const PUCK_OVERRIDES = { headerActions: () => <></> }
+// Stable (module-level): Puck remounts overrides whose identity changes
+const PUCK_OVERRIDES = { header: EditorHeader, iframe: CanvasStyles }
+// The canvas gets the theme's CSS (CanvasStyles), not Studio's
+const PUCK_IFRAME = { enabled: true, syncHostStyles: false }
 
 interface Loaded {
   editor: EditorContent
@@ -28,18 +34,21 @@ interface Loaded {
   context: EditorContextValue
 }
 
+type Message = { tone: 'danger' | 'success' | 'info'; text: string }
+
 export function EditorPage() {
   const { contentID = '' } = useParams()
   const { config, api } = useStudio()
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [initial, setInitial] = useState<{ data: PuckData; notices: BlockNotice[]; key: number } | null>(null)
   const [loadError, setLoadError] = useState('')
-  const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
+  const [message, setMessage] = useState<Message | null>(null)
   const [errors, setErrors] = useState<BlockError[]>([])
   const [changelog, setChangelog] = useState('')
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [showVersions, setShowVersions] = useState(false)
+  const [templateDialog, setTemplateDialog] = useState(false)
   const current = useRef<PuckData | null>(null)
 
   const show = useCallback((blocks: ParsedBlock[], definitions: BlockDefinition[]) => {
@@ -55,22 +64,19 @@ export function EditorPage() {
       try {
         const editor = await api.get<EditorContent>(`${config.studioApi}/content/${contentID}`)
         const site = encodeURIComponent(editor.content.siteID)
-        const [definitions, pages, contentStoreItems] = await Promise.all([
+        const [definitions, pages, contentStoreItems, themeStylesheets] = await Promise.all([
           api.get<BlockDefinition[]>(`${config.studioApi}/blocks?site=${site}`),
           api.get<TreePage[]>(`${config.studioApi}/sites/${site}/tree`),
           api.get<{ slug: string; title: string }[]>(`${config.studioApi}/sites/${site}/contentstore`),
+          api.get<string[]>(`${config.studioApi}/sites/${site}/styles`).catch(() => [] as string[]),
         ])
+        // Core block styles first: the theme's CSS comes later and wins anyway (blocks.css uses :where())
+        const stylesheets = [config.blockStyles, ...themeStylesheets].filter(Boolean)
         if (cancelled) return
         setLoaded({
           editor,
           definitions,
-          context: {
-            siteID: editor.content.siteID,
-            canEdit: editor.canEdit,
-            canEditHtml: editor.canEditHtml,
-            pages,
-            contentStoreItems,
-          },
+          context: { siteID: editor.content.siteID, canEdit: editor.canEdit, canEditHtml: editor.canEditHtml, pages, contentStoreItems, stylesheets },
         })
         show(editor.blocks, definitions)
       } catch (error) {
@@ -91,10 +97,7 @@ export function EditorPage() {
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
 
-  const puckConfig = useMemo(
-    () => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml) : null),
-    [loaded],
-  )
+  const puckConfig = useMemo(() => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml) : null), [loaded])
 
   async function save() {
     if (!loaded || !current.current) return
@@ -110,16 +113,29 @@ export function EditorPage() {
       setLoaded({ ...loaded, editor: result })
       show(result.blocks, loaded.definitions)
       setChangelog('')
-      setMessage({ kind: 'info', text: `Saved as version ${result.content.version}.` })
+      setMessage({ tone: 'success', text: `Saved as version ${result.content.version}.` })
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         setErrors((error.data as { errors?: BlockError[] } | undefined)?.errors ?? [])
-        setMessage({ kind: 'error', text: 'Not saved: some blocks need attention.' })
+        setMessage({ tone: 'danger', text: 'Not saved: some blocks need attention.' })
       } else {
-        setMessage({ kind: 'error', text: `Not saved: ${messageOf(error)}` })
+        setMessage({ tone: 'danger', text: `Not saved: ${messageOf(error)}` })
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function togglePublished() {
+    if (!loaded) return
+    try {
+      const result = await api.put<EditorContent>(`${config.studioApi}/content/${contentID}/status`, {
+        isPublished: !loaded.editor.content.isPublished,
+      })
+      setLoaded({ ...loaded, editor: { ...loaded.editor, content: result.content } })
+      setMessage({ tone: 'success', text: result.content.isPublished ? 'Published.' : 'Unpublished: the page is a draft again.' })
+    } catch (error) {
+      setMessage({ tone: 'danger', text: messageOf(error) })
     }
   }
 
@@ -134,26 +150,28 @@ export function EditorPage() {
       })
       openPreview(url, previewFields(config, loaded.editor.content, rendered.body))
     } catch (error) {
-      setMessage({ kind: 'error', text: `Preview failed: ${messageOf(error)}` })
+      setMessage({ tone: 'danger', text: `Preview failed: ${messageOf(error)}` })
     }
   }
 
   if (loadError) {
     return (
-      <div className="studio">
+      <div className="min-h-screen">
         <Header />
-        <main className="studio-main">
-          <p className="studio-error" role="alert">Could not open the content: {loadError}</p>
-          <Link to="/">Back to the pages</Link>
-        </main>
+        <div className="mx-auto mt-16 grid max-w-lg gap-4 px-4">
+          <Alert tone="danger">Could not open the content: {loadError}</Alert>
+          <Link to="/" className={buttonClass('secondary', 'md', 'justify-self-start')}>
+            Back to the pages
+          </Link>
+        </div>
       </div>
     )
   }
   if (!loaded || !initial || !puckConfig) {
     return (
-      <div className="studio">
+      <div className="min-h-screen">
         <Header />
-        <p className="studio-muted studio-center">Loading…</p>
+        <Loading>Loading the editor…</Loading>
       </div>
     )
   }
@@ -164,45 +182,14 @@ export function EditorPage() {
     return item ? (loaded.definitions.find((definition) => definition.name === item.type)?.label ?? item.type) : id
   }
 
-  return (
-    <div className="studio studio--editor">
-      <Header>
-        <span className="studio-editor-title">
-          <Link to={`/?site=${encodeURIComponent(editor.content.siteSlug)}`}>Pages</Link> / {editor.content.title}{' '}
-          <small>
-            version {editor.content.version}
-            {dirty ? ' · unsaved changes' : ''}
-          </small>
-        </span>
-        <div className="studio-editor-actions">
-          <input
-            value={changelog}
-            onChange={(event) => setChangelog(event.target.value)}
-            placeholder="What changed? (optional)"
-            aria-label="Change note"
-            disabled={!editor.canEdit}
-          />
-          {previewUrl(config, editor.content) && (
-            <button type="button" onClick={() => void preview()}>Preview</button>
-          )}
-          <button type="button" onClick={() => setShowVersions(!showVersions)} aria-pressed={showVersions}>
-            Versions
-          </button>
-          {editor.content.url && (
-            <a href={editor.content.url} target="_blank" rel="noreferrer">View live</a>
-          )}
-          <button type="button" className="studio-primary" onClick={() => void save()} disabled={!editor.canEdit || saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      </Header>
-
-      {(message || errors.length > 0 || initial.notices.length > 0 || !editor.canEdit) && (
-        <div className="studio-editor-messages" role="status" aria-live="polite">
-          {!editor.canEdit && <p className="studio-error">You can look at this content but not save it (missing permission).</p>}
-          {message && <p className={message.kind === 'error' ? 'studio-error' : 'studio-muted'}>{message.text}</p>}
+  const messages = (message || errors.length > 0 || initial.notices.length > 0 || !editor.canEdit) && (
+    <div className="grid gap-2 border-t border-slate-100 px-4 py-2">
+      {!editor.canEdit && <Alert tone="warning">You can look at this content but not save it (missing permission).</Alert>}
+      {message && (
+        <Alert tone={message.tone} onClose={() => setMessage(null)}>
+          {message.text}
           {errors.length > 0 && (
-            <ul className="studio-error">
+            <ul className="mt-1 list-disc pl-4">
               {errors.map((error, index) => (
                 <li key={index}>
                   {blockLabel(error.blockID)}: {error.message}
@@ -210,34 +197,60 @@ export function EditorPage() {
               ))}
             </ul>
           )}
-          {initial.notices.length > 0 && (
-            <ul className="studio-muted">
-              {initial.notices.map((notice) => (
-                <li key={notice.id}>
-                  Block “{notice.type}” ({notice.id}): {NOTICE_TEXT[notice.status]}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        </Alert>
       )}
+      {initial.notices.length > 0 && (
+        <Alert tone="info">
+          <ul className="list-disc pl-4">
+            {initial.notices.map((notice) => (
+              <li key={notice.id}>
+                Block “{notice.type}”: {NOTICE_TEXT[notice.status]}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+    </div>
+  )
 
-      <div className={`studio-editor${showVersions ? ' studio-editor--with-side' : ''}`}>
-        <EditorContext.Provider value={loaded.context}>
-          <Puck
-            key={initial.key}
-            config={puckConfig}
-            data={initial.data}
-            onChange={(data) => {
-              current.current = data as PuckData
-              setDirty(true)
-            }}
-            headerTitle={editor.content.title}
-            headerPath={editor.content.url ? `/${editor.content.slug}` : editor.content.slug}
-            permissions={{ edit: editor.canEdit, insert: editor.canEdit, delete: editor.canEdit, drag: editor.canEdit, duplicate: editor.canEdit }}
-            overrides={PUCK_OVERRIDES}
-          />
-        </EditorContext.Provider>
+  const actions: EditorActions = {
+    content: editor.content,
+    canEdit: editor.canEdit,
+    dirty,
+    saving,
+    changelog,
+    setChangelog,
+    save: () => void save(),
+    preview: previewUrl(config, editor.content) ? () => void preview() : null,
+    togglePublished: () => void togglePublished(),
+    toggleVersions: () => setShowVersions(!showVersions),
+    showVersions,
+    saveAsTemplate: () => setTemplateDialog(true),
+    messages,
+  }
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden">
+      <Header />
+      <div className="flex min-h-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden [&>*]:h-full">
+          <EditorContext.Provider value={loaded.context}>
+            <EditorActionsContext.Provider value={actions}>
+              <Puck
+                key={initial.key}
+                config={puckConfig}
+                data={initial.data}
+                onChange={(data) => {
+                  current.current = data as PuckData
+                  setDirty(true)
+                }}
+                overrides={PUCK_OVERRIDES}
+                iframe={PUCK_IFRAME}
+                permissions={{ edit: editor.canEdit, insert: editor.canEdit, delete: editor.canEdit, drag: editor.canEdit, duplicate: editor.canEdit }}
+              />
+            </EditorActionsContext.Provider>
+          </EditorContext.Provider>
+        </div>
         {showVersions && (
           <VersionsPanel
             contentID={contentID}
@@ -246,11 +259,23 @@ export function EditorPage() {
             onLoad={(blocks, version) => {
               show(blocks, loaded.definitions)
               setDirty(true)
-              setMessage({ kind: 'info', text: `Version ${version} is in the editor. Save to make it the current version.` })
+              setMessage({ tone: 'info', text: `Version ${version} is in the editor. Save to make it the current version.` })
             }}
           />
         )}
       </div>
+      {templateDialog && (
+        <SaveTemplateDialog
+          contentID={contentID}
+          title={editor.content.title}
+          dirty={dirty}
+          onClose={() => setTemplateDialog(false)}
+          onSaved={(name) => {
+            setTemplateDialog(false)
+            setMessage({ tone: 'success', text: `Saved as the template “${name}”. New pages can start from it.` })
+          }}
+        />
+      )}
     </div>
   )
 }
