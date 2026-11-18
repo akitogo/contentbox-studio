@@ -58,7 +58,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
   block content and the language. Search keeps matches in place.
 - Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
-  `PAGES_EDITOR`. Moving changes the address of the page and its subpages; ContentBox redirects the old ones.
+  `PAGES_EDITOR`. Drop onto a page to make it a subpage, or on its top or bottom edge to place it before or after
+  (the bottom edge of an open page makes it the first subpage); a line shows where it lands, collapsed pages open
+  when you hover them, and a zone below the tree moves a page to the top level. Moving changes the address of the
+  page and its subpages; ContentBox redirects the old ones.
 - **New page** (or the + of a page for a subpage) creates a draft with a title, address and parent, empty or from a
   template, and opens it in the editor. Needs `PAGES_ADMIN` or `PAGES_EDITOR`.
 - Selecting a page shows its details: edit, view, publish or unpublish, language and translations.

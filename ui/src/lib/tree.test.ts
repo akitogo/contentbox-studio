@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TreePage } from '../types'
-import { applyMove, buildTree, childrenOf, filterPages, isWithin, keyboardMove, moveFor } from './tree'
+import { applyMove, buildTree, childrenOf, filterPages, isWithin, keyboardMove, moveFor, moveToRootEnd } from './tree'
 
 function page(contentID: string, parentID = '', order = 0, title = contentID): TreePage {
   return {
@@ -57,6 +57,24 @@ describe('moveFor', () => {
 
   it('moves next to a page under another parent', () => {
     expect(moveFor(pages, 'contact', 'team', 'after')).toEqual({ parentID: 'about', index: 1 })
+  })
+
+  it('moves inside a page as its first child', () => {
+    expect(moveFor(pages, 'contact', 'about', 'first')).toEqual({ parentID: 'about', index: 0 })
+    expect(moveFor(pages, 'jobs', 'about', 'first')).toEqual({ parentID: 'about', index: 0 })
+  })
+
+  it('ignores drops that leave the page where it is', () => {
+    expect(moveFor(pages, 'about', 'home', 'after')).toBeNull()
+    expect(moveFor(pages, 'about', 'contact', 'before')).toBeNull()
+    expect(moveFor(pages, 'jobs', 'about', 'inside')).toBeNull()
+    expect(moveFor(pages, 'team', 'about', 'first')).toBeNull()
+  })
+
+  it('moves to the end of the top level', () => {
+    expect(moveToRootEnd(pages, 'team')).toEqual({ parentID: '', index: 3 })
+    expect(moveToRootEnd(pages, 'home')).toEqual({ parentID: '', index: 2 })
+    expect(moveToRootEnd(pages, 'contact')).toBeNull()
   })
 
   it('refuses drops onto the page itself or into its subtree', () => {

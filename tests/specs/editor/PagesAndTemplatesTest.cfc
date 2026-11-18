@@ -32,7 +32,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"creates a draft page with a slug from the title, last among its siblings",
 					() => {
 						var parent = createTestPage( testSlug( variables.MARKER ) );
-						createTestPage( testSlug( variables.MARKER ), parent );
+						var sibling = createTestPage( testSlug( variables.MARKER ), parent );
+						// Orders with gaps, as the classic admin can leave them
+						sibling.setOrder( 7 );
+						pageService.save( sibling );
 						var title = "#variables.MARKER# Rooms & Suites #createUUID()#";
 
 						var page = siteTree.createPage(
@@ -49,7 +52,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						expect( stored.getSlug() ).toBe(
 							parent.getSlug() & "/" & getInstance( "HTMLHelper@coldbox" ).slugify( title )
 						);
-						expect( stored.getOrder() ).toBe( 2 );
+						expect( stored.getOrder() ).toBe( 8 );
 						expect( stored.getContent() ).toBe( "" );
 					}
 				);

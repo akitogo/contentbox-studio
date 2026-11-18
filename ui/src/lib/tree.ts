@@ -10,7 +10,8 @@ export interface TreeNode {
   depth: number
 }
 
-export type DropPosition = 'before' | 'after' | 'inside'
+/** Next to the target, as its last child (inside) or as its first child (first) */
+export type DropPosition = 'before' | 'after' | 'inside' | 'first'
 
 /** Server move request: new parent ("" for the root) and 0-based position among the new siblings */
 export interface Move {
@@ -55,22 +56,34 @@ export function isWithin(pages: TreePage[], candidateID: string, ancestorID: str
 
 /**
  * Where dropping `draggedID` on `targetID` at `position` moves it, or null if that is not possible
- * (onto itself or into its own subtree)
+ * (onto itself or into its own subtree) or would leave the page where it is
  */
 export function moveFor(pages: TreePage[], draggedID: string, targetID: string, position: DropPosition): Move | null {
   const target = pages.find((page) => page.contentID === targetID)
-  if (!target || draggedID === targetID) return null
+  const dragged = pages.find((page) => page.contentID === draggedID)
+  if (!target || !dragged || draggedID === targetID) return null
 
-  if (position === 'inside') {
+  let move: Move
+  if (position === 'inside' || position === 'first') {
     if (isWithin(pages, targetID, draggedID)) return null
     const siblings = childrenOf(pages, targetID).filter((page) => page.contentID !== draggedID)
-    return { parentID: targetID, index: siblings.length }
+    move = { parentID: targetID, index: position === 'first' ? 0 : siblings.length }
+  } else {
+    if (target.parentID && isWithin(pages, target.parentID, draggedID)) return null
+    const siblings = childrenOf(pages, target.parentID).filter((page) => page.contentID !== draggedID)
+    const targetIndex = siblings.findIndex((page) => page.contentID === targetID)
+    move = { parentID: target.parentID, index: targetIndex + (position === 'after' ? 1 : 0) }
   }
 
-  if (target.parentID && isWithin(pages, target.parentID, draggedID)) return null
-  const siblings = childrenOf(pages, target.parentID).filter((page) => page.contentID !== draggedID)
-  const targetIndex = siblings.findIndex((page) => page.contentID === targetID)
-  return { parentID: target.parentID, index: targetIndex + (position === 'after' ? 1 : 0) }
+  const currentIndex = childrenOf(pages, dragged.parentID).findIndex((page) => page.contentID === draggedID)
+  return move.parentID === dragged.parentID && move.index === currentIndex ? null : move
+}
+
+/** Moving a page to the end of the top level, or null if it is already there */
+export function moveToRootEnd(pages: TreePage[], draggedID: string): Move | null {
+  const roots = childrenOf(pages, '')
+  const last = roots[roots.length - 1]
+  return last ? moveFor(pages, draggedID, last.contentID, 'after') : null
 }
 
 /** Keyboard moves: one up/down among siblings, into the previous sibling (indent), next to the parent (outdent) */

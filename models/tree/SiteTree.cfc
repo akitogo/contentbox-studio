@@ -222,7 +222,7 @@ component singleton {
 				: "";
 		}
 
-		// Last among the new siblings
+		// Last among the new siblings (orders need not be contiguous, e.g. after changes in the classic admin)
 		var criteria = variables
 			.pageService
 			.newCriteria()
@@ -232,7 +232,8 @@ component singleton {
 		} else {
 			criteria.isNull( "parent" );
 		}
-		var order = criteria.count() + 1;
+		var lastSibling = criteria.list( max = 1, sortOrder = "order desc" );
+		var order = lastSibling.len() ? val( lastSibling[ 1 ].getOrder() ) + 1 : 1;
 
 		var page = variables.pageService.new(
 			{
