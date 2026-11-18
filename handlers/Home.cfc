@@ -6,7 +6,7 @@ component {
 	function index( event, rc, prc ){
 		return {
 			"name"    : "ContentBox Studio",
-			"version" : getModuleSettings( "contentbox-studio" ).version ?: "",
+			"version" : getModuleConfig( "contentbox-studio" ).version,
 			"status"  : "skeleton"
 		};
 	}
