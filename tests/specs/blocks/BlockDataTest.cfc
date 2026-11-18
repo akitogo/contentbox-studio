@@ -185,8 +185,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 											"/b.jpg",
 											"/c.jpg"
 										],
-										"items" : [ { "label": "one" }, { "label": "" } ],
-										"store" : "footer-cta"
+										"items": [ { "label": "one" }, { "label": "" } ],
+										"store": "footer-cta"
 									}
 								);
 								expect(

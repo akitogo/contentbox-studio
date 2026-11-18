@@ -247,9 +247,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					() => {
 						expect( richText.toHTML( "<script>alert(1)</script>" ) ).toBe( "" );
 						expect(
-							richText.isEmpty(
-								{ "type": "doc", "content": [ { "type": "paragraph" } ] }
-							)
+							richText.isEmpty( { "type": "doc", "content": [ { "type": "paragraph" } ] } )
 						).toBeTrue();
 						expect(
 							richText.isEmpty(

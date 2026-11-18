@@ -38,6 +38,7 @@ component {
 		router.route( "/me" ).to( "me.index" );
 		router.route( "/sites" ).to( "sites.index" );
 		router.route( "/blocks/render" ).to( "blocks.render" );
+		router.route( "/blocks/rerender" ).to( "blocks.rerender" );
 		router.route( "/blocks" ).to( "blocks.index" );
 	}
 

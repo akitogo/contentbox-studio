@@ -28,7 +28,7 @@ component {
 			arguments.event.buildLink( "cbstudio/content/#content.getContentID()#" )
 		);
 		savecontent variable="local.html" {
-			include template="/contentbox-studio/views/classicAdmin/editorNotice.cfm";
+			include "/contentbox-studio/views/classicAdmin/editorNotice.cfm";
 		}
 		arguments.buffer.append( html );
 	}

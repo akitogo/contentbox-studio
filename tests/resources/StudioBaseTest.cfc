@@ -34,8 +34,20 @@ component extends="tests.resources.BaseTest" {
 	 * @target Receives the author
 	 */
 	function withAuthorWithoutStudioAccess( required target ) {
+		return withTemporaryAuthor( [], arguments.target );
+	}
+
+	/**
+	 * Run a closure with a temporary active author whose role has exactly the given permissions; author and role are
+	 * deleted afterwards
+	 *
+	 * @permissions Permission names, e.g. [ "STUDIO_ACCESS" ]
+	 * @target      Receives the author
+	 */
+	function withTemporaryAuthor( required array permissions, required target ) {
 		var authorService = getInstance( "authorService@contentbox" );
 		var roleService = getInstance( "roleService@contentbox" );
+		var permissionService = getInstance( "permissionService@contentbox" );
 		var suffix = lCase(
 			left(
 				replace(
@@ -53,6 +65,9 @@ component extends="tests.resources.BaseTest" {
 				"role"       : "studio-test-#suffix#",
 				"description": "Temporary role for ContentBox Studio tests"
 			}
+		);
+		role.setPermissions(
+			arguments.permissions.map( ( name ) => permissionService.findByPermission( name ) )
 		);
 		roleService.save( role );
 

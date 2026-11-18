@@ -66,11 +66,11 @@ component singleton {
 			var normalized = variables.blockData.normalize( definition.fields, input.data ?: {} );
 			result.blocks.append(
 				{
-					"type"  : definition.name,
-					"v"     : definition.version,
-					"id"    : id,
-					"data"  : normalized.data,
-					"html"  : renderBlock(
+					"type": definition.name,
+					"v"   : definition.version,
+					"id"  : id,
+					"data": normalized.data,
+					"html": renderBlock(
 						definition,
 						normalized.data,
 						{ "id": id, "site": arguments.site }
@@ -107,8 +107,8 @@ component singleton {
 			return arguments.data.html ?: "";
 		}
 		var args = {
-			"data"  : arguments.data,
-			"block" : {
+			"data" : arguments.data,
+			"block": {
 				"id"  : arguments.context.id ?: "",
 				"type": arguments.definition.name
 			},
@@ -116,7 +116,7 @@ component singleton {
 			"site"  : arguments.context.site ?: ""
 		};
 		savecontent variable="local.html" {
-			include template="#arguments.definition.renderTemplate#";
+			include "#arguments.definition.renderTemplate#";
 		}
 		return trim( html );
 	}

@@ -85,8 +85,8 @@ component singleton {
 				case "heading":
 					result.append(
 						{
-							"type"   : "heading",
-							"attrs"  : {
+							"type" : "heading",
+							"attrs": {
 								"level": clampInt(
 									attr(
 										node,
@@ -105,8 +105,8 @@ component singleton {
 				case "orderedList":
 					result.append(
 						{
-							"type"   : "orderedList",
-							"attrs"  : {
+							"type" : "orderedList",
+							"attrs": {
 								"start": clampInt(
 									attr(
 										node,
@@ -191,7 +191,9 @@ component singleton {
 					.node
 					.attrs
 					.start;
-				return "<ol#start > 1 ? " start=""#start#""" : ""#>#renderNodes( arguments.node.content )#</ol>";
+				// No #...# nested inside an expression inside a string: Adobe ColdFusion may not parse it
+				var startAttr = start > 1 ? " start=""" & start & """" : "";
+				return "<ol#startAttr#>#renderNodes( arguments.node.content )#</ol>";
 			default:
 				var tag = variables.CONTAINERS[ arguments.node.type ];
 				return "<#tag#>#renderNodes( arguments.node.content )#</#tag#>";

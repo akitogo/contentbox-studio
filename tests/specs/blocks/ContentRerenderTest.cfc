@@ -1,0 +1,133 @@
+/**
+ * Re-rendering all block content of a site (models/blocks/ContentRerender.cfc, POST /cbstudio/api/blocks/rerender)
+ */
+component extends="cbstudioTests.resources.StudioBaseTest" {
+
+	function run( testResults, testBox ) {
+		describe(
+			"Re-rendering a site's block content",
+			() => {
+				beforeEach(
+					() => {
+						setup();
+						format = getInstance( "BlockFormat@contentbox-studio" );
+						rerender = getInstance( "ContentRerender@contentbox-studio" );
+						pageService = getInstance( "pageService@contentbox" );
+						site = getInstance( "siteService@contentbox" ).getDefaultSite();
+					}
+				);
+
+				it(
+					"saves a new version where an old template's HTML changes and skips content edited outside Studio",
+					() => {
+						// Rendered by an "old template": consistent hash, but not what the heading template renders today
+						var outdated = createPage(
+							format.serialize(
+								[
+									{
+										"type": "heading",
+										"id"  : "r1",
+										"data": { "text": "Old", "level": "2" },
+										"html": "<h2 class=""old-template"">Old</h2>"
+									}
+								]
+							)
+						);
+						// Inner HTML changed after Studio wrote it: hash mismatch
+						var edited = createPage(
+							replace(
+								format.serialize(
+									[
+										{
+											"type": "heading",
+											"id"  : "e1",
+											"data": { "text": "E" },
+											"html": "<h2 class=""cbs-heading"">E</h2>"
+										}
+									]
+								),
+								">E</h2>",
+								">Edited elsewhere</h2>"
+							)
+						);
+						try {
+							var versionsBefore = outdated.getContentVersions().len();
+
+							var result = rerender.rerenderSite( site, getAdministrator() );
+
+							expect( result.checked ).toBeGTE( 2 );
+							expect( result.updated ).toInclude( outdated.getSlug() );
+							expect( result.skipped.map( ( item ) => item.slug ) ).toInclude( edited.getSlug() );
+
+							var reloaded = pageService.get( outdated.getContentID() );
+							expect( reloaded.getContent() ).toInclude( "<h2 class=""cbs-heading"">Old</h2>" );
+							expect( reloaded.getContentVersions().len() ).toBe( versionsBefore + 1 );
+							expect( pageService.get( edited.getContentID() ).getContent() ).toInclude(
+								"Edited elsewhere"
+							);
+						} finally {
+							deletePage( outdated );
+							deletePage( edited );
+						}
+					}
+				);
+
+				it(
+					"is only allowed with THEME_ADMIN",
+					() => {
+						withTemporaryAuthor(
+							[ "STUDIO_ACCESS" ],
+							( author ) => {
+								var response = post(
+									route  = "/cbstudio/api/blocks/rerender",
+									params = { "x-auth-token": tokenFor( author ) }
+								).getResponse();
+								expect( response.getStatusCode() ).toBe( 403 );
+							}
+						);
+					}
+				);
+			}
+		);
+	}
+
+	private function createPage( required string body ) {
+		var slug = "studio-rerender-#lCase(
+			left(
+				replace(
+					createUUID(),
+					"-",
+					"",
+					"all"
+				),
+				10
+			)
+		)#";
+		var author = getAdministrator();
+		var page = pageService.new(
+			{
+				"title"        : slug,
+				"slug"         : slug,
+				"publishedDate": now(),
+				"site"         : site,
+				"creator"      : author
+			}
+		);
+		// Like the admin: the body is a content version
+		page.addNewContentVersion(
+			content   = arguments.body,
+			changelog = "ContentBox Studio test",
+			author    = author
+		);
+		return pageService.save( page );
+	}
+
+	private void function deletePage( required page ) {
+		ormClearSession();
+		var stored = pageService.get( arguments.page.getContentID() );
+		if ( !isNull( stored ) && stored.isLoaded() ) {
+			pageService.delete( stored );
+		}
+	}
+
+}
