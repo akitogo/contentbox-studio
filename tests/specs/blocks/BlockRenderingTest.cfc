@@ -422,7 +422,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 			);
 		}
 		var content = createStub().$( "getContentVersions", versions ).$( "getSlug", "studio-test" );
-		return { "content" : content, "active" : versions[ versions.len() ] };
+		return {
+			"content": content,
+			"active" : versions[ versions.len() ]
+		};
 	}
 
 }

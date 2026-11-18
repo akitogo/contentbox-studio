@@ -57,6 +57,10 @@ component {
 			{
 				"class": "#moduleMapping#.interceptors.ClassicAdmin",
 				"name" : "ClassicAdmin"
+			},
+			{
+				"class": "#moduleMapping#.interceptors.Translations",
+				"name" : "Translations"
 			}
 		];
 

@@ -6,8 +6,6 @@ component extends="BaseHandler" {
 
 	property name="renderer" inject="BlockRenderer@contentbox-studio";
 
-	property name="siteService" inject="siteService@contentbox";
-
 	property name="contentRerender" inject="ContentRerender@contentbox-studio";
 	this.allowedMethods = {
 		"index"   : "GET",
@@ -51,17 +49,6 @@ component extends="BaseHandler" {
 			return prc.response.setErrorMessage( "Site not found", 404 );
 		}
 		prc.response.setData( variables.contentRerender.rerenderSite( site, jwtAuth().getUser() ) );
-	}
-
-	/**
-	 * By id or slug; the default site if empty
-	 */
-	private function findSite( any idOrSlug = "" ) {
-		if ( !isSimpleValue( arguments.idOrSlug ) || !len( arguments.idOrSlug ) ) {
-			return variables.siteService.getDefaultSite();
-		}
-		var site = variables.siteService.get( id = arguments.idOrSlug, returnNew = false );
-		return isNull( site ) ? variables.siteService.findBySlug( arguments.idOrSlug ) : site;
 	}
 
 }

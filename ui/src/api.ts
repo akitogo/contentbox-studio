@@ -46,6 +46,17 @@ export class ApiClient {
     })
   }
 
+  put<T>(url: string, data?: unknown): Promise<T> {
+    return this.request<T>(url, {
+      method: 'PUT',
+      body: data === undefined ? undefined : JSON.stringify(data),
+    })
+  }
+
+  delete<T>(url: string): Promise<T> {
+    return this.request<T>(url, { method: 'DELETE' })
+  }
+
   async request<T>(url: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers)
     headers.set('Accept', 'application/json')

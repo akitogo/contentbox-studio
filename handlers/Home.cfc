@@ -15,6 +15,7 @@ component {
 		// Read by ui/src/config.ts
 		prc.studioConfig = {
 			"version"      : getModuleConfig( "contentbox-studio" ).version,
+			"appBase"      : event.buildLink( "cbstudio" ),
 			"studioApi"    : event.buildLink( "cbstudio/api" ),
 			"contentboxApi": event.buildLink( "cbapi/v1" ),
 			"adminUrl"     : event.buildLink( "cbadmin" ),

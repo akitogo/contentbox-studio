@@ -36,7 +36,14 @@ component {
 		};
 
 		router.route( "/me" ).to( "me.index" );
+		router.route( "/sites/:site/tree" ).to( "tree.index" );
 		router.route( "/sites" ).to( "sites.index" );
+		router.route( "/pages/:contentID/move" ).to( "tree.move" );
+		router.route( "/content/:contentID/language" ).to( "translations.setLanguage" );
+		router
+			.route( "/content/:contentID/translations" )
+			.withAction( { "GET": "show", "POST": "link", "DELETE": "unlink" } )
+			.toHandler( "translations" );
 		router.route( "/blocks/render" ).to( "blocks.render" );
 		router.route( "/blocks/rerender" ).to( "blocks.rerender" );
 		router.route( "/blocks" ).to( "blocks.index" );

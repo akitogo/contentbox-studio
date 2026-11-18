@@ -53,6 +53,17 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - In the classic admin, block content shows a notice with a link to Studio and its body is read-only; saving there
   keeps the blocks and changes only the other settings.
 
+## Site tree
+
+- `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
+  block content and the language. Search keeps matches in place.
+- Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
+  `PAGES_EDITOR`. Moving changes the address of the page and its subpages; ContentBox redirects the old ones.
+- **Translation groups:** pages and blog entries in different languages, also on different sites, can be linked.
+  Each page gets a language code; the public pages get `hreflang` links, and themes can build a language switcher
+  from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
+  `cbstudio_language` and `cbstudio_translationGroup`.
+
 ## Development
 
 The module is developed inside a ContentBox 7 site, linked as `modules_app/contentbox-studio`.

@@ -30,9 +30,7 @@ component singleton {
 				result.checked++;
 				var rendered = variables.renderer.rerenderBody( arguments.site, content.getContent() );
 				if ( len( rendered.skipped ) ) {
-					result.skipped.append(
-						{ "slug": content.getSlug(), "reason": rendered.skipped }
-					);
+					result.skipped.append( { "slug": content.getSlug(), "reason": rendered.skipped } );
 				} else if ( rendered.changed > 0 ) {
 					content.addNewContentVersion(
 						content   = rendered.body,

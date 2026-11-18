@@ -94,6 +94,82 @@ component extends="tests.resources.BaseTest" {
 	}
 
 	/**
+	 * Create and save a page on the default site with one content version
+	 *
+	 * @slug          Last slug segment (the parent's slug is put in front)
+	 * @parent        Parent page or ""
+	 * @isPublished   Published flag
+	 * @publishedDate Publish date, defaults to now
+	 */
+	function createTestPage(
+		required string slug,
+		any parent          = "",
+		boolean isPublished = true,
+		any publishedDate   = now(),
+		string body         = "<p>Studio test page</p>"
+	) {
+		var pageService = getInstance( "pageService@contentbox" );
+		var author = getAdministrator();
+		var page = pageService.new(
+			{
+				"title"        : arguments.slug,
+				"slug"         : arguments.slug,
+				"isPublished"  : arguments.isPublished,
+				"publishedDate": arguments.publishedDate,
+				"site"         : getInstance( "siteService@contentbox" ).getDefaultSite(),
+				"creator"      : author
+			}
+		);
+		if ( isObject( arguments.parent ) ) {
+			page.setParent( arguments.parent );
+		}
+		page.addNewContentVersion(
+			content   = arguments.body,
+			changelog = "ContentBox Studio test",
+			author    = author
+		);
+		return pageService.save( page );
+	}
+
+	/**
+	 * Delete test pages whose slug contains the marker (children first) and relocations created for them
+	 */
+	function deleteTestPages( required string marker ) {
+		ormClearSession();
+		var pageService = getInstance( "pageService@contentbox" );
+		var pages = pageService
+			.newCriteria()
+			.like( "slug", "%#arguments.marker#%" )
+			.list();
+		pages.sort( ( a, b ) => len( b.getSlug() ) - len( a.getSlug() ) );
+		for ( var page in pages ) {
+			pageService.delete( page );
+		}
+		queryExecute(
+			"DELETE FROM cb_relocations WHERE slug LIKE :marker",
+			{ "marker": "%#arguments.marker#%" }
+		);
+		ormClearSession();
+	}
+
+	/**
+	 * A unique slug segment for test content
+	 */
+	string function testSlug( required string prefix ) {
+		return "#arguments.prefix#-#lCase(
+			left(
+				replace(
+					createUUID(),
+					"-",
+					"",
+					"all"
+				),
+				8
+			)
+		)#";
+	}
+
+	/**
 	 * A fresh access token for the author
 	 */
 	string function tokenFor( required author ) {

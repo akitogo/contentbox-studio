@@ -50,7 +50,12 @@ component {
 	 * if that one had blocks
 	 */
 	private void function keepBlockBody( required struct data ) {
-		if ( ( arguments.data.isNew ?: true ) || !isObject( arguments.data.content ?: "" ) ) {
+		// Not "isNew ?: true": Adobe ColdFusion's Elvis operator also replaces false
+		if (
+			!arguments.data.keyExists( "isNew" ) || !isBoolean( arguments.data.isNew ) || arguments.data.isNew ||
+					!arguments.data.keyExists( "content" ) ||
+				!isObject( arguments.data.content )
+		) {
 			return;
 		}
 		var content = arguments.data.content;

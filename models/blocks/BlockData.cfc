@@ -191,30 +191,39 @@ component singleton {
 			case "number":
 				if ( !isSimpleValue( value ) || !isNumeric( value ) ) {
 					if ( isSimpleValue( value ) && len( trim( value ) ) ) {
-						arguments.collector.errors.append(
-							{
-								"field"  : arguments.path,
-								"message": "#arguments.field.label# must be a number"
-							}
-						);
+						arguments
+							.collector
+							.errors
+							.append(
+								{
+									"field"  : arguments.path,
+									"message": "#arguments.field.label# must be a number"
+								}
+							);
 					}
 					return "";
 				}
 				if ( arguments.field.keyExists( "min" ) && value < arguments.field.min ) {
-					arguments.collector.errors.append(
-						{
-							"field"  : arguments.path,
-							"message": "#arguments.field.label# must be at least #arguments.field.min#"
-						}
-					);
+					arguments
+						.collector
+						.errors
+						.append(
+							{
+								"field"  : arguments.path,
+								"message": "#arguments.field.label# must be at least #arguments.field.min#"
+							}
+						);
 				}
 				if ( arguments.field.keyExists( "max" ) && value > arguments.field.max ) {
-					arguments.collector.errors.append(
-						{
-							"field"  : arguments.path,
-							"message": "#arguments.field.label# must be at most #arguments.field.max#"
-						}
-					);
+					arguments
+						.collector
+						.errors
+						.append(
+							{
+								"field"  : arguments.path,
+								"message": "#arguments.field.label# must be at most #arguments.field.max#"
+							}
+						);
 				}
 				return val( value );
 			case "boolean":
@@ -228,12 +237,15 @@ component singleton {
 							.options
 							.some( ( option ) => compare( option.value, choice ) == 0 )
 				) {
-					arguments.collector.errors.append(
-						{
-							"field"  : arguments.path,
-							"message": "#arguments.field.label#: [#choice#] is not one of the options"
-						}
-					);
+					arguments
+						.collector
+						.errors
+						.append(
+							{
+								"field"  : arguments.path,
+								"message": "#arguments.field.label#: [#choice#] is not one of the options"
+							}
+						);
 					return toText( arguments.field.default );
 				}
 				return choice;
@@ -242,12 +254,15 @@ component singleton {
 				var href = toText( link.href ?: "" );
 				var safe = variables.markup.safeUrl( href );
 				if ( len( trim( href ) ) && !len( safe ) ) {
-					arguments.collector.errors.append(
-						{
-							"field"  : arguments.path,
-							"message": "#arguments.field.label#: the link [#href#] is not allowed"
-						}
-					);
+					arguments
+						.collector
+						.errors
+						.append(
+							{
+								"field"  : arguments.path,
+								"message": "#arguments.field.label#: the link [#href#] is not allowed"
+							}
+						);
 				}
 				return {
 					"href"  : safe,
@@ -283,12 +298,15 @@ component singleton {
 			case "contentStore":
 				var slug = trim( toText( value ) );
 				if ( len( slug ) && !reFind( variables.SLUG_PATTERN, slug ) ) {
-					arguments.collector.errors.append(
-						{
-							"field"  : arguments.path,
-							"message": "#arguments.field.label#: [#slug#] is not a valid slug"
-						}
-					);
+					arguments
+						.collector
+						.errors
+						.append(
+							{
+								"field"  : arguments.path,
+								"message": "#arguments.field.label#: [#slug#] is not a valid slug"
+							}
+						);
 					return "";
 				}
 				return slug;
@@ -301,7 +319,10 @@ component singleton {
 						isNull( items[ i ] ) ? {} : items[ i ],
 						"#arguments.path#[#i#]."
 					);
-					arguments.collector.errors.append( item.errors, true );
+					arguments
+						.collector
+						.errors
+						.append( item.errors, true );
 					result.append( item.data );
 				}
 				return checkItems(
@@ -325,12 +346,15 @@ component singleton {
 		var src = toText( image.src ?: "" );
 		var safe = variables.markup.safeImageUrl( src );
 		if ( len( trim( src ) ) && !len( safe ) ) {
-			arguments.collector.errors.append(
-				{
-					"field"  : arguments.path,
-					"message": "#arguments.field.label#: the image URL [#src#] is not allowed"
-				}
-			);
+			arguments
+				.collector
+				.errors
+				.append(
+					{
+						"field"  : arguments.path,
+						"message": "#arguments.field.label#: the image URL [#src#] is not allowed"
+					}
+				);
 		}
 		var result = { "src": safe, "alt": toText( image.alt ?: "" ) };
 		for ( var dimension in [ "width", "height" ] ) {
@@ -352,12 +376,15 @@ component singleton {
 		required struct collector
 	) {
 		if ( ( arguments.field.maxLength ?: 0 ) > 0 && len( arguments.value ) > arguments.field.maxLength ) {
-			arguments.collector.errors.append(
-				{
-					"field"  : arguments.path,
-					"message": "#arguments.field.label# is longer than #arguments.field.maxLength# characters"
-				}
-			);
+			arguments
+				.collector
+				.errors
+				.append(
+					{
+						"field"  : arguments.path,
+						"message": "#arguments.field.label# is longer than #arguments.field.maxLength# characters"
+					}
+				);
 		}
 		return arguments.value;
 	}
@@ -369,12 +396,15 @@ component singleton {
 		required struct collector
 	) {
 		if ( ( arguments.field.maxItems ?: 0 ) > 0 && arguments.items.len() > arguments.field.maxItems ) {
-			arguments.collector.errors.append(
-				{
-					"field"  : arguments.path,
-					"message": "#arguments.field.label# has more than #arguments.field.maxItems# items"
-				}
-			);
+			arguments
+				.collector
+				.errors
+				.append(
+					{
+						"field"  : arguments.path,
+						"message": "#arguments.field.label# has more than #arguments.field.maxItems# items"
+					}
+				);
 		}
 		return arguments.items;
 	}

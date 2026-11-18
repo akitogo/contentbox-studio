@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { parseConfig } from './config'
+import { basePath, parseConfig } from './config'
 
 const valid = {
   version: '0.1.0',
+  appBase: 'http://example.test/cbstudio/',
   studioApi: 'http://example.test/cbstudio/api/',
   contentboxApi: 'http://example.test/cbapi/v1/',
   adminUrl: 'http://example.test/cbadmin',
@@ -19,5 +20,11 @@ describe('parseConfig', () => {
 
   it('rejects a config without tokens', () => {
     expect(() => parseConfig(JSON.stringify({ ...valid, tokens: {} }))).toThrow(/no tokens/)
+  })
+})
+
+describe('basePath', () => {
+  it('is the path of the app URL', () => {
+    expect(basePath(parseConfig(JSON.stringify(valid)))).toBe('/cbstudio')
   })
 })
