@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ui:
+    name: UI (typecheck, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          include-hidden-files: true # dist/.vite/manifest.json
+
+  cfml:
+    name: CFML tests (${{ matrix.cfengine }})
+    needs: ui
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # ContentBox 7 supports BoxLang 1+ and Adobe ColdFusion 2023+
+        cfengine: ["boxlang-cfml@1", "adobe@2023", "adobe@2025"]
+    env:
+      DB_USER: root
+      DB_PASSWORD: root
+    steps:
+      # A ContentBox site (development = ContentBox 7) with this module in modules_app/contentbox-studio
+      - name: Checkout ContentBox
+        uses: actions/checkout@v7
+        with:
+          repository: Ortus-Solutions/ContentBox
+          ref: development
+          path: contentbox
+
+      - name: Checkout module
+        uses: actions/checkout@v7
+        with:
+          path: contentbox/modules_app/contentbox-studio
+
+      - name: Download built UI
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: contentbox/modules_app/contentbox-studio/dist
+
+      - name: Database with ContentBox's MySQL test fixture
+        run: |
+          sudo systemctl start mysql.service
+          mysql -u$DB_USER -p$DB_PASSWORD -e 'CREATE DATABASE contentbox;'
+          mysql -u$DB_USER -p$DB_PASSWORD < contentbox/tests/resources/sql/mysql/contentbox.sql
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: Ortus-Solutions/setup-commandbox@v2.0.1
+
+      - name: ContentBox .env
+        working-directory: contentbox
+        run: |
+          cat > .env <<ENV
+          ENVIRONMENT=development
+          DB_HOST=127.0.0.1
+          DB_DATABASE=contentbox
+          DB_DRIVER=MySQL
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_CLASS=com.mysql.cj.jdbc.Driver
+          DB_BUNDLEVERSION=8.0.24
+          DB_BUNDLENAME=com.mysql.cj
+          DB_CONNECTIONSTRING=jdbc:mysql://127.0.0.1:3306/contentbox?useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useLegacyDatetimeCode=true
+          ENV
+
+      - name: Install ContentBox dependencies
+        working-directory: contentbox
+        run: box run-script contentbox:install
+
+      - name: Start ${{ matrix.cfengine }}
+        working-directory: contentbox
+        run: |
+          box server start serverConfigFile="server-${{ matrix.cfengine }}.json" --noSaveSettings --debug
+          curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8589
+
+      - name: Run tests
+        working-directory: contentbox
+        run: |
+          mkdir -p modules_app/contentbox-studio/tests/results
+          box testbox run --verbose runner=http://127.0.0.1:8589/modules_app/contentbox-studio/tests/runner.cfm outputFile=modules_app/contentbox-studio/tests/results/test-results outputFormats=json,antjunit
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.cfengine }}
+          path: contentbox/modules_app/contentbox-studio/tests/results
+
+      - name: Server log on failure
+        if: failure()
+        working-directory: contentbox
+        run: box server log serverConfigFile="server-${{ matrix.cfengine }}.json"

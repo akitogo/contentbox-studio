@@ -1,4 +1,9 @@
 .DS_Store
 node_modules/
-ui/node_modules/
 *.log
+
+# Built by `npm run build` in ui/ (CI and releases build it; not in git)
+dist/
+
+# TestBox output
+tests/results/

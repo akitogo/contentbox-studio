@@ -22,7 +22,43 @@ Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, ru
 box install contentbox-studio
 ```
 
-Then open `/cbstudio`.
+Then reinit the site and open `/cbstudio`. Studio uses the classic admin login.
+
+## Permissions
+
+Studio adds these permissions when it loads (only if they are missing, so your changes in the admin are kept):
+
+| Permission | Allows | Granted on creation to |
+|---|---|---|
+| `STUDIO_ACCESS` | Opening Studio and using its API | Administrator, Editor |
+| `STUDIO_SITE_TREE` | Moving and reordering pages in the site tree | Administrator, Editor |
+| `STUDIO_HTML_BLOCKS` | Adding and editing raw HTML blocks | Administrator |
+
+## How it works
+
+- `/cbstudio` needs a classic admin session with `STUDIO_ACCESS`; without a session you go through the admin login
+  (including two-factor authentication) and come back.
+- The page passes JWT tokens for the logged-in author to the React app, which uses them for the ContentBox REST API
+  (`/cbapi/v1`) and the Studio API (`/cbstudio/api`). Expired access tokens are refreshed automatically.
+
+## Development
+
+The module is developed inside a ContentBox 7 site, linked as `modules_app/contentbox-studio`.
+
+```bash
+cd ui
+npm ci
+npm run build        # builds the app into dist/, which the module serves
+npm test             # Vitest
+npm run typecheck
+```
+
+- **Hot reload:** set `CBSTUDIO_DEV_SERVER=http://localhost:5173` in the site's `.env`, restart the server, run
+  `npm run dev` in `ui/` and open `/cbstudio`.
+- **CFML tests (TestBox):** open `/modules_app/contentbox-studio/tests/runner.cfm` on the site. They reuse ContentBox's
+  test application (`tests/Application.cfc` of a ContentBox source checkout) and the ORM dialect from `ORM_DIALECT`.
+- **CI** (`.github/workflows/ci.yml`): UI checks, then the TestBox suite in a ContentBox `development` checkout with its
+  MySQL fixture on BoxLang 1 and Adobe ColdFusion 2023/2025.
 
 ## License
 

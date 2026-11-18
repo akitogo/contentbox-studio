@@ -1,22 +1,38 @@
 {
-    "name":"ContentBox Studio",
-    "slug":"contentbox-studio",
-    "version":"0.1.0",
-    "author":"akitogo Internet and Media Applications GmbH",
-    "shortDescription":"Block editor and site tree for ContentBox 7",
-    "type":"modules",
-    "keywords":["contentbox","cms","block editor","site tree"],
-    "homepage":"https://github.com/akitogo/contentbox-studio",
-    "repository":{
-        "type":"git",
-        "URL":"https://github.com/akitogo/contentbox-studio"
+    "name": "ContentBox Studio",
+    "slug": "contentbox-studio",
+    "version": "0.1.0",
+    "author": "akitogo Internet and Media Applications GmbH",
+    "shortDescription": "Block editor and site tree for ContentBox 7",
+    "type": "modules",
+    "keywords": [
+        "contentbox",
+        "cms",
+        "block editor",
+        "site tree"
+    ],
+    "homepage": "https://github.com/akitogo/contentbox-studio",
+    "repository": {
+        "type": "git",
+        "URL": "https://github.com/akitogo/contentbox-studio"
     },
-    "license":[
+    "license": [
         {
-            "type":"Apache2",
-            "URL":"https://www.apache.org/licenses/LICENSE-2.0"
+            "type": "Apache2",
+            "URL": "https://www.apache.org/licenses/LICENSE-2.0"
         }
     ],
-    "dependencies":{},
-    "ignore":["ui/**", "tests/**", ".github/**"]
+    "dependencies": {},
+    "ignore": [
+        "ui/**",
+        "tests/**",
+        ".github/**",
+        ".bxformat.json",
+        ".gitignore"
+    ],
+    "scripts": {
+        "build": "!cd ui && npm ci && npm run build",
+        "format": "!boxlang format --source ModuleConfig.cfc,handlers,models,modules,tests",
+        "format:check": "!boxlang format --check --source ModuleConfig.cfc,handlers,models,modules,tests"
+    }
 }
