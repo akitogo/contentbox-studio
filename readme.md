@@ -41,6 +41,18 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - The page passes JWT tokens for the logged-in author to the React app, which uses them for the ContentBox REST API
   (`/cbapi/v1`) and the Studio API (`/cbstudio/api`). Expired access tokens are refreshed automatically.
 
+## Blocks
+
+- A page is a sequence of blocks stored **inside the normal content body**: each block is an HTML comment with its
+  data, followed by its rendered HTML ([block format](docs/block-format.md)). Versions, search, the REST API and
+  exports keep working; on the public site Studio removes the comments.
+- Block types come from Studio (HTML, text, heading, image, gallery, button, quote, content store item), from the
+  site's theme and from other modules ([theme blocks](docs/theme-blocks.md)).
+- The server renders blocks when they are saved. Rich text is stored as a structured document and rendered by the
+  server, so it cannot carry arbitrary HTML; raw HTML needs the `HTML` block and the `STUDIO_HTML_BLOCKS` permission.
+- In the classic admin, block content shows a notice with a link to Studio and its body is read-only; saving there
+  keeps the blocks and changes only the other settings.
+
 ## Development
 
 The module is developed inside a ContentBox 7 site, linked as `modules_app/contentbox-studio`.

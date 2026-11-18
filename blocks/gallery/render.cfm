@@ -1,0 +1,1 @@
+<cfoutput><div class="cbs-gallery cbs-gallery--#args.data.columns#"><cfloop array="#args.data.images#" index="local.image"><figure class="cbs-gallery__item"><img src="#args.studio.src( local.image.src )#" alt="#args.studio.attr( local.image.alt )#" loading="lazy"></figure></cfloop></div></cfoutput>

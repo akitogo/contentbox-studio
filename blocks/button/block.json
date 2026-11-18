@@ -1,0 +1,19 @@
+{
+	"label": "Button",
+	"icon": "button",
+	"category": "text",
+	"fields": [
+		{ "name": "label", "type": "text", "label": "Label", "required": true, "maxLength": 80 },
+		{ "name": "link", "type": "link", "label": "Link", "required": true },
+		{
+			"name": "style",
+			"type": "select",
+			"label": "Style",
+			"default": "primary",
+			"options": [
+				{ "value": "primary", "label": "Primary" },
+				{ "value": "secondary", "label": "Secondary" }
+			]
+		}
+	]
+}

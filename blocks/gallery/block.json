@@ -1,0 +1,15 @@
+{
+	"label": "Gallery",
+	"icon": "gallery",
+	"category": "media",
+	"fields": [
+		{ "name": "images", "type": "images", "label": "Images", "required": true, "maxItems": 60 },
+		{
+			"name": "columns",
+			"type": "select",
+			"label": "Columns",
+			"default": "3",
+			"options": [ "2", "3", "4" ]
+		}
+	]
+}

@@ -38,7 +38,9 @@ against the same fixtures in `tests/fixtures/block-format/`.
 | `hash` | string | Hash of the inner HTML (see Hash); optional |
 | `data` | object | Field values as defined by the block type. For `html` blocks `{}`: the inner HTML is the data |
 
-Writers put the keys in this order. Readers accept any order and ignore unknown keys.
+Writers put the keys in this order. Readers accept any order and ignore unknown keys. The order of keys inside
+`data` is not significant (Adobe ColdFusion, for one, writes them sorted), so bodies are compared parsed, not byte
+for byte.
 
 ### Escaping
 

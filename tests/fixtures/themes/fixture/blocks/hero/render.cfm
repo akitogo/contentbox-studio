@@ -1,0 +1,1 @@
+<cfoutput><section class="hero"><h1>#args.studio.esc( args.data.title )#</h1><cfloop array="#args.data.links#" index="local.item"><a#args.studio.linkAttrs( local.item.link )#>#args.studio.esc( local.item.label )#</a></cfloop></section></cfoutput>

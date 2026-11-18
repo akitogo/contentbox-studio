@@ -1,0 +1,9 @@
+{
+	"label": "HTML",
+	"description": "Raw HTML. Pages written before Studio open as HTML blocks. Adding or changing one needs the STUDIO_HTML_BLOCKS permission.",
+	"icon": "code",
+	"category": "advanced",
+	"fields": [
+		{ "name": "html", "type": "html", "label": "HTML" }
+	]
+}

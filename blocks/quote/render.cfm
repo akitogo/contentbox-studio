@@ -1,0 +1,1 @@
+<cfoutput><blockquote class="cbs-quote"><p>#args.studio.nl2br( args.data.quote )#</p><cfif len( args.data.cite )><footer><cite>#args.studio.esc( args.data.cite )#</cite></footer></cfif></blockquote></cfoutput>

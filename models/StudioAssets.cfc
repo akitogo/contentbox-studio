@@ -38,8 +38,10 @@ component singleton {
 		var distRoot = arguments.moduleRoot & "/dist/";
 
 		// Not ( entry.css ?: [] ).map(): Adobe ColdFusion cannot call methods on a parenthesized expression
-		var css  = entry.css ?: [];
-		var head = css.map( ( file ) => "<link rel=""stylesheet"" href=""#distRoot##file#"">" );
+		var css = entry.css ?: [];
+		var head = css.map(
+			( file ) => "<link rel=""stylesheet"" href=""#distRoot##file#"">"
+		);
 		return {
 			"head": head.toList( chr( 10 ) ),
 			"body": "<script type=""module"" src=""#distRoot##entry.file#""></script>"

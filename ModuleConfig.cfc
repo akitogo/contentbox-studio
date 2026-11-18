@@ -16,7 +16,7 @@ component {
 	this.version = "0.1.0";
 	this.entryPoint = "cbstudio";
 	this.modelNamespace = "contentbox-studio";
-	this.cfmapping = "contentbox-studio";
+	this.classMapping = "contentbox-studio";
 	this.dependencies = [ "contentbox" ];
 
 	function configure() {
@@ -43,7 +43,26 @@ component {
 			}
 		};
 
+		interceptorSettings = {
+			// Announced once when the block registry first loads, with { registry }: other modules can call
+			// registry.registerDirectory( directory, includePath ) to add block types
+			"customInterceptionPoints": [ "cbstudio_onBlockRegistration" ]
+		};
+
+		interceptors = [
+			{
+				"class": "#moduleMapping#.interceptors.BlockOutput",
+				"name" : "BlockOutput"
+			},
+			{
+				"class": "#moduleMapping#.interceptors.ClassicAdmin",
+				"name" : "ClassicAdmin"
+			}
+		];
+
 		router.route( "/" ).to( "home.index" );
+		// Content editing (phase 3); the app handles the path
+		router.route( "/content/:contentID" ).to( "home.index" );
 	}
 
 	/**

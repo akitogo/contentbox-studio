@@ -11,7 +11,7 @@ component {
 	this.description = "REST API of ContentBox Studio";
 	this.entryPoint = "cbstudio/api";
 	this.modelNamespace = "contentbox-studio-api";
-	this.cfmapping = "contentbox-studio-api";
+	this.classMapping = "contentbox-studio-api";
 	this.dependencies = [];
 
 	function configure() {
@@ -37,6 +37,8 @@ component {
 
 		router.route( "/me" ).to( "me.index" );
 		router.route( "/sites" ).to( "sites.index" );
+		router.route( "/blocks/render" ).to( "blocks.render" );
+		router.route( "/blocks" ).to( "blocks.index" );
 	}
 
 }

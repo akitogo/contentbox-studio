@@ -1,0 +1,10 @@
+{
+	"label": "Image",
+	"icon": "image",
+	"category": "media",
+	"fields": [
+		{ "name": "image", "type": "image", "label": "Image", "required": true },
+		{ "name": "caption", "type": "text", "label": "Caption" },
+		{ "name": "link", "type": "link", "label": "Link" }
+	]
+}

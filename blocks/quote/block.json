@@ -1,0 +1,9 @@
+{
+	"label": "Quote",
+	"icon": "quote",
+	"category": "text",
+	"fields": [
+		{ "name": "quote", "type": "textarea", "label": "Quote", "required": true },
+		{ "name": "cite", "type": "text", "label": "Source" }
+	]
+}

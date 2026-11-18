@@ -1,0 +1,1 @@
+{ "label": "Broken", "fields": [ { "name": "x", "type": "doesNotExist" } ] }

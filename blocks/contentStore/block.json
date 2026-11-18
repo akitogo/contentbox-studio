@@ -1,0 +1,9 @@
+{
+	"label": "Content store item",
+	"description": "A shared item from ContentBox's content store. It stays live: changes to the item show on every page that uses it.",
+	"icon": "store",
+	"category": "advanced",
+	"fields": [
+		{ "name": "slug", "type": "contentStore", "label": "Content store item", "required": true }
+	]
+}

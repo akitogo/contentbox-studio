@@ -1,0 +1,19 @@
+{
+	"label": "Hero",
+	"icon": "hero",
+	"category": "sections",
+	"version": 2,
+	"fields": [
+		{ "name": "title", "type": "text", "label": "Title", "required": true },
+		{
+			"name": "links",
+			"type": "list",
+			"label": "Links",
+			"maxItems": 3,
+			"fields": [
+				{ "name": "label", "type": "text", "label": "Label", "required": true },
+				{ "name": "link", "type": "link", "label": "Link" }
+			]
+		}
+	]
+}
