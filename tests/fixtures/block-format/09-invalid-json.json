@@ -1,0 +1,17 @@
+{
+  "description": "An envelope that is not valid JSON keeps its inner HTML as an invalid html block",
+  "body": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"bad1\",\"data\":{\"text\":\"Bro -->\n<h2>Broken</h2>\n<!-- /cb:block -->",
+  "blocks": [
+    {
+      "type": "html",
+      "v": 1,
+      "id": "legacy-1",
+      "data": {
+        "html": "<h2>Broken</h2>"
+      },
+      "html": "<h2>Broken</h2>",
+      "status": "invalid"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"legacy-1\",\"hash\":\"c2875b94\",\"data\":{}} -->\n<h2>Broken</h2>\n<!-- /cb:block -->"
+}

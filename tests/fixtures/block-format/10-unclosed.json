@@ -1,0 +1,28 @@
+{
+  "description": "An opening marker without a closing one: the rest of the body is one legacy block",
+  "body": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"k2f9a\",\"hash\":\"532edb4b\",\"data\":{\"text\":\"Rooms\",\"level\":\"2\"}} -->\n<h2 class=\"cbs-heading\">Rooms</h2>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"open1\",\"data\":{}} -->\n<p>no closing marker</p>",
+  "blocks": [
+    {
+      "type": "heading",
+      "v": 1,
+      "id": "k2f9a",
+      "data": {
+        "text": "Rooms",
+        "level": "2"
+      },
+      "html": "<h2 class=\"cbs-heading\">Rooms</h2>",
+      "status": "ok"
+    },
+    {
+      "type": "html",
+      "v": 1,
+      "id": "legacy-1",
+      "data": {
+        "html": "<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"open1\",\"data\":{}} -->\n<p>no closing marker</p>"
+      },
+      "html": "<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"open1\",\"data\":{}} -->\n<p>no closing marker</p>",
+      "status": "legacy"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"k2f9a\",\"hash\":\"532edb4b\",\"data\":{\"text\":\"Rooms\",\"level\":\"2\"}} -->\n<h2 class=\"cbs-heading\">Rooms</h2>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"legacy-1\",\"hash\":\"4d45a1ad\",\"data\":{}} -->\n<!-- cb-block {\"type\":\"text\",\"v\":1,\"id\":\"open1\",\"data\":{}} -->\n<p>no closing marker</p>\n<!-- /cb:block -->"
+}

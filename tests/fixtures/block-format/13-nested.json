@@ -1,0 +1,17 @@
+{
+  "description": "A second opening marker before the closing one: the rest of the body is one legacy block",
+  "body": "<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"out1\",\"data\":{}} -->\n<p>a</p>\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"in1\",\"data\":{}} -->\n<p>b</p>\n<!-- /cb:block -->",
+  "blocks": [
+    {
+      "type": "html",
+      "v": 1,
+      "id": "legacy-1",
+      "data": {
+        "html": "<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"out1\",\"data\":{}} -->\n<p>a</p>\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"in1\",\"data\":{}} -->\n<p>b</p>\n<!-- /cb:block -->"
+      },
+      "html": "<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"out1\",\"data\":{}} -->\n<p>a</p>\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"in1\",\"data\":{}} -->\n<p>b</p>\n<!-- /cb:block -->",
+      "status": "legacy"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"legacy-1\",\"hash\":\"0c51a16d\",\"data\":{}} -->\n<!-- cb-block {\"type\":\"text\",\"v\":1,\"id\":\"out1\",\"data\":{}} -->\n<p>a</p>\n<!-- cb-block {\"type\":\"text\",\"v\":1,\"id\":\"in1\",\"data\":{}} -->\n<p>b</p>\n<!-- /cb-block -->\n<!-- /cb:block -->"
+}

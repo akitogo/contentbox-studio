@@ -1,0 +1,6 @@
+{
+  "description": "A body with only whitespace has no blocks",
+  "body": "  \n\n\t \r\n",
+  "blocks": [],
+  "serialized": ""
+}

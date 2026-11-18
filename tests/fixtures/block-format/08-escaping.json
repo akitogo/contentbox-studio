@@ -1,0 +1,18 @@
+{
+  "description": "Characters that would end the comment or trigger ContentBox renderers are escaped in the JSON",
+  "body": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"e5c4p\",\"hash\":\"f4b3cf82\",\"data\":{\"text\":\"Close \\u003c/script\\u003e \\u002d\\u002d\\u003e \\u0026 \\u007b\\u007b{ContentStore slug=\\\"x\\\"}}} \\\"quoted\\\" \\\\ back\\\\slash Ümläute 🎉 \\u002d\\u002d-\",\"level\":\"3\"}} -->\n<h3 class=\"cbs-heading\">Close &lt;/script&gt; --&gt; &amp; {{{ContentStore slug=&quot;x&quot;}}} &quot;quoted&quot; \\ back\\slash Ümläute 🎉 ---</h3>\n<!-- /cb:block -->",
+  "blocks": [
+    {
+      "type": "heading",
+      "v": 1,
+      "id": "e5c4p",
+      "data": {
+        "text": "Close </script> --> & {{{ContentStore slug=\"x\"}}} \"quoted\" \\ back\\slash Ümläute 🎉 ---",
+        "level": "3"
+      },
+      "html": "<h3 class=\"cbs-heading\">Close &lt;/script&gt; --&gt; &amp; {{{ContentStore slug=&quot;x&quot;}}} &quot;quoted&quot; \\ back\\slash Ümläute 🎉 ---</h3>",
+      "status": "ok"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"e5c4p\",\"hash\":\"f4b3cf82\",\"data\":{\"text\":\"Close \\u003c/script\\u003e \\u002d\\u002d\\u003e \\u0026 \\u007b\\u007b{ContentStore slug=\\\"x\\\"}}} \\\"quoted\\\" \\\\ back\\\\slash Ümläute 🎉 \\u002d\\u002d-\",\"level\":\"3\"}} -->\n<h3 class=\"cbs-heading\">Close &lt;/script&gt; --&gt; &amp; {{{ContentStore slug=&quot;x&quot;}}} &quot;quoted&quot; \\ back\\slash Ümläute 🎉 ---</h3>\n<!-- /cb:block -->"
+}

@@ -1,0 +1,17 @@
+{
+  "description": "A body without markers is one legacy block, trimmed",
+  "body": "\n<p>Hello</p>\n<p>World</p>\n",
+  "blocks": [
+    {
+      "type": "html",
+      "v": 1,
+      "id": "legacy-1",
+      "data": {
+        "html": "<p>Hello</p>\n<p>World</p>"
+      },
+      "html": "<p>Hello</p>\n<p>World</p>",
+      "status": "legacy"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"legacy-1\",\"hash\":\"359a966a\",\"data\":{}} -->\n<p>Hello</p>\n<p>World</p>\n<!-- /cb:block -->"
+}

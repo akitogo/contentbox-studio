@@ -1,0 +1,17 @@
+{
+  "description": "Block type versions are kept, unknown envelope keys ignored",
+  "body": "<!-- cb:block {\"type\":\"textSection\",\"v\":2,\"id\":\"Ts_01\",\"hash\":\"43c6a78f\",\"data\":{\"heading\":\"x\"},\"extra\":true} -->\n<section>x</section>\n<!-- /cb:block -->",
+  "blocks": [
+    {
+      "type": "textSection",
+      "v": 2,
+      "id": "Ts_01",
+      "data": {
+        "heading": "x"
+      },
+      "html": "<section>x</section>",
+      "status": "ok"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"textSection\",\"v\":2,\"id\":\"Ts_01\",\"hash\":\"43c6a78f\",\"data\":{\"heading\":\"x\"}} -->\n<section>x</section>\n<!-- /cb:block -->"
+}

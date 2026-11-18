@@ -1,0 +1,51 @@
+{
+  "description": "Several blocks round-trip byte for byte; html blocks keep their HTML only once",
+  "body": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"k2f9a\",\"hash\":\"532edb4b\",\"data\":{\"text\":\"Rooms\",\"level\":\"2\"}} -->\n<h2 class=\"cbs-heading\">Rooms</h2>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"p0q1r\",\"hash\":\"7fb2048d\",\"data\":{\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Sea view\"}]}]}}} -->\n<div class=\"cbs-text\"><p>Sea view</p></div>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"x81qe\",\"hash\":\"bf7ac8e1\",\"data\":{}} -->\n<p>Any <strong>HTML</strong></p>\n<!-- /cb:block -->",
+  "blocks": [
+    {
+      "type": "heading",
+      "v": 1,
+      "id": "k2f9a",
+      "data": {
+        "text": "Rooms",
+        "level": "2"
+      },
+      "html": "<h2 class=\"cbs-heading\">Rooms</h2>",
+      "status": "ok"
+    },
+    {
+      "type": "text",
+      "v": 1,
+      "id": "p0q1r",
+      "data": {
+        "content": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sea view"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "html": "<div class=\"cbs-text\"><p>Sea view</p></div>",
+      "status": "ok"
+    },
+    {
+      "type": "html",
+      "v": 1,
+      "id": "x81qe",
+      "data": {
+        "html": "<p>Any <strong>HTML</strong></p>"
+      },
+      "html": "<p>Any <strong>HTML</strong></p>",
+      "status": "ok"
+    }
+  ],
+  "serialized": "<!-- cb:block {\"type\":\"heading\",\"v\":1,\"id\":\"k2f9a\",\"hash\":\"532edb4b\",\"data\":{\"text\":\"Rooms\",\"level\":\"2\"}} -->\n<h2 class=\"cbs-heading\">Rooms</h2>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"text\",\"v\":1,\"id\":\"p0q1r\",\"hash\":\"7fb2048d\",\"data\":{\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Sea view\"}]}]}}} -->\n<div class=\"cbs-text\"><p>Sea view</p></div>\n<!-- /cb:block -->\n\n<!-- cb:block {\"type\":\"html\",\"v\":1,\"id\":\"x81qe\",\"hash\":\"bf7ac8e1\",\"data\":{}} -->\n<p>Any <strong>HTML</strong></p>\n<!-- /cb:block -->"
+}
