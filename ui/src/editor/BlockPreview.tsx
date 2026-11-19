@@ -1,5 +1,5 @@
 import { registerOverlayPortal, useGetPuck } from '@puckeditor/core'
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { messageOf, useStudio } from '../studio'
 import type { BlockError } from '../types'
 import { setPath } from './blocksData'
@@ -109,13 +109,23 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     return () => cleanups.forEach((cleanup) => cleanup?.())
   }, [html, canEdit])
 
-  function onFocus(event: FocusEvent) {
-    if (!fieldOf(event.target)) return
-    editing.current = true
-    // Select the block, so its fields show on the right
+  /** Select the block, so its fields show on the right */
+  function select() {
     const puck = getPuck()
     const selector = puck.getSelectorForId(id)
     if (selector && puck.selectedItem?.props.id !== id) puck.dispatch({ type: 'setUi', ui: { itemSelector: selector } })
+  }
+
+  function onFocus(event: FocusEvent) {
+    if (!fieldOf(event.target)) return
+    editing.current = true
+    // After Puck has handled the click
+    window.setTimeout(select)
+  }
+
+  // A click into editable text is not a click on the block for Puck (a second click would deselect it)
+  function onClick(event: MouseEvent) {
+    if (fieldOf(event.target)) event.stopPropagation()
   }
 
   function onInput(event: FormEvent) {
@@ -159,6 +169,7 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
       {html ? (
         <div
           ref={container}
+          onClick={onClick}
           onFocus={onFocus}
           onInput={onInput}
           onBlur={onBlur}

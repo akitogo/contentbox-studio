@@ -96,7 +96,14 @@ jobs:
 
       - name: Install ContentBox dependencies
         working-directory: contentbox
-        run: box run-script contentbox:install
+        # ForgeBox and its download storage fail now and then (502, connection errors): retry before giving up
+        run: |
+          for attempt in 1 2 3; do
+            box run-script contentbox:install && exit 0
+            echo "Attempt $attempt failed, retrying in 30 seconds"
+            sleep 30
+          done
+          exit 1
 
       - name: Start ${{ matrix.cfengine }}
         working-directory: contentbox
