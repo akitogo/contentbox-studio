@@ -95,6 +95,13 @@ export function isFieldVisible(field: FieldDefinition, data: Record<string, unkn
   })
 }
 
+/** The value at a path like setPath's, undefined if there is none */
+export function getPath(target: unknown, path: string): unknown {
+  return path
+    .split('.')
+    .reduce<unknown>((node, key) => (node !== null && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined), target)
+}
+
 /**
  * A copy of the props with one value changed, by path ("title", "steps.0.title"); every level on the path is copied
  */

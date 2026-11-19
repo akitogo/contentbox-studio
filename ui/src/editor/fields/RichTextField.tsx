@@ -1,5 +1,4 @@
 import { EditorContent, useEditor, type Editor, type JSONContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import {
   Bold,
   Heading2,
@@ -12,19 +11,15 @@ import {
   Quote,
   Strikethrough,
   Underline,
+  type LucideIcon,
 } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, IconButton, Input } from '../../ui'
+import { EMPTY_DOC, isDoc, richTextExtensions, type RichTextDoc } from '../richText'
 
-/** ProseMirror document, as the server stores and renders it (models/blocks/RichText.cfc) */
-export type RichTextDoc = { type: 'doc'; content?: unknown[] }
+export type { RichTextDoc } from '../richText'
 
-const EMPTY: RichTextDoc = { type: 'doc', content: [] }
-
-/**
- * TipTap with the nodes and marks the server allows: paragraphs, headings 2-4, lists, quotes, rules, line breaks,
- * bold, italic, underline, strike, code and links
- */
+/** The rich text field in the panel (TipTap); the same text can also be edited in the canvas (BlockPreview) */
 export function RichTextField({
   value,
   onChange,
@@ -34,19 +29,26 @@ export function RichTextField({
   onChange: (value: RichTextDoc) => void
   readOnly?: boolean
 }) {
+  // The value this editor shows, to tell changes made elsewhere (the canvas) from its own
+  const shown = useRef(JSON.stringify(value))
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-        heading: { levels: [2, 3, 4] },
-        link: { openOnClick: false, autolink: true },
-      }),
-    ],
-    content: (isDoc(value) ? value : EMPTY) as JSONContent,
+    extensions: richTextExtensions(),
+    content: (isDoc(value) ? value : EMPTY_DOC) as JSONContent,
     editable: !readOnly,
     editorProps: { attributes: { class: 'studio-prose' } },
-    onUpdate: ({ editor: current }) => onChange(current.getJSON() as RichTextDoc),
+    onUpdate: ({ editor: current }) => {
+      const doc = current.getJSON() as RichTextDoc
+      shown.current = JSON.stringify(doc)
+      onChange(doc)
+    },
   })
+
+  useEffect(() => {
+    const json = JSON.stringify(value)
+    if (!editor || json === shown.current || !isDoc(value)) return
+    shown.current = json
+    editor.commands.setContent(value as JSONContent, { emitUpdate: false })
+  }, [editor, value])
 
   if (!editor) return null
   return (
@@ -57,23 +59,17 @@ export function RichTextField({
   )
 }
 
-function isDoc(value: unknown): value is RichTextDoc {
-  return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'doc'
+export interface FormattingTool {
+  label: string
+  Icon: LucideIcon
+  active: boolean
+  run: () => void
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
-  const [linking, setLinking] = useState(false)
-  const [href, setHref] = useState('')
+/** Formatting buttons of the panel and the canvas toolbar (the link has its own form) */
+export function formattingTools(editor: Editor): FormattingTool[] {
   const chain = () => editor.chain().focus()
-
-  function applyLink(event: FormEvent) {
-    event.preventDefault()
-    if (href.trim()) chain().extendMarkRange('link').setLink({ href: href.trim() }).run()
-    else chain().extendMarkRange('link').unsetLink().run()
-    setLinking(false)
-  }
-
-  const tools = [
+  return [
     { label: 'Bold', Icon: Bold, active: editor.isActive('bold'), run: () => chain().toggleBold().run() },
     { label: 'Italic', Icon: Italic, active: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
     { label: 'Underline', Icon: Underline, active: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
@@ -85,6 +81,28 @@ function Toolbar({ editor }: { editor: Editor }) {
     { label: 'Quote', Icon: Quote, active: editor.isActive('blockquote'), run: () => chain().toggleBlockquote().run() },
     { label: 'Horizontal line', Icon: Minus, active: false, run: () => chain().setHorizontalRule().run() },
   ]
+}
+
+/** Sets the link of the selection (or the link the cursor is in); an empty address removes it */
+export function applyLink(editor: Editor, href: string) {
+  const chain = editor.chain().focus().extendMarkRange('link')
+  if (href.trim()) chain.setLink({ href: href.trim() }).run()
+  else chain.unsetLink().run()
+}
+
+export const LINK_PLACEHOLDER = 'https://… or page:[slug], empty removes the link'
+
+function Toolbar({ editor }: { editor: Editor }) {
+  const [linking, setLinking] = useState(false)
+  const [href, setHref] = useState('')
+
+  function submitLink(event: FormEvent) {
+    event.preventDefault()
+    applyLink(editor, href)
+    setLinking(false)
+  }
+
+  const tools = formattingTools(editor)
 
   return (
     <div className="border-b border-slate-200 bg-slate-50 p-1">
@@ -107,13 +125,13 @@ function Toolbar({ editor }: { editor: Editor }) {
         </IconButton>
       </div>
       {linking && (
-        <form onSubmit={applyLink} className="mt-1 flex gap-1">
+        <form onSubmit={submitLink} className="mt-1 flex gap-1">
           <Input
             autoFocus
             className="h-7 text-xs"
             value={href}
             onChange={(event) => setHref(event.target.value)}
-            placeholder="https://… or page:[slug], empty removes the link"
+            placeholder={LINK_PLACEHOLDER}
             aria-label="Link address"
           />
           <Button type="submit" size="sm">

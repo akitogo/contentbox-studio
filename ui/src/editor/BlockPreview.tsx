@@ -1,9 +1,12 @@
 import { registerOverlayPortal, useGetPuck } from '@puckeditor/core'
+import { Editor } from '@tiptap/react'
 import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { messageOf, useStudio } from '../studio'
 import type { BlockError } from '../types'
-import { setPath } from './blocksData'
+import { getPath, setPath } from './blocksData'
+import { CanvasToolbar } from './CanvasToolbar'
 import { useEditorContext } from './EditorContext'
+import { editableDoc, offsetAtPoint, positionAt, richTextExtensions, tagClasses } from './richText'
 
 interface RenderResult {
   blocks: { html: string }[]
@@ -49,11 +52,25 @@ const NOTE: CSSProperties = {
 }
 
 const fieldOf = (target: EventTarget | null) => (target as HTMLElement | null)?.closest?.<HTMLElement>('[data-cbs-field]') ?? null
+const isRichText = (field: HTMLElement) => field.dataset.cbsType === 'richtext'
+
+/** Rich text being edited in the canvas */
+interface RichTextSession {
+  editor: Editor
+  /** The marked element (data-cbs-field) the editor is in */
+  element: HTMLElement
+  /** The server's HTML of the text, shown again if nothing changed */
+  original: Node[]
+  /** The document when editing started, as the editor gives it */
+  initial: string
+  onKeyDown: (event: globalThis.KeyboardEvent) => void
+}
 
 /**
  * A block in the editor canvas, rendered by the server with the theme's template (what will be saved).
- * Text the template shows unchanged from a text field is marked by the server (data-cbs-field) and can be edited
- * in place; everything else is edited in the fields on the right.
+ * Text the template shows unchanged from a text or rich text field is marked by the server (data-cbs-field) and can
+ * be edited in place: text as plain content-editable text, rich text with TipTap and a formatting toolbar.
+ * Everything else is edited in the fields on the right.
  */
 export function BlockPreview({ type, label, id, data }: { type: string; label: string; id: string; data: Record<string, unknown> }) {
   const { config, api } = useStudio()
@@ -65,6 +82,10 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
   const [refresh, setRefresh] = useState(0)
   const editing = useRef(false)
   const container = useRef<HTMLDivElement>(null)
+  const toolbar = useRef<HTMLDivElement>(null)
+  // The session in a ref for event handlers (set at once), in state for rendering the toolbar
+  const richText = useRef<RichTextSession | null>(null)
+  const [richTextShown, setRichTextShown] = useState<RichTextSession | null>(null)
 
   useEffect(() => {
     // While text is edited in place the HTML stays (a new rendering would move the cursor); it is rendered on blur
@@ -102,12 +123,20 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     const root = container.current
     if (!root || !canEdit) return
     const cleanups = [...root.querySelectorAll<HTMLElement>('[data-cbs-field]')].map((element) => {
-      element.contentEditable = 'plaintext-only'
-      element.spellcheck = true
+      if (isRichText(element)) {
+        // TipTap takes over on click
+        element.style.cursor = 'text'
+      } else {
+        element.contentEditable = 'plaintext-only'
+        element.spellcheck = true
+      }
       return registerOverlayPortal(element, { disableDragOnFocus: true })
     })
     return () => cleanups.forEach((cleanup) => cleanup?.())
   }, [html, canEdit])
+
+  // A block removed (or the page left) while its rich text is edited
+  useEffect(() => () => richText.current?.editor.destroy(), [])
 
   /** Select the block, so its fields show on the right */
   function select() {
@@ -123,15 +152,8 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     window.setTimeout(select)
   }
 
-  // A click into editable text is not a click on the block for Puck (a second click would deselect it)
-  function onClick(event: MouseEvent) {
-    if (fieldOf(event.target)) event.stopPropagation()
-  }
-
-  function onInput(event: FormEvent) {
-    const field = fieldOf(event.target)
-    const path = field?.dataset.cbsField
-    if (!field || !path) return
+  /** Puts a field's new value into Puck's data (the fields on the right follow) */
+  function replaceField(path: string, value: unknown) {
     const puck = getPuck()
     const selector = puck.getSelectorForId(id)
     const item = puck.getItemById(id)
@@ -140,14 +162,95 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
       type: 'replace',
       destinationIndex: selector.index,
       destinationZone: selector.zone,
-      data: {
-        ...item,
-        props: { ...setPath(item.props, path, editedValue(field.innerText, field.dataset.cbsType === 'textarea')), id: item.props.id },
-      },
+      data: { ...item, props: { ...setPath(item.props, path, value), id: item.props.id } },
     })
   }
 
+  /** TipTap in place of the server's HTML of a rich text field, the cursor where it was clicked */
+  function startRichText(element: HTMLElement, x: number, y: number) {
+    const path = element.dataset.cbsField
+    const item = getPuck().getItemById(id)
+    if (!path || !item) return
+    const extensions = richTextExtensions(tagClasses(element))
+    // Formatting the editor does not know (subscript, ...) would get lost: such text is not editable here
+    const content = editableDoc(getPath(item.props, path), extensions)
+    if (!content) return
+    const offset = offsetAtPoint(element, x, y)
+    const original = [...element.childNodes]
+    element.replaceChildren()
+    editing.current = true
+    const editor = new Editor({
+      element,
+      extensions,
+      content,
+      injectCSS: false,
+      // The canvas has no TipTap CSS; ProseMirror needs whitespace kept
+      editorProps: { attributes: { style: 'white-space: pre-wrap; word-wrap: break-word' } },
+      onUpdate: ({ editor: current }) => replaceField(path, current.getJSON()),
+    })
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        editor.view.dom.blur()
+      }
+      // Puck's shortcuts are for the page, not the text: Cmd+Z is the text's undo, Cmd+I italic, Backspace no delete
+      event.stopPropagation()
+    }
+    element.addEventListener('keydown', onKeyDown)
+    const session = { editor, element, original, initial: JSON.stringify(editor.getJSON()), onKeyDown }
+    richText.current = session
+    setRichTextShown(session)
+    const position = offset === null ? null : positionAt(editor.state.doc, offset)
+    editor.commands.focus(position ?? 'end')
+  }
+
+  /** Back to HTML: the edited text until the server's rendering arrives, the server's HTML if nothing changed */
+  function stopRichText() {
+    const session = richText.current
+    if (!session) return
+    richText.current = null
+    setRichTextShown(null)
+    const { editor, element, original, initial, onKeyDown } = session
+    element.removeEventListener('keydown', onKeyDown)
+    const changed = JSON.stringify(editor.getJSON()) !== initial
+    const shown = changed ? [...editor.view.dom.cloneNode(true).childNodes] : original
+    editor.destroy()
+    element.replaceChildren(...shown)
+    editing.current = false
+    setRefresh((count) => count + 1)
+  }
+
+  // A click into editable text is not a click on the block for Puck (a second click would deselect it)
+  function onClick(event: MouseEvent) {
+    const field = fieldOf(event.target)
+    if (!field) return
+    event.stopPropagation()
+    if (!isRichText(field)) return
+    // Links in the text are not followed
+    event.preventDefault()
+    if (canEdit && !richText.current) startRichText(field, event.clientX, event.clientY)
+  }
+
+  function onInput(event: FormEvent) {
+    const field = fieldOf(event.target)
+    const path = field?.dataset.cbsField
+    // Rich text reports its changes itself (TipTap's onUpdate)
+    if (!field || !path || isRichText(field)) return
+    replaceField(path, editedValue(field.innerText, field.dataset.cbsType === 'textarea'))
+  }
+
   function onBlur(event: FocusEvent) {
+    const session = richText.current
+    if (session) {
+      // The toolbar's link field is part of editing; the toolbar is in the React tree, so its events come here too
+      // Canvas nodes are not instances of this window's Node (an iframe), so no instanceof
+      const within = (target: EventTarget | null) => {
+        const node = target as Node | null
+        return !!node && (session.element.contains(node) || !!toolbar.current?.contains(node))
+      }
+      if (within(event.target) && !within(event.relatedTarget)) stopRichText()
+      return
+    }
     if (!fieldOf(event.target)) return
     editing.current = false
     setRefresh((count) => count + 1)
@@ -155,7 +258,7 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
 
   function onKeyDown(event: KeyboardEvent) {
     const field = fieldOf(event.target)
-    if (!field) return
+    if (!field || isRichText(field)) return
     if (event.key === 'Escape' || (event.key === 'Enter' && field.dataset.cbsType !== 'textarea')) {
       event.preventDefault()
       field.blur()
@@ -165,21 +268,15 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
   const missing = result?.errors.map((item) => item.message).join(' ')
 
   return (
-    <div data-block-type={type} style={{ minHeight: 24 }}>
+    // Handlers here, not on the HTML's div: they also get the events of the toolbar (a portal into the canvas body)
+    <div data-block-type={type} style={{ minHeight: 24 }} onFocus={onFocus} onBlur={onBlur}>
       {html ? (
-        <div
-          ref={container}
-          onClick={onClick}
-          onFocus={onFocus}
-          onInput={onInput}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div ref={container} onClick={onClick} onInput={onInput} onKeyDown={onKeyDown} dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         <div style={PLACEHOLDER}>{result ? `${label}: fill in the fields on the right` : 'Rendering…'}</div>
       )}
       {(missing || error) && <p style={NOTE}>{error || missing}</p>}
+      {richTextShown && <CanvasToolbar editor={richTextShown.editor} anchor={richTextShown.element} toolbar={toolbar} />}
     </div>
   )
 }

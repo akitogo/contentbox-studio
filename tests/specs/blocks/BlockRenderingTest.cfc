@@ -329,6 +329,36 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"marks rich text from rich text fields in previews",
+					() => {
+						var result = renderer.renderBlocks(
+							site     = getDefaultSite(),
+							blocks   = [
+								{
+									"type": "text",
+									"id"  : "t1",
+									"data": {
+										"content": {
+											"type"   : "doc",
+											"content": [
+												{
+													"type"   : "paragraph",
+													"content": [ { "type": "text", "text": "Hello" } ]
+												}
+											]
+										}
+									}
+								}
+							],
+							editable = true
+						);
+						expect( result.blocks[ 1 ].html ).toInclude(
+							"<div data-cbs-field=""content"" data-cbs-type=""richtext""><p>Hello</p></div>"
+						);
+					}
+				);
+
+				it(
 					"never marks HTML that is saved",
 					() => {
 						var result = renderer.renderBlocks(
@@ -375,6 +405,53 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							"data-cbs-field=""steps.0.label"" data-cbs-type=""textarea"""
 						);
 						expect( helper.attr( "One" ) ).toBe( "One" );
+					}
+				);
+
+				it(
+					"marks rich text in list items and skips empty or shared documents",
+					() => {
+						var doc = ( text ) => {
+							return {
+								"type"   : "doc",
+								"content": [
+									{
+										"type"   : "paragraph",
+										"content": [ { "type": "text", "text": text } ]
+									}
+								]
+							};
+						};
+						var helper = getInstance(
+							name          = "EditableTemplateHelper@contentbox-studio",
+							initArguments = {
+								"helper": getInstance( "TemplateHelper@contentbox-studio" ),
+								"fields": [
+									{ "name": "intro", "type": "richtext" },
+									{ "name": "copy", "type": "richtext" },
+									{ "name": "empty", "type": "richtext" },
+									{
+										"name"  : "cards",
+										"type"  : "list",
+										"fields": [ { "name": "body", "type": "richtext" } ]
+									}
+								],
+								"data": {
+									"intro": doc( "Same" ),
+									"copy" : doc( "Same" ),
+									"empty": { "type": "doc", "content": [] },
+									"cards": [ { "body": doc( "One" ) }, { "body": doc( "Two" ) } ]
+								}
+							}
+						);
+						expect( helper.docPathOf( doc( "Two" ) ) ).toBe( "cards.1.body" );
+						expect( helper.docPathOf( doc( "Same" ) ) ).toBe( "" );
+						expect( helper.richText( { "type": "doc", "content": [] } ) ).notToInclude( "data-cbs-field" );
+						expect( helper.richText( doc( "One" ) ) ).toBe(
+							"<div data-cbs-field=""cards.0.body"" data-cbs-type=""richtext""><p>One</p></div>"
+						);
+						// Text never matches a document
+						expect( helper.pathOf( "One" ) ).toBe( "" );
 					}
 				);
 			}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ParsedBlock } from '../blocks/format'
 import type { BlockDefinition } from '../types'
-import { fromPuckData, isFieldVisible, itemSummary, setPath, toPuckData, typesByName, withDefaults } from './blocksData'
+import { fromPuckData, getPath, isFieldVisible, itemSummary, setPath, toPuckData, typesByName, withDefaults } from './blocksData'
 
 const heading: BlockDefinition = {
   name: 'heading',
@@ -98,5 +98,16 @@ describe('setPath', () => {
     expect((next.steps as unknown[])[0]).toBe(props.steps[0])
     expect(props.steps[1]?.title).toBe('B')
     expect(setPath(props, 'title', 'T').title).toBe('T')
+  })
+})
+
+describe('getPath', () => {
+  it('reads values by path, list items by index', () => {
+    const props = { title: 'Hi', steps: [{ label: 'One' }, { label: 'Two', body: { type: 'doc' } }] }
+    expect(getPath(props, 'title')).toBe('Hi')
+    expect(getPath(props, 'steps.1.label')).toBe('Two')
+    expect(getPath(props, 'steps.1.body')).toEqual({ type: 'doc' })
+    expect(getPath(props, 'steps.5.label')).toBeUndefined()
+    expect(getPath(props, 'title.x.y')).toBeUndefined()
   })
 })

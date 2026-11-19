@@ -1,10 +1,12 @@
 /**
  * args.studio for previews in the editor canvas: like TemplateHelper, but text a template outputs unchanged from a
- * text or textarea field (through esc() or nl2br()) is wrapped in <span data-cbs-field="path">, so the editor can
- * make it editable in place. Saved HTML never goes through this helper.
+ * text or textarea field (through esc() or nl2br()) is wrapped in <span data-cbs-field="path">, and a rich text
+ * field's HTML (through richText()) in <div data-cbs-field="path">, so the editor can make it editable in place.
+ * Saved HTML never goes through this helper.
  *
- * Values are matched exactly (case-sensitive); a value that several fields share is not marked, so a span always
- * names the right field. Text a template changes first (trim, split, ...) is not marked and is edited in the panel.
+ * Values are matched exactly (case-sensitive, rich text by its document); a value that several fields share is not
+ * marked, so a mark always names the right field. Text a template changes first (trim, split, ...) is not marked
+ * and is edited in the panel.
  */
 component {
 
@@ -51,7 +53,12 @@ component {
 	}
 
 	string function richText( any doc = "" ) {
-		return variables.helper.richText( arguments.doc );
+		var html = variables.helper.richText( arguments.doc );
+		var path = docPathOf( arguments.doc );
+		if ( !len( path ) ) {
+			return html;
+		}
+		return "<div data-cbs-field=""#path#"" data-cbs-type=""richtext"">#html#</div>";
 	}
 
 	string function src( any source = "" ) {
@@ -73,11 +80,14 @@ component {
 		if ( !isSimpleValue( arguments.text ) ) {
 			return "";
 		}
-		var key = toString( arguments.text );
-		if ( variables.ambiguous.contains( key ) || !variables.paths.containsKey( key ) ) {
-			return "";
-		}
-		return variables.paths.get( key );
+		return lookup( toString( arguments.text ) );
+	}
+
+	/**
+	 * Path of a rich text field with exactly this document, "" if none or several
+	 */
+	string function docPathOf( any doc = "" ) {
+		return lookup( docKey( arguments.doc ) );
 	}
 
 	private string function mark(
@@ -92,8 +102,37 @@ component {
 		return "<span data-cbs-field=""#path#"" data-cbs-type=""#arguments.type#"">#arguments.html#</span>";
 	}
 
+	private string function lookup( required string key ) {
+		if ( !len( arguments.key ) || variables.ambiguous.contains( arguments.key ) || !variables.paths.containsKey( arguments.key ) ) {
+			return "";
+		}
+		return variables.paths.get( arguments.key );
+	}
+
 	/**
-	 * Text and textarea values by path; list items are numbered from 0, like the editor's data
+	 * Map key of a rich text document with content, "" for anything else; the prefix keeps documents apart from text
+	 */
+	private string function docKey( any doc ) {
+		if (
+			isNull( arguments.doc ) || !isStruct( arguments.doc ) || !arguments.doc.keyExists( "content" ) || !isArray(
+				arguments.doc.content
+			) || !arguments.doc.content.len()
+		) {
+			return "";
+		}
+		return "richtext:" & serializeJSON( arguments.doc );
+	}
+
+	private void function add( required string key, required string path ) {
+		if ( variables.paths.containsKey( arguments.key ) ) {
+			variables.ambiguous.add( arguments.key );
+		} else {
+			variables.paths.put( arguments.key, arguments.path );
+		}
+	}
+
+	/**
+	 * Text, textarea and rich text values by path; list items are numbered from 0, like the editor's data
 	 */
 	private void function collect(
 		required array fields,
@@ -107,12 +146,9 @@ component {
 			var value = arguments.data[ field.name ];
 			var path = arguments.prefix & field.name;
 			if ( listFindNoCase( "text,textarea", field.type ) && isSimpleValue( value ) && len( trim( value ) ) ) {
-				var key = toString( value );
-				if ( variables.paths.containsKey( key ) ) {
-					variables.ambiguous.add( key );
-				} else {
-					variables.paths.put( key, path );
-				}
+				add( toString( value ), path );
+			} else if ( field.type == "richtext" && len( docKey( value ) ) ) {
+				add( docKey( value ), path );
 			} else if ( field.type == "list" && isArray( value ) ) {
 				for ( var i = 1; i <= value.len(); i++ ) {
 					if ( isStruct( value[ i ] ) ) {

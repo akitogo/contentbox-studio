@@ -112,8 +112,14 @@ Rules:
 - The template runs when the page is saved, not on every view. After changing a template, re-render the pages
   that use it.
 - Editing in place: in the editor canvas, text that a template outputs unchanged from a `text` or `textarea` field
-  through `esc()` or `nl2br()` can be clicked and edited directly. Text the template changes first (`trim()`,
-  splitting into words, ...) is edited in the fields panel; so are values that two fields share.
+  through `esc()` or `nl2br()` can be clicked and edited directly, and so can a `richtext` field output through
+  `richText()`. Text the template changes first (`trim()`, splitting into words, ...) is edited in the fields
+  panel; so are values that two fields share.
+- Rich text in the canvas: the output of `richText()` gets a wrapping `<div>` there (not in saved HTML), so avoid
+  child selectors like `.text > p` for it. Classes a template adds to the HTML of `richText()` (e.g. by replacing
+  `<p>` with `<p class="lead">`) are kept while editing: the editor gives each element the class of the first element
+  with the same tag. Text with formatting the editor does not offer (subscript, superscript) is not editable in the
+  canvas.
 
 ## Styles
 
