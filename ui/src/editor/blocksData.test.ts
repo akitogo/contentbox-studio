@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ParsedBlock } from '../blocks/format'
 import type { BlockDefinition } from '../types'
-import { fromPuckData, isFieldVisible, itemSummary, toPuckData, typesByName, withDefaults } from './blocksData'
+import { fromPuckData, isFieldVisible, itemSummary, setPath, toPuckData, typesByName, withDefaults } from './blocksData'
 
 const heading: BlockDefinition = {
   name: 'heading',
@@ -86,5 +86,17 @@ describe('isFieldVisible', () => {
     expect(isFieldVisible(name, { kind: 'none', boxed: true })).toBe(false)
     expect(isFieldVisible(name, { kind: 'box', boxed: false })).toBe(false)
     expect(isFieldVisible(name, {})).toBe(false)
+  })
+})
+
+describe('setPath', () => {
+  it('changes one value by path and copies every level on the way', () => {
+    const props = { id: 'b1', title: 'Old', steps: [{ title: 'A' }, { title: 'B' }] }
+    const next = setPath(props, 'steps.1.title', 'New')
+    expect(next).toEqual({ id: 'b1', title: 'Old', steps: [{ title: 'A' }, { title: 'New' }] })
+    expect(next.steps).not.toBe(props.steps)
+    expect((next.steps as unknown[])[0]).toBe(props.steps[0])
+    expect(props.steps[1]?.title).toBe('B')
+    expect(setPath(props, 'title', 'T').title).toBe('T')
   })
 })

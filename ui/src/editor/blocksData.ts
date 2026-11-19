@@ -94,3 +94,22 @@ export function isFieldVisible(field: FieldDefinition, data: Record<string, unkn
     return (typeof value === 'string' || typeof value === 'number') && values.includes(String(value))
   })
 }
+
+/**
+ * A copy of the props with one value changed, by path ("title", "steps.0.title"); every level on the path is copied
+ */
+export function setPath(target: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+  return setIn(target, path.split('.'), value) as Record<string, unknown>
+}
+
+function setIn(node: unknown, keys: string[], value: unknown): unknown {
+  const [key, ...rest] = keys
+  if (key === undefined) return value
+  if (Array.isArray(node)) {
+    const copy = [...node]
+    copy[Number(key)] = setIn(copy[Number(key)], rest, value)
+    return copy
+  }
+  const object = node && typeof node === 'object' ? (node as Record<string, unknown>) : {}
+  return { ...object, [key]: setIn(object[key], rest, value) }
+}

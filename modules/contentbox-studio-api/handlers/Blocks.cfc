@@ -26,8 +26,9 @@ component extends="BaseHandler" {
 	}
 
 	/**
-	 * POST /cbstudio/api/blocks/render with JSON { site, blocks: [ { type, id, data } ] }
+	 * POST /cbstudio/api/blocks/render with JSON { site, blocks: [ { type, id, data } ], editable }
 	 * Renders without saving (preview): normalized blocks, their HTML, the body and validation errors.
+	 * editable: true for the editor canvas (text fields marked for editing in place).
 	 */
 	function render( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
@@ -39,7 +40,14 @@ component extends="BaseHandler" {
 			prc.response.setErrorMessage( "blocks must be an array", 400 );
 			return;
 		}
-		prc.response.setData( variables.renderer.renderBlocks( site, rc.blocks ) );
+		var editable = rc.editable ?: false;
+		prc.response.setData(
+			variables.renderer.renderBlocks(
+				site     = site,
+				blocks   = rc.blocks,
+				editable = isBoolean( editable ) && editable
+			)
+		);
 	}
 
 	/**

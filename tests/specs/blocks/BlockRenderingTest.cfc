@@ -299,6 +299,88 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 		);
 
 		describe(
+			"Editable previews",
+			() => {
+				beforeEach(
+					() => {
+						setup();
+						renderer = getInstance( "BlockRenderer@contentbox-studio" );
+					}
+				);
+
+				it(
+					"marks text from text fields in previews for the editor canvas",
+					() => {
+						var result = renderer.renderBlocks(
+							site     = getDefaultSite(),
+							blocks   = [
+								{
+									"type": "heading",
+									"id"  : "h1",
+									"data": { "text": "Hi there" }
+								}
+							],
+							editable = true
+						);
+						expect( result.blocks[ 1 ].html ).toInclude(
+							"<span data-cbs-field=""text"" data-cbs-type=""text"">Hi there</span>"
+						);
+					}
+				);
+
+				it(
+					"never marks HTML that is saved",
+					() => {
+						var result = renderer.renderBlocks(
+							getDefaultSite(),
+							[
+								{
+									"type": "heading",
+									"id"  : "h1",
+									"data": { "text": "Hi there" }
+								}
+							]
+						);
+						expect( result.body ).notToInclude( "data-cbs-field" );
+					}
+				);
+
+				it(
+					"marks list items by index and skips values shared by several fields",
+					() => {
+						var helper = getInstance(
+							name          = "EditableTemplateHelper@contentbox-studio",
+							initArguments = {
+								"helper": getInstance( "TemplateHelper@contentbox-studio" ),
+								"fields": [
+									{ "name": "title", "type": "text" },
+									{ "name": "same", "type": "text" },
+									{
+										"name"  : "steps",
+										"type"  : "list",
+										"fields": [ { "name": "label", "type": "textarea" } ]
+									}
+								],
+								"data": {
+									"title": "Same",
+									"same" : "Same",
+									"steps": [ { "label": "One" }, { "label": "Two" } ]
+								}
+							}
+						);
+						expect( helper.pathOf( "Two" ) ).toBe( "steps.1.label" );
+						expect( helper.pathOf( "Same" ) ).toBe( "" );
+						expect( helper.pathOf( "two" ) ).toBe( "" );
+						expect( helper.nl2br( "One" ) ).toInclude(
+							"data-cbs-field=""steps.0.label"" data-cbs-type=""textarea"""
+						);
+						expect( helper.attr( "One" ) ).toBe( "One" );
+					}
+				);
+			}
+		);
+
+		describe(
 			"Output and classic admin",
 			() => {
 				beforeEach(

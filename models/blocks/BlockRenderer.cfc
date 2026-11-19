@@ -16,19 +16,24 @@ component singleton {
 
 	property name="helper" inject="TemplateHelper@contentbox-studio";
 
+	property name="wirebox" inject="wirebox";
+
 	/**
 	 * Render blocks from the editor
 	 *
 	 * @site   The site, for its theme's block types
 	 * @blocks Array of { type, id (optional), data }
-	 * @types  Block types to use instead of the site's (tests, previews of other themes)
+	 * @types    Block types to use instead of the site's (tests, previews of other themes)
+	 * @editable For the editor canvas: mark text that comes unchanged from text fields (EditableTemplateHelper).
+	 * Never for HTML that is saved or shown on the site.
 	 *
 	 * @return { body, blocks: [ { type, v, id, data, html, errors } ], errors: [ { blockID, field, message } ] }
 	 */
 	struct function renderBlocks(
 		required site,
 		required array blocks,
-		struct types
+		struct types,
+		boolean editable = false
 	) {
 		var blockTypes = arguments.types ?: variables.registry.forSite( arguments.site );
 		var usedIDs = {};
@@ -73,7 +78,11 @@ component singleton {
 					"html": renderBlock(
 						definition,
 						normalized.data,
-						{ "id": id, "site": arguments.site }
+						{
+							"id"      : id,
+							"site"    : arguments.site,
+							"editable": arguments.editable
+						}
 					),
 					"errors": normalized.errors
 				}
@@ -96,7 +105,7 @@ component singleton {
 	/**
 	 * @definition A block type from the registry
 	 * @data       Normalized data
-	 * @context    { id, site }
+	 * @context    { id, site, editable }
 	 */
 	string function renderBlock(
 		required struct definition,
@@ -112,8 +121,17 @@ component singleton {
 				"id"  : arguments.context.id ?: "",
 				"type": arguments.definition.name
 			},
-			"studio": variables.helper,
-			"site"  : arguments.context.site ?: ""
+			"studio": ( arguments.context.editable ?: false ) == true
+				? variables.wirebox.getInstance(
+					name          = "EditableTemplateHelper@contentbox-studio",
+					initArguments = {
+						"helper": variables.helper,
+						"fields": arguments.definition.fields,
+						"data"  : arguments.data
+					}
+				)
+				: variables.helper,
+			"site": arguments.context.site ?: ""
 		};
 		savecontent variable="local.html" {
 			include "#arguments.definition.renderTemplate#";

@@ -111,6 +111,9 @@ Rules:
 - Values of `select` fields are always one of the options, so they can go into class names directly.
 - The template runs when the page is saved, not on every view. After changing a template, re-render the pages
   that use it.
+- Editing in place: in the editor canvas, text that a template outputs unchanged from a `text` or `textarea` field
+  through `esc()` or `nl2br()` can be clicked and edited directly. Text the template changes first (`trim()`,
+  splitting into words, ...) is edited in the fields panel; so are values that two fields share.
 
 ## Styles
 

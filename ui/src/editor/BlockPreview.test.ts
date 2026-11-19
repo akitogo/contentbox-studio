@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { withWidgetPlaceholders } from './BlockPreview'
+import { editedValue, withWidgetPlaceholders } from './BlockPreview'
 
 describe('withWidgetPlaceholders', () => {
   it('replaces widget calls with placeholders and keeps the rest', () => {
@@ -8,5 +8,13 @@ describe('withWidgetPlaceholders', () => {
     expect(html).toContain('Content store item “de-contact”')
     expect(html).toContain('<h1>Hi</h1>')
     expect(html).not.toContain('{{{')
+  })
+})
+
+describe('editedValue', () => {
+  it('keeps line breaks for multi-line fields and joins single-line ones', () => {
+    expect(editedValue('Fresh ideas\nfor every season.\n', true)).toBe('Fresh ideas\nfor every season.')
+    expect(editedValue('Two\nlines', false)).toBe('Two lines')
+    expect(editedValue('Plain', false)).toBe('Plain')
   })
 })
