@@ -3,7 +3,7 @@
  */
 import { FieldLabel, type ComponentConfig, type Config, type Field } from '@puckeditor/core'
 import type { BlockDefinition, FieldDefinition } from '../types'
-import { fieldLabel, itemSummary, withDefaults } from './blocksData'
+import { fieldLabel, isFieldVisible, itemSummary, withDefaults } from './blocksData'
 import { BlockPreview } from './BlockPreview'
 import { ContentStoreField, HtmlField, ImageField, ImagesField, LinkField } from './fields/Fields'
 import { RichTextField } from './fields/RichTextField'
@@ -21,9 +21,18 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
   const categories: Record<string, { title: string; components: string[]; visible?: boolean }> = {}
 
   for (const definition of definitions) {
+    const fields = Object.fromEntries(definition.fields.map((field) => [field.name, toPuckField(field)]))
+    const conditional = definition.fields.some((field) => field.when)
     components[definition.name] = {
       label: definition.label,
-      fields: Object.fromEntries(definition.fields.map((field) => [field.name, toPuckField(field)])),
+      fields,
+      // Fields with `when` show only for matching values of other fields
+      ...(conditional
+        ? {
+            resolveFields: (data: { props: Record<string, unknown> }) =>
+              Object.fromEntries(definition.fields.filter((field) => isFieldVisible(field, data.props)).map((field) => [field.name, fields[field.name]])),
+          }
+        : {}),
       defaultProps: withDefaults(definition.fields),
       render: ({ puck: _puck, editMode: _editMode, id, ...data }: Record<string, unknown>) => (
         <BlockPreview type={definition.name} label={definition.label} id={String(id ?? '')} data={data} />

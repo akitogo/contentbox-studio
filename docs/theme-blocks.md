@@ -47,7 +47,12 @@ After adding or changing a block type, reinit the application (block types are c
 
 ### Fields
 
-Every field has `name` (`[A-Za-z][A-Za-z0-9_]*`), `type`, and optionally `label`, `help`, `required` and `default`.
+Every field has `name` (`[A-Za-z][A-Za-z0-9_]*`), `type`, and optionally `label`, `help`, `required`, `default` and
+`when`.
+
+`when` shows a field only for certain values of other fields of the same block (or list item), which must be
+`select` or `boolean` fields: `"when": { "layout": [ "card", "box" ], "boxed": [ true ] }` shows the field when
+`layout` is `card` or `box` and `boxed` is on. A hidden field keeps its value and is not required.
 
 | Type | Value in `args.data` | Extra keys |
 |---|---|---|

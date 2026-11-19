@@ -84,3 +84,13 @@ export function itemSummary(fields: FieldDefinition[], item: Record<string, unkn
   }
   return `Item ${index + 1}`
 }
+
+/** Whether a field is shown for the block's data (block.json `when`; same rule as BlockData.isVisible on the server) */
+export function isFieldVisible(field: FieldDefinition, data: Record<string, unknown>): boolean {
+  if (!field.when) return true
+  return Object.entries(field.when).every(([name, values]) => {
+    const value = data[name]
+    if (typeof value === 'boolean') return values.includes(value ? 'true' : 'false')
+    return (typeof value === 'string' || typeof value === 'number') && values.includes(String(value))
+  })
+}

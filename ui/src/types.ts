@@ -78,6 +78,8 @@ export interface FieldDefinition {
   default: unknown
   options?: { value: string; label: string }[]
   fields?: FieldDefinition[]
+  /** Shown only when every named field (select or boolean) has one of the values ("true"/"false" for booleans) */
+  when?: Record<string, string[]>
   maxLength?: number
   maxItems?: number
   min?: number

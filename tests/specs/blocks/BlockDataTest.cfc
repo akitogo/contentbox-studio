@@ -61,6 +61,89 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				describe(
+					"conditional fields (when)",
+					() => {
+						beforeEach(
+							() => {
+								fields = blockData.normalizeFields(
+									[
+										{
+											"name"   : "kind",
+											"type"   : "select",
+											"default": "none",
+											"options": [ "none", "card", "box" ]
+										},
+										{ "name": "boxed", "type": "boolean" },
+										{
+											"name"    : "name",
+											"type"    : "text",
+											"required": true,
+											"when"    : { "kind": [ "card", "box" ] }
+										},
+										{
+											"name": "note",
+											"type": "text",
+											"when": { "boxed": [ true ] }
+										}
+									],
+									"test"
+								);
+							}
+						);
+
+						it(
+							"shows a field only when the named fields have one of the values",
+							() => {
+								var name = fields[ 3 ];
+								var note = fields[ 4 ];
+								expect( blockData.isVisible( name, { "kind": "none" } ) ).toBeFalse();
+								expect( blockData.isVisible( name, { "kind": "card" } ) ).toBeTrue();
+								expect( blockData.isVisible( note, { "boxed": false } ) ).toBeFalse();
+								expect( blockData.isVisible( note, { "boxed": true } ) ).toBeTrue();
+								expect( blockData.isVisible( fields[ 1 ], {} ) ).toBeTrue();
+							}
+						);
+
+						it(
+							"requires a hidden field only when it is shown",
+							() => {
+								expect( blockData.normalize( fields, { "kind": "none" } ).errors ).toBeEmpty();
+								var errors = blockData.normalize( fields, { "kind": "box" } ).errors;
+								expect( errors ).toHaveLength( 1 );
+								expect( errors[ 1 ].field ).toBe( "name" );
+							}
+						);
+
+						it(
+							"refuses conditions on unknown or unsuitable fields",
+							() => {
+								expect(
+									() => blockData.normalizeFields(
+										[
+											{
+												"name": "a",
+												"type": "text",
+												"when": { "missing": [ "x" ] }
+											}
+										],
+										"test"
+									)
+								).toThrow( "BlockDefinition.InvalidField" );
+								expect(
+									() => blockData.normalizeFields(
+										[
+											{ "name": "a", "type": "text" },
+											{ "name": "b", "type": "text", "when": { "a": [ "x" ] } }
+										],
+										"test"
+									)
+								).toThrow( "BlockDefinition.InvalidField" );
+							}
+						);
+					}
+				);
+
+				describe(
 					"data",
 					() => {
 						beforeEach(

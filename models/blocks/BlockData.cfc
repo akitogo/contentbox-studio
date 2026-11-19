@@ -45,7 +45,7 @@ component singleton {
 			invalidField( arguments.blockName, "fields must be an array" );
 		}
 		var names = {};
-		return arguments.fields.map(
+		var normalizedFields = arguments.fields.map(
 			( field ) => {
 				if (
 					!isStruct( field ) || !isSimpleValue( field.name ?: [] ) ||
@@ -109,9 +109,44 @@ component singleton {
 					}
 				}
 				normalized[ "default" ] = field.keyExists( "default" ) ? field.default : typeDefault( normalized.type );
+				if ( field.keyExists( "when" ) ) {
+					normalized[ "when" ] = field.when;
+				}
 				return normalized;
 			}
 		);
+		checkConditions( normalizedFields, arguments.blockName );
+		return normalizedFields;
+	}
+
+	/**
+	 * Whether a field is shown for the given data: fields with `when` only if every named field has one of the values
+	 *
+	 * @field Normalized field definition
+	 * @data  Normalized data of the block (or list item)
+	 */
+	boolean function isVisible( required struct field, required struct data ) {
+		if ( !arguments.field.keyExists( "when" ) ) {
+			return true;
+		}
+		for ( var name in arguments.field.when ) {
+			// No ?: here: Adobe ColdFusion's Elvis operator also replaces false
+			var value = arguments.data.keyExists( name ) && !isNull( arguments.data[ name ] )
+				? arguments.data[ name ]
+				: "";
+			if ( !isSimpleValue( value ) ) {
+				return false;
+			}
+			var allowed = arguments.field.when[ name ];
+			// Booleans match "true"/"false" (CFML also treats "yes"/"no" as booleans, so the value as written counts too)
+			var asBoolean = isBoolean( value ) && !isNumeric( value ) ? ( value ? "true" : "false" ) : "";
+			if (
+				!allowed.findNoCase( toString( value ) ) && !( len( asBoolean ) && allowed.findNoCase( asBoolean ) )
+			) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -135,27 +170,73 @@ component singleton {
 				? input[ field.name ]
 				: duplicate( field.default );
 			// result is a struct, so passed by reference on every engine (Adobe ColdFusion copies arrays)
-			var value = normalizeValue(
+			result.data[ field.name ] = normalizeValue(
 				field,
 				raw,
 				fieldPath,
 				result
 			);
-			if ( field.required && isEmptyValue( field, value ) ) {
+		}
+
+		// Required fields, once all values are known: a field hidden by `when` is not required
+		for ( var field in arguments.fields ) {
+			if (
+				field.required && isVisible( field, result.data ) && isEmptyValue( field, result.data[ field.name ] )
+			) {
 				result.errors.append(
 					{
-						"field"  : fieldPath,
+						"field"  : arguments.path & field.name,
 						"message": "#field.label# is required"
 					}
 				);
 			}
-			result.data[ field.name ] = value;
 		}
 
 		return result;
 	}
 
 	/********************************* PRIVATE *********************************/
+
+	/**
+	 * `when` must be { otherField: [ values ] } naming select or boolean fields of the same block (or list item);
+	 * values are kept as strings ("true"/"false" for booleans)
+	 */
+	private void function checkConditions(
+		required array fields,
+		required string blockName
+	) {
+		var types = {};
+		for ( var field in arguments.fields ) {
+			types[ field.name ] = field.type;
+		}
+		for ( var field in arguments.fields ) {
+			if ( !field.keyExists( "when" ) ) {
+				continue;
+			}
+			if ( !isStruct( field.when ) || field.when.isEmpty() ) {
+				invalidField(
+					arguments.blockName,
+					"[when] of field [#field.name#] must be an object"
+				);
+			}
+			var conditions = {};
+			for ( var name in field.when ) {
+				if (
+					!types.keyExists( name ) || !listFindNoCase( "select,boolean", types[ name ] ) || name == field.name
+				) {
+					invalidField(
+						arguments.blockName,
+						"[when] of field [#field.name#] must name another select or boolean field, not [#name#]"
+					);
+				}
+				var values = isArray( field.when[ name ] ) ? field.when[ name ] : [ field.when[ name ] ];
+				conditions[ name ] = values.map(
+					( value ) => isSimpleValue( value ) ? toString( value ) : ""
+				);
+			}
+			field.when = conditions;
+		}
+	}
 
 	private any function normalizeValue(
 		required struct field,

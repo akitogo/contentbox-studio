@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ParsedBlock } from '../blocks/format'
 import type { BlockDefinition } from '../types'
-import { fromPuckData, itemSummary, toPuckData, typesByName, withDefaults } from './blocksData'
+import { fromPuckData, isFieldVisible, itemSummary, toPuckData, typesByName, withDefaults } from './blocksData'
 
 const heading: BlockDefinition = {
   name: 'heading',
@@ -70,5 +70,21 @@ describe('helpers', () => {
   it('summarizes list items by their first text', () => {
     expect(itemSummary(heading.fields, { text: 'Rooms' }, 0)).toBe('Rooms')
     expect(itemSummary(heading.fields, {}, 2)).toBe('Item 3')
+  })
+})
+
+describe('isFieldVisible', () => {
+  const field = (when?: Record<string, string[]>) => ({ name: 'x', type: 'text' as const, label: 'X', help: '', required: false, default: '', when })
+
+  it('shows fields without conditions', () => {
+    expect(isFieldVisible(field(), {})).toBe(true)
+  })
+
+  it('shows a field when every named field has one of the values', () => {
+    const name = field({ kind: ['card', 'box'], boxed: ['true'] })
+    expect(isFieldVisible(name, { kind: 'card', boxed: true })).toBe(true)
+    expect(isFieldVisible(name, { kind: 'none', boxed: true })).toBe(false)
+    expect(isFieldVisible(name, { kind: 'box', boxed: false })).toBe(false)
+    expect(isFieldVisible(name, {})).toBe(false)
   })
 })
