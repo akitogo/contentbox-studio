@@ -19,9 +19,9 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						it(
 							"rejects requests without a token",
 							() => {
-								var response = get( route = "/cbstudio/api/me" ).getResponse();
-								expect( response.getStatusCode() ).toBe( 401 );
-								expect( response.getError() ).toBeTrue();
+								var response = get( route = "/cbstudio/api/me" );
+								expect( renderedStatus( response ) ).toBe( 401 );
+								expect( response.getResponse().getError() ).toBeTrue();
 							}
 						);
 
@@ -33,8 +33,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 										var response = get(
 											route  = "/cbstudio/api/me",
 											params = { "x-auth-token": tokenFor( author ) }
-										).getResponse();
-										expect( response.getStatusCode() ).toBe( 403 );
+										);
+										expect( renderedStatus( response ) ).toBe( 403 );
 									}
 								);
 							}
@@ -112,8 +112,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								var response = post(
 									route  = "/cbstudio/api/blocks/render",
 									params = { "x-auth-token": tokenFor( getAdministrator() ) }
-								).getResponse();
-								expect( response.getStatusCode() ).toBe( 400 );
+								);
+								expect( renderedStatus( response ) ).toBe( 400 );
 							}
 						);
 					}

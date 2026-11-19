@@ -163,8 +163,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								var again = post(
 									route  = "/cbstudio/api/sites/default/pages",
 									params = { "x-auth-token": token, "title": title }
-								).getResponse();
-								expect( again.getStatusCode() ).toBe( 409 );
+								);
+								expect( renderedStatus( again ) ).toBe( 409 );
 							}
 						);
 
@@ -180,8 +180,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 												"x-auth-token": tokenFor( author ),
 												"title"       : "#variables.MARKER# nope"
 											}
-										).getResponse();
-										expect( response.getStatusCode() ).toBe( 403 );
+										);
+										expect( renderedStatus( response ) ).toBe( 403 );
 									}
 								);
 							}

@@ -16,7 +16,8 @@ component extends="BaseHandler" {
 	function show( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.translations.forContent( content ) );
 	}
@@ -27,7 +28,8 @@ component extends="BaseHandler" {
 	function setLanguage( event, rc, prc ) secured="STUDIO_SITE_TREE" {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		try {
 			variables.translations.setLanguage( content, toString( rc.language ?: "" ) );
@@ -44,7 +46,8 @@ component extends="BaseHandler" {
 		var content = findContent( rc.contentID ?: "" );
 		var other = findContent( rc.translationID ?: "" );
 		if ( isNull( content ) || isNull( other ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		try {
 			variables.translations.link( content, other );
@@ -60,7 +63,8 @@ component extends="BaseHandler" {
 	function unlink( event, rc, prc ) secured="STUDIO_SITE_TREE" {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		variables.translations.unlink( content );
 		prc.response.setData( variables.translations.forContent( content ) );

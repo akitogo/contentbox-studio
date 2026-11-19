@@ -40,7 +40,8 @@ component extends="BaseHandler" {
 	function contentStore( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		transaction {
 			var rows = ormExecuteQuery(
@@ -63,7 +64,8 @@ component extends="BaseHandler" {
 	function templates( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		var contentType = listFindNoCase( "page,entry,contentStore", rc.contentType ?: "" ) ? rc.contentType : "page";
 		prc.response.setData( variables.contentEditor.templates( site, contentType ) );
@@ -75,7 +77,8 @@ component extends="BaseHandler" {
 	function styles( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.themeStyles.stylesheets( site ) );
 	}

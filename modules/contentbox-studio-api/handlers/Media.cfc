@@ -25,7 +25,8 @@ component extends="BaseHandler" {
 	 */
 	function upload( event, rc, prc ) secured="MEDIAMANAGER_ADMIN" {
 		if ( !len( rc.file ?: "" ) ) {
-			return prc.response.setErrorMessage( "No file uploaded", 400 );
+			prc.response.setErrorMessage( "No file uploaded", 400 );
+			return;
 		}
 		var temp = getTempDirectory() & "cbstudio-uploads";
 		if ( !directoryExists( temp ) ) {

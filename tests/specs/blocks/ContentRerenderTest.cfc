@@ -81,8 +81,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								var response = post(
 									route  = "/cbstudio/api/blocks/rerender",
 									params = { "x-auth-token": tokenFor( author ) }
-								).getResponse();
-								expect( response.getStatusCode() ).toBe( 403 );
+								);
+								expect( renderedStatus( response ) ).toBe( 403 );
 							}
 						);
 					}

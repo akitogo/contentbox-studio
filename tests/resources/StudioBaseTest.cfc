@@ -177,6 +177,15 @@ component extends="tests.resources.BaseTest" {
 	/**
 	 * A fresh access token for the author
 	 */
+	/**
+	 * The HTTP status ColdBox renders for a request (event.getRenderData()), not just what prc.response holds:
+	 * an action that returns a value skips RestHandler's rendering, so both can differ
+	 */
+	numeric function renderedStatus( required event ) {
+		var rendered = arguments.event.getRenderData();
+		return rendered.statusCode ?: 0;
+	}
+
 	string function tokenFor( required author ) {
 		return getInstance( "JwtService@cbsecurity" ).fromUser( arguments.author ).access_token;
 	}

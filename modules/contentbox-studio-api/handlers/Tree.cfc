@@ -13,7 +13,8 @@ component extends="BaseHandler" {
 	function index( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.siteTree.getPages( site ) );
 	}
@@ -24,11 +25,13 @@ component extends="BaseHandler" {
 	 */
 	function move( event, rc, prc ) secured="STUDIO_SITE_TREE" {
 		if ( !hasAnyPermission( "PAGES_ADMIN,PAGES_EDITOR" ) ) {
-			return prc.response.setErrorMessage( "Moving pages needs PAGES_ADMIN or PAGES_EDITOR", 403 );
+			prc.response.setErrorMessage( "Moving pages needs PAGES_ADMIN or PAGES_EDITOR", 403 );
+			return;
 		}
 		var page = variables.pageService.get( id = rc.contentID ?: "", returnNew = false );
 		if ( isNull( page ) ) {
-			return prc.response.setErrorMessage( "Page not found", 404 );
+			prc.response.setErrorMessage( "Page not found", 404 );
+			return;
 		}
 		var index = isNumeric( rc.index ?: "" ) ? rc.index : 0;
 		try {
@@ -50,11 +53,13 @@ component extends="BaseHandler" {
 	 */
 	function create( event, rc, prc ) {
 		if ( !hasAnyPermission( "PAGES_ADMIN,PAGES_EDITOR" ) ) {
-			return prc.response.setErrorMessage( "Creating pages needs PAGES_ADMIN or PAGES_EDITOR", 403 );
+			prc.response.setErrorMessage( "Creating pages needs PAGES_ADMIN or PAGES_EDITOR", 403 );
+			return;
 		}
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		try {
 			var page = variables.siteTree.createPage(

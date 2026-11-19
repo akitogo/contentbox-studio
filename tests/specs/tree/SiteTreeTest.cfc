@@ -206,8 +206,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 												"parentID"    : "",
 												"index"       : 0
 											}
-										).getResponse();
-										expect( response.getStatusCode() ).toBe( 403 );
+										);
+										expect( renderedStatus( response ) ).toBe( 403 );
 									}
 								);
 							}
@@ -224,8 +224,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 										"parentID"    : page.getContentID(),
 										"index"       : 0
 									}
-								).getResponse();
-								expect( response.getStatusCode() ).toBe( 409 );
+								);
+								expect( renderedStatus( response ) ).toBe( 409 );
 							}
 						);
 					}

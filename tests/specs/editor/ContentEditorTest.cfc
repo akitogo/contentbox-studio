@@ -210,22 +210,42 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								expect( saved.getData().content.version ).toBe( 2 );
 
 								setup();
-								var stale = put(
+								var staleEvent = put(
 									route  = "/cbstudio/api/content/#page.getContentID()#/blocks",
 									params = { "x-auth-token": token, "baseVersion": 1, "blocks": [] }
-								).getResponse();
-								expect( stale.getStatusCode() ).toBe( 409 );
+								);
+								expect( renderedStatus( staleEvent ) ).toBe( 409 );
 
 								setup();
-								var invalid = put(
+								var invalidEvent = put(
 									route  = "/cbstudio/api/content/#page.getContentID()#/blocks",
 									params = {
 										"x-auth-token": token,
 										"blocks"      : [ { "type": "heading", "id": "h1", "data": {} } ]
 									}
-								).getResponse();
-								expect( invalid.getStatusCode() ).toBe( 422 );
-								expect( invalid.getData().errors ).notToBeEmpty();
+								);
+								expect( renderedStatus( invalidEvent ) ).toBe( 422 );
+								expect(
+									invalidEvent.getRenderData()
+										.data
+										.data
+										.errors
+								).notToBeEmpty();
+							}
+						);
+
+						it(
+							"answers 404 for content that does not exist",
+							() => {
+								var event = get(
+									route  = "/cbstudio/api/content/0000doesnotexist0000",
+									params = { "x-auth-token": tokenFor( getAdministrator() ) }
+								);
+								// What goes over the wire, not only prc.response
+								expect( renderedStatus( event ) ).toBe( 404 );
+								var rendered = event.getRenderData().data;
+								expect( rendered.error ).toBeTrue();
+								expect( arrayToList( rendered.messages ) ).toInclude( "not found" );
 							}
 						);
 
@@ -239,8 +259,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 										var response = put(
 											route  = "/cbstudio/api/content/#page.getContentID()#/blocks",
 											params = { "x-auth-token": tokenFor( author ), "blocks": [] }
-										).getResponse();
-										expect( response.getStatusCode() ).toBe( 403 );
+										);
+										expect( renderedStatus( response ) ).toBe( 403 );
 									}
 								);
 							}

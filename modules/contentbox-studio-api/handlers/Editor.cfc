@@ -18,7 +18,8 @@ component extends="BaseHandler" {
 	function show( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.editor.load( content, jwtAuth().getUser() ) );
 	}
@@ -30,10 +31,12 @@ component extends="BaseHandler" {
 	function save( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		if ( !isArray( rc.blocks ?: "" ) ) {
-			return prc.response.setErrorMessage( "blocks must be an array", 400 );
+			prc.response.setErrorMessage( "blocks must be an array", 400 );
+			return;
 		}
 		try {
 			var result = variables.editor.save(
@@ -64,7 +67,8 @@ component extends="BaseHandler" {
 	function versions( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.editor.versions( content ) );
 	}
@@ -75,11 +79,13 @@ component extends="BaseHandler" {
 	function version( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		var result = variables.editor.version( content, toString( rc.versionID ?: "" ) );
 		if ( isNull( result ) ) {
-			return prc.response.setErrorMessage( "Version not found", 404 );
+			prc.response.setErrorMessage( "Version not found", 404 );
+			return;
 		}
 		prc.response.setData( result );
 	}
@@ -90,10 +96,12 @@ component extends="BaseHandler" {
 	function status( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		if ( !isBoolean( rc.isPublished ?: "" ) ) {
-			return prc.response.setErrorMessage( "isPublished must be true or false", 400 );
+			prc.response.setErrorMessage( "isPublished must be true or false", 400 );
+			return;
 		}
 		try {
 			prc.response.setData(
@@ -115,7 +123,8 @@ component extends="BaseHandler" {
 	function template( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
 		if ( isNull( content ) ) {
-			return prc.response.setErrorMessage( "Content not found", 404 );
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
 		}
 		try {
 			prc

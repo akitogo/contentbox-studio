@@ -19,7 +19,8 @@ component extends="BaseHandler" {
 	function index( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.registry.publicDefinitions( variables.registry.forSite( site ) ) );
 	}
@@ -31,10 +32,12 @@ component extends="BaseHandler" {
 	function render( event, rc, prc ) {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		if ( !isArray( rc.blocks ?: "" ) ) {
-			return prc.response.setErrorMessage( "blocks must be an array", 400 );
+			prc.response.setErrorMessage( "blocks must be an array", 400 );
+			return;
 		}
 		prc.response.setData( variables.renderer.renderBlocks( site, rc.blocks ) );
 	}
@@ -46,7 +49,8 @@ component extends="BaseHandler" {
 	function rerender( event, rc, prc ) secured="THEME_ADMIN" {
 		var site = findSite( rc.site ?: "" );
 		if ( isNull( site ) ) {
-			return prc.response.setErrorMessage( "Site not found", 404 );
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
 		}
 		prc.response.setData( variables.contentRerender.rerenderSite( site, jwtAuth().getUser() ) );
 	}
