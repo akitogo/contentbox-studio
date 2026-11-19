@@ -183,7 +183,11 @@ component extends="tests.resources.BaseTest" {
 	 */
 	numeric function renderedStatus( required event ) {
 		var rendered = arguments.event.getRenderData();
-		return rendered.statusCode ?: 0;
+		// No ?: here: Adobe ColdFusion 2023 returned a non-numeric value with it
+		if ( !structKeyExists( rendered, "statusCode" ) || !isNumeric( rendered.statusCode ) ) {
+			return 0;
+		}
+		return val( rendered.statusCode );
 	}
 
 	string function tokenFor( required author ) {
