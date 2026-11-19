@@ -20,6 +20,20 @@ const PLACEHOLDER: CSSProperties = {
   background: '#f8fafc',
   font: '13px/1.4 system-ui, -apple-system, sans-serif',
 }
+// Widget calls ({{{Name ...}}}) are expanded by ContentBox when the page is shown, not in the editor
+const WIDGET = /\{\{\{(~?)([A-Za-z][A-Za-z0-9]*)([^}]*)\}\}\}/g
+const PLACEHOLDER_INLINE =
+  'padding:10px 14px;border:1px dashed #cbd5e1;border-radius:6px;color:#64748b;background:#f8fafc;font:13px/1.4 system-ui,-apple-system,sans-serif'
+
+/** Server-rendered block HTML with placeholders for widget calls */
+export function withWidgetPlaceholders(html: string): string {
+  return html.replace(WIDGET, (_call, _nocache: string, name: string, args: string) => {
+    const slug = name === 'ContentStore' ? /slug="([A-Za-z0-9_/-]+)"/.exec(args)?.[1] : undefined
+    const label = slug ? `Content store item “${slug}”, shown on the page` : `Widget “${name}”, shown on the page`
+    return `<div style="${PLACEHOLDER_INLINE}">${label}</div>`
+  })
+}
+
 const NOTE: CSSProperties = {
   margin: '4px 0 0',
   color: '#b45309',
@@ -63,15 +77,12 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  const html = result?.blocks[0]?.html ?? ''
-  const contentStore = /^\{\{\{ContentStore slug="([^"]+)"\}\}\}$/.exec(html)?.[1]
+  const html = withWidgetPlaceholders(result?.blocks[0]?.html ?? '')
   const missing = result?.errors.map((item) => item.message).join(' ')
 
   return (
     <div data-block-type={type} style={{ minHeight: 24 }}>
-      {contentStore ? (
-        <div style={PLACEHOLDER}>Content store item “{contentStore}”, shown on the page</div>
-      ) : html ? (
+      {html ? (
         <div dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         <div style={PLACEHOLDER}>{result ? `${label}: fill in the fields on the right` : 'Rendering…'}</div>
