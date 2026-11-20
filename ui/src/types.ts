@@ -185,6 +185,8 @@ export interface EditorContent {
   blocks: import('./blocks/format').ParsedBlock[]
   canEdit: boolean
   canEditHtml: boolean
+  /** Publish, unpublish, save as template: the content type's admin permission (PAGES_ADMIN, ...) */
+  canPublish: boolean
 }
 
 export interface BlockError {

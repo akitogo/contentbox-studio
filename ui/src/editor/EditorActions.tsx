@@ -16,6 +16,7 @@ import { PageDetails } from './PageDetails'
 export interface EditorActions {
   content: ContentDetails
   canEdit: boolean
+  canPublish: boolean
   /** Unsaved changes: blocks or settings */
   dirty: boolean
   /** The content's settings as edited (saved with the blocks) */
@@ -34,6 +35,9 @@ export interface EditorActions {
 }
 
 export const EditorActionsContext = createContext<EditorActions | null>(null)
+
+/** What publishing a content type needs */
+const ADMIN_PERMISSION: Record<ContentDetails['contentType'], string> = { page: 'PAGES_ADMIN', entry: 'ENTRIES_ADMIN', contentStore: 'CONTENTSTORE_ADMIN' }
 
 const usePuck = createUsePuck()
 
@@ -113,11 +117,23 @@ export function EditorHeader() {
             <History className="size-3.5" />
             <Label>Versions</Label>
           </Button>
-          <Button size="sm" variant="ghost" onClick={actions.saveAsTemplate} disabled={!actions.canEdit} aria-label="Save as template" title="Save as template">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={actions.saveAsTemplate}
+            disabled={!actions.canPublish}
+            aria-label="Save as template"
+            title={actions.canPublish ? 'Save as template' : `Save as template: needs the ${ADMIN_PERMISSION[content.contentType]} permission`}
+          >
             <LayoutTemplate className="size-3.5" />
             <Label>Save as template</Label>
           </Button>
-          <Button size="sm" onClick={actions.togglePublished} disabled={!actions.canEdit}>
+          <Button
+            size="sm"
+            onClick={actions.togglePublished}
+            disabled={!actions.canPublish}
+            title={actions.canPublish ? undefined : `Publishing needs the ${ADMIN_PERMISSION[content.contentType]} permission`}
+          >
             {content.isPublished ? 'Unpublish' : 'Publish'}
           </Button>
           <Button size="sm" variant="primary" onClick={actions.save} disabled={!actions.canEdit || actions.saving}>

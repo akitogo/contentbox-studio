@@ -252,6 +252,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const actions: EditorActions = {
     content: editor.content,
     canEdit: editor.canEdit,
+    canPublish: editor.canPublish,
     dirty: unsaved,
     settings,
     setSettings,

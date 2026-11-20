@@ -335,6 +335,29 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						);
 
 						it(
+							"lets editors save but not publish (the admin permission does)",
+							() => {
+								var page = createTestPage( slug = testSlug( variables.MARKER ), isPublished = false );
+								expect( editor.load( page, getAdministrator() ).canPublish ).toBeTrue();
+								withTemporaryAuthor(
+									[ "STUDIO_ACCESS", "PAGES_EDITOR" ],
+									( author ) => {
+										var loaded = editor.load( page, author );
+										expect( loaded.canEdit ).toBeTrue();
+										expect( loaded.canPublish ).toBeFalse();
+										var response = put(
+											route  = "/cbstudio/api/content/#page.getContentID()#/status",
+											params = { "x-auth-token": tokenFor( author ), "isPublished": true }
+										);
+										expect( renderedStatus( response ) ).toBe( 403 );
+									}
+								);
+								ormClearSession();
+								expect( pageService.get( page.getContentID() ).getIsPublished() ).toBeFalse();
+							}
+						);
+
+						it(
 							"lists content store items of a site",
 							() => {
 								var response = get(

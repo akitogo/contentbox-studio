@@ -50,14 +50,24 @@ component singleton {
 	}
 
 	/**
-	 * @return { content: details, blocks: parsed blocks, canEdit, canEditHtml }
+	 * Publishing, unpublishing and saving templates need the content type's admin permission (PAGES_ADMIN, ...), as
+	 * in the classic admin; editors (PAGES_EDITOR, ...) can edit but not publish
+	 */
+	boolean function canPublish( required content, required author ) {
+		var permission = variables.ADMIN_PERMISSIONS[ normalizedType( arguments.content ) ] ?: "";
+		return len( permission ) && arguments.author.hasPermission( permission );
+	}
+
+	/**
+	 * @return { content: details, blocks: parsed blocks, canEdit, canEditHtml, canPublish }
 	 */
 	struct function load( required content, required author ) {
 		return {
 			"content"    : describe( arguments.content ),
 			"blocks"     : variables.format.parse( arguments.content.getContent() ),
 			"canEdit"    : canEdit( arguments.content, arguments.author ),
-			"canEditHtml": arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" )
+			"canEditHtml": arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" ),
+			"canPublish" : canPublish( arguments.content, arguments.author )
 		};
 	}
 
@@ -215,10 +225,12 @@ component singleton {
 		required boolean isPublished,
 		required author
 	) {
-		if ( !canEdit( arguments.content, arguments.author ) ) {
+		if ( !canPublish( arguments.content, arguments.author ) ) {
 			throw(
 				type    = "ContentEditor.Forbidden",
-				message = "You may not edit this content"
+				message = "Publishing and unpublishing need the #variables.ADMIN_PERMISSIONS[ normalizedType(
+					arguments.content
+				) ]# permission"
 			);
 		}
 		arguments.content.setIsPublished( arguments.isPublished );
