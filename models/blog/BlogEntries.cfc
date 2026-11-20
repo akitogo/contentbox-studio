@@ -19,6 +19,8 @@ component singleton {
 	property name="contentEditor" inject="ContentEditor@contentbox-studio";
 
 	property name="translations" inject="Translations@contentbox-studio";
+
+	property name="contentEvents" inject="ContentEvents@contentbox-studio";
 	variables.MAX_ROWS = 500;
 
 	/**
@@ -227,7 +229,9 @@ component singleton {
 			changelog = "Created in ContentBox Studio",
 			author    = arguments.author
 		);
-		return variables.entryService.save( entry );
+		variables.entryService.save( entry );
+		variables.contentEvents.saved( content = entry, isNew = true );
+		return entry;
 	}
 
 	/********************************* PRIVATE *********************************/

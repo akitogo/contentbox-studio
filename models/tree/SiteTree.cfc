@@ -23,6 +23,8 @@ component singleton {
 
 	property name="contentEditor" inject="ContentEditor@contentbox-studio";
 
+	property name="contentEvents" inject="ContentEvents@contentbox-studio";
+
 	/**
 	 * All pages of a site as a flat list, sorted by parent order (order, then title)
 	 *
@@ -165,6 +167,7 @@ component singleton {
 			page         = page,
 			originalSlug = compare( newSlug, previousSlug ) != 0 ? previousSlug : ""
 		);
+		variables.contentEvents.saved( content = page, originalSlug = previousSlug );
 
 		return { "slug": newSlug, "previousSlug": previousSlug };
 	}
@@ -257,7 +260,9 @@ component singleton {
 			changelog = "Created in ContentBox Studio",
 			author    = arguments.author
 		);
-		return variables.pageService.save( page );
+		variables.pageService.save( page );
+		variables.contentEvents.saved( content = page, isNew = true );
+		return page;
 	}
 
 	/********************************* PRIVATE *********************************/

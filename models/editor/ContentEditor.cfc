@@ -24,6 +24,8 @@ component singleton {
 	property name="contentStatus" inject="ContentStatus@contentbox-studio";
 
 	property name="entrySettings" inject="EntrySettings@contentbox-studio";
+
+	property name="contentEvents" inject="ContentEvents@contentbox-studio";
 	variables.ADMIN_PERMISSIONS = {
 		"page"        : "PAGES_ADMIN",
 		"entry"       : "ENTRIES_ADMIN",
@@ -167,6 +169,7 @@ component singleton {
 			}
 			variables.contentService.save( entity = arguments.content, transactional = false );
 		}
+		variables.contentEvents.saved( arguments.content );
 
 		var loaded = load( arguments.content, arguments.author );
 		loaded[ "saved" ] = true;
@@ -238,6 +241,7 @@ component singleton {
 			arguments.content.setPublishedDate( now() );
 		}
 		variables.contentService.save( arguments.content );
+		variables.contentEvents.saved( arguments.content );
 		return load( arguments.content, arguments.author );
 	}
 

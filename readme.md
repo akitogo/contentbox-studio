@@ -115,6 +115,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   [Blog](#blog)), search engine fields (title, meta description and keywords, with length hints and a preview of the
   search result), language (needs `STUDIO_SITE_TREE`), translations, and a link to the other settings (layout, ...)
   in the classic admin. Everything but the translation links is saved with **Save**, like the blocks.
+- After saving, publishing, creating, moving or linking translations, Studio announces ContentBox's
+  `cbadmin_post<Type>Save` events like the classic admin: ContentBox clears its content, page, sitemap and RSS caches,
+  updates menu items that point to a moved page, and sends its notifications for new pages and entries (if they are
+  on); other modules can listen too.
 - **Save** only adds a version when the blocks changed; saving only settings keeps the version (ContentBox does not
   version them).
 - Opening other content with unsaved changes asks first.

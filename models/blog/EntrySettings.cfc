@@ -77,7 +77,7 @@ component singleton {
 				if ( isNull( category ) || category.getSite().getSiteID() != site.getSiteID() ) {
 					invalid( "The category #id# does not exist on this site" );
 				}
-				add( existing, category );
+				existing = withCategory( existing, category );
 				continue;
 			}
 			var name = trim( text( item.name ?: "" ) );
@@ -93,7 +93,7 @@ component singleton {
 			if ( isNull( found ) ) {
 				newNames.append( name );
 			} else {
-				add( existing, found );
+				existing = withCategory( existing, found );
 			}
 		}
 
@@ -170,15 +170,18 @@ component singleton {
 	/********************************* PRIVATE *********************************/
 
 	/**
-	 * Add a category once (it may be given by id and by name)
+	 * The categories with this one added once (it may be given by id and by name). Returns the array: Adobe ColdFusion
+	 * passes arrays by value, so appending to the argument would not change the caller's array.
 	 */
-	private void function add( required array categories, required category ) {
-		for ( var item in arguments.categories ) {
+	private array function withCategory( required array categories, required category ) {
+		var result = arguments.categories;
+		for ( var item in result ) {
 			if ( item.getCategoryID() == arguments.category.getCategoryID() ) {
-				return;
+				return result;
 			}
 		}
-		arguments.categories.append( arguments.category );
+		result.append( arguments.category );
+		return result;
 	}
 
 	/**

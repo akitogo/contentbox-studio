@@ -3,6 +3,8 @@
  */
 component extends="BaseHandler" {
 	property name="translations" inject="Translations@contentbox-studio";
+
+	property name="contentEvents" inject="ContentEvents@contentbox-studio";
 	this.allowedMethods = {
 		"show"       : "GET",
 		"setLanguage": "PUT",
@@ -33,7 +35,9 @@ component extends="BaseHandler" {
 		}
 		try {
 			variables.translations.setLanguage( content, toString( rc.language ?: "" ) );
-			prc.response.setData( variables.translations.forContent( content ) );
+			var group = variables.translations.forContent( content );
+			changed( group.members );
+			prc.response.setData( group );
 		} catch (Translations.Invalid e) {
 			prc.response.setErrorMessage( e.message, 409 );
 		}
@@ -51,7 +55,9 @@ component extends="BaseHandler" {
 		}
 		try {
 			variables.translations.link( content, other );
-			prc.response.setData( variables.translations.forContent( content ) );
+			var group = variables.translations.forContent( content );
+			changed( group.members );
+			prc.response.setData( group );
 		} catch (Translations.Invalid e) {
 			prc.response.setErrorMessage( e.message, 409 );
 		}
@@ -66,8 +72,24 @@ component extends="BaseHandler" {
 			prc.response.setErrorMessage( "Content not found", 404 );
 			return;
 		}
+		var before = variables.translations.forContent( content ).members;
 		variables.translations.unlink( content );
+		changed( before );
 		prc.response.setData( variables.translations.forContent( content ) );
+	}
+
+	/**
+	 * The hreflang links in the head of these pages and entries changed: let ContentBox clear their cached output
+	 *
+	 * @members Group members (forContent().members)
+	 */
+	private void function changed( required array members ) {
+		for ( var member in arguments.members ) {
+			var item = findContent( member.contentID );
+			if ( !isNull( item ) ) {
+				variables.contentEvents.saved( item );
+			}
+		}
 	}
 
 }

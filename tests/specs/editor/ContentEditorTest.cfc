@@ -73,6 +73,40 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"lets ContentBox clear its cached rendering of the content after a save",
+					() => {
+						var page = createTestPage( slug = testSlug( variables.MARKER ) );
+						var heading = ( text ) => [ { "type": "heading", "id": "h1", "data": { "text": text } } ];
+						editor.save(
+							content = page,
+							blocks  = heading( "First text" ),
+							author  = getAdministrator()
+						);
+						ormClearSession();
+						var stored = pageService.get( page.getContentID() );
+						// Rendered once: in ContentBox's content cache now (if caching is on)
+						expect( stored.renderContent() ).toInclude( "First text" );
+
+						editor.save(
+							content = stored,
+							blocks  = heading( "Second text" ),
+							author  = getAdministrator()
+						);
+						// ContentBox clears the cache asynchronously
+						var rendered = "";
+						for ( var i = 1; i <= 30; i++ ) {
+							ormClearSession();
+							rendered = pageService.get( page.getContentID() ).renderContent();
+							if ( rendered contains "Second text" ) {
+								break;
+							}
+							sleep( 100 );
+						}
+						expect( rendered ).toInclude( "Second text" );
+					}
+				);
+
+				it(
 					"saves the SEO fields, without a new version when the blocks stay the same",
 					() => {
 						var page = createTestPage( slug = testSlug( variables.MARKER ) );
