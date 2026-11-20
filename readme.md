@@ -81,8 +81,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   category); long blogs load 50 more at a time.
 - Clicking an entry opens it in the same block editor as pages, with the blog as the column next to it. Opening an
   entry or a page switches the column to the matching tab.
-- **New entry** creates a draft with a title and address, empty or from a content template for entries. Needs
-  `ENTRIES_ADMIN` or `ENTRIES_EDITOR`.
+- **New entry** creates a draft with a title and address, empty or from a content template for entries (the
+  default template is preselected). Needs `ENTRIES_ADMIN` or `ENTRIES_EDITOR`.
+- Theme blocks can be limited to some content types (`contentTypes` in `block.json`), e.g. so a page hero is not
+  offered in posts.
 - An entry's own settings are in the editor's right column and saved with **Save**: publish date (a later one
   schedules it), optional unpublish date, categories (pick one or type a new name; new ones are created on save),
   excerpt (rich text, stored as HTML like ContentBox does), featured image (media library) and comments.
@@ -117,8 +119,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - Opening other content with unsaved changes asks first.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
-- **Save as template** stores the saved blocks as a ContentBox content template; new pages can start from it (block
-  presets). Templates are also listed in the classic admin.
+- **Save as template** stores the saved blocks as a ContentBox content template; new content of the same type can
+  start from it (block presets). Marked as the default, it becomes ContentBox's global template of the type and is
+  preselected for new pages or entries. Templates are also listed in the classic admin.
 - Content written in the classic editor opens as one HTML block; blocks changed outside Studio are pointed out.
 
 ## Settings

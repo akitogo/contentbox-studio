@@ -20,7 +20,14 @@ export function NewEntryDialog({ site, onClose }: { site: Site; onClose: () => v
   const base = `${config.studioApi}/sites/${encodeURIComponent(site.siteID)}`
 
   useEffect(() => {
-    api.get<TemplateInfo[]>(`${base}/templates?contentType=entry`).then(setTemplates, () => setTemplates([]))
+    api.get<TemplateInfo[]>(`${base}/templates?contentType=entry`).then(
+      (loaded) => {
+        setTemplates(loaded)
+        // ContentBox's global template is the default start
+        setTemplateID((current) => current || (loaded.find((template) => template.isGlobal)?.templateID ?? ''))
+      },
+      () => setTemplates([]),
+    )
   }, [api, base])
 
   async function create(event: FormEvent) {
@@ -65,6 +72,7 @@ export function NewEntryDialog({ site, onClose }: { site: Site; onClose: () => v
               <option key={template.templateID} value={template.templateID}>
                 {template.name}
                 {template.hasBlocks ? '' : ' (HTML)'}
+                {template.isGlobal ? ' (default)' : ''}
               </option>
             ))}
           </Select>

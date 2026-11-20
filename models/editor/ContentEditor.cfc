@@ -252,7 +252,8 @@ component singleton {
 						"templateID" : template.getTemplateID(),
 						"name"       : template.getName(),
 						"description": template.getDescription() ?: "",
-						"hasBlocks"  : variables.format.hasBlocks( templateBody( template ) )
+						"hasBlocks"  : variables.format.hasBlocks( templateBody( template ) ),
+						"isGlobal"   : template.getIsGlobal()
 					};
 				}
 			);
@@ -271,13 +272,17 @@ component singleton {
 	/**
 	 * Store the saved body of the content as a ContentBox content template (block preset for new content)
 	 *
+	 * @isGlobal Make it ContentBox's global template of the content type (the default for new content of that type;
+	 * the previous one stops being global)
+	 *
 	 * @throws ContentEditor.Forbidden, ContentEditor.Invalid
 	 */
 	struct function saveAsTemplate(
 		required content,
 		required string name,
 		string description = "",
-		required author
+		required author,
+		boolean isGlobal   = false
 	) {
 		var permission = variables.ADMIN_PERMISSIONS[ normalizedType( arguments.content ) ] ?: "";
 		if ( !len( permission ) || !arguments.author.hasPermission( permission ) ) {
@@ -299,9 +304,22 @@ component singleton {
 				"contentType": arguments.content.getContentType(),
 				"site"       : arguments.content.getSite(),
 				"creator"    : arguments.author,
-				"isGlobal"   : false
+				"isGlobal"   : arguments.isGlobal
 			}
 		);
+		// One global (default) template per content type and site
+		if ( arguments.isGlobal ) {
+			for ( var other in variables
+				.templateService
+				.newCriteria()
+				.isEq( "site", arguments.content.getSite() )
+				.isEq( "contentType", arguments.content.getContentType() )
+				.isTrue( "isGlobal" )
+				.list() ) {
+				other.setIsGlobal( false );
+				variables.templateService.save( other );
+			}
+		}
 		template.setDefinition(
 			serializeJSON(
 				{ "content": { "value": arguments.content.getContent() } }

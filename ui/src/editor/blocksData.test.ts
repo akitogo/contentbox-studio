@@ -11,6 +11,7 @@ const heading: BlockDefinition = {
   category: 'text',
   version: 1,
   source: 'core',
+  contentTypes: ['page', 'entry', 'contentStore'],
   fields: [
     { name: 'text', type: 'text', label: 'Text', help: '', required: true, default: '' },
     { name: 'level', type: 'select', label: 'Level', help: '', required: false, default: '2', options: [{ value: '2', label: 'H2' }] },

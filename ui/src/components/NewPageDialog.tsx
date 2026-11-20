@@ -33,7 +33,11 @@ export function NewPageDialog({
   useEffect(() => {
     api
       .get<TemplateInfo[]>(`${config.studioApi}/sites/${encodeURIComponent(site.siteID)}/templates?contentType=page`)
-      .then(setTemplates, () => setTemplates([]))
+      .then((loaded) => {
+        setTemplates(loaded)
+        // ContentBox's global template is the default start
+        setTemplateID((current) => current || (loaded.find((template) => template.isGlobal)?.templateID ?? ''))
+      }, () => setTemplates([]))
   }, [api, config, site])
 
   const parentOptions = useMemo(() => {
@@ -108,6 +112,7 @@ export function NewPageDialog({
               <option key={template.templateID} value={template.templateID}>
                 {template.name}
                 {template.hasBlocks ? '' : ' (HTML)'}
+                {template.isGlobal ? ' (default)' : ''}
               </option>
             ))}
           </Select>

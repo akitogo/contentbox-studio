@@ -133,6 +133,8 @@ export interface BlockDefinition {
   version: number
   source: 'core' | 'module' | 'theme'
   fields: FieldDefinition[]
+  /** Content types the editor offers it for (block.json contentTypes) */
+  contentTypes: ContentDetails['contentType'][]
 }
 
 /** ContentBox's HTML title, meta description and keywords */
@@ -223,4 +225,6 @@ export interface TemplateInfo {
   name: string
   description: string
   hasBlocks: boolean
+  /** ContentBox's global template of its content type: the default for new content */
+  isGlobal: boolean
 }

@@ -3,6 +3,7 @@
 	"icon": "hero",
 	"category": "sections",
 	"version": 2,
+	"contentTypes": [ "page" ],
 	"fields": [
 		{ "name": "title", "type": "text", "label": "Title", "required": true },
 		{

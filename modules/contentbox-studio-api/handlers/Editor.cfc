@@ -133,8 +133,8 @@ component extends="BaseHandler" {
 	}
 
 	/**
-	 * POST /cbstudio/api/content/:contentID/template with JSON { name, description }: the saved body as a content
-	 * template (block preset for new pages)
+	 * POST /cbstudio/api/content/:contentID/template with JSON { name, description, isGlobal }: the saved body as a
+	 * content template (block preset for new content of its type; isGlobal: the default one)
 	 */
 	function template( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
@@ -150,7 +150,8 @@ component extends="BaseHandler" {
 						content     = content,
 						name        = toString( rc.name ?: "" ),
 						description = toString( rc.description ?: "" ),
-						author      = jwtAuth().getUser()
+						author      = jwtAuth().getUser(),
+						isGlobal    = isBoolean( rc.isGlobal ?: "" ) && rc.isGlobal
 					)
 				)
 				.setStatusCode( 201 );

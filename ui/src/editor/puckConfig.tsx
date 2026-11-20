@@ -2,7 +2,7 @@
  * Puck configuration from the site's block types (GET /blocks): one Puck component per block type
  */
 import { FieldLabel, type ComponentConfig, type Config, type Field } from '@puckeditor/core'
-import type { BlockDefinition, FieldDefinition } from '../types'
+import type { BlockDefinition, ContentDetails, FieldDefinition } from '../types'
 import { fieldLabel, isFieldVisible, itemSummary, withDefaults } from './blocksData'
 import { BlockPreview } from './BlockPreview'
 import { ContentStoreField, HtmlField, ImageField, ImagesField, LinkField } from './fields/Fields'
@@ -17,9 +17,16 @@ const CATEGORY_TITLES: Record<string, string> = {
 }
 
 /**
- * @rootLabel What the content is ("Page", "Blog entry"): Puck's title for it in the fields panel and breadcrumbs
+ * @rootLabel   What the content is ("Page", "Blog entry"): Puck's title for it in the fields panel and breadcrumbs
+ * @contentType Block types are offered only for the content types of their block.json; existing blocks of other
+ *              types still show and can be edited
  */
-export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean, rootLabel = 'Page'): Config {
+export function buildConfig(
+  definitions: BlockDefinition[],
+  canEditHtml: boolean,
+  rootLabel = 'Page',
+  contentType: ContentDetails['contentType'] = 'page',
+): Config {
   const components: Record<string, ComponentConfig> = {}
   const categories: Record<string, { title: string; components: string[]; visible?: boolean }> = {}
 
@@ -41,8 +48,9 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
         <BlockPreview type={definition.name} label={definition.label} id={String(id ?? '')} data={data} />
       ),
     }
-    // Without STUDIO_HTML_BLOCKS, new HTML blocks cannot be added (existing ones still load and can be removed)
-    const category = definition.name === 'html' && !canEditHtml ? 'restricted' : definition.category || 'other'
+    // Not offered (existing ones still load): HTML blocks without STUDIO_HTML_BLOCKS, types for other content
+    const offered = (definition.name !== 'html' || canEditHtml) && (definition.contentTypes ?? []).includes(contentType)
+    const category = offered ? definition.category || 'other' : 'restricted'
     categories[category] ??= {
       title: CATEGORY_TITLES[category] ?? category.charAt(0).toUpperCase() + category.slice(1),
       components: [],

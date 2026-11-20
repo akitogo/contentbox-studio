@@ -268,6 +268,47 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"makes one template per content type the default (global)",
+					() => {
+						var templateService = getInstance( "contentTemplateService@contentbox" );
+						var previous = templateService
+							.newCriteria()
+							.isEq( "site", site )
+							.isEq( "contentType", "Entry" )
+							.isTrue( "isGlobal" )
+							.list()
+							.map( ( template ) => template.getTemplateID() );
+						try {
+							var source = createTestEntry( testSlug( variables.MARKER ) );
+							var first = editor.saveAsTemplate(
+								content  = source,
+								name     = "#variables.MARKER# first",
+								author   = getAdministrator(),
+								isGlobal = true
+							);
+							var second = editor.saveAsTemplate(
+								content  = source,
+								name     = "#variables.MARKER# second",
+								author   = getAdministrator(),
+								isGlobal = true
+							);
+							ormClearSession();
+							var global = editor
+								.templates( site, "entry" )
+								.filter( ( template ) => template.isGlobal )
+								.map( ( template ) => template.templateID );
+							expect( global ).toBe( [ second.templateID ] );
+						} finally {
+							for ( var id in previous ) {
+								var template = templateService.get( id );
+								template.setIsGlobal( true );
+								templateService.save( template );
+							}
+						}
+					}
+				);
+
+				it(
 					"creates entries from entry templates only",
 					() => {
 						var source = createTestEntry( testSlug( variables.MARKER ) );
@@ -374,8 +415,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								.entry
 								.categories
 								.map( ( item ) => item.name )
-						// By name (" " sorts before "-"); the category given by id and by name is there once
-						).toBe( [ "#variables.MARKER# News", category.getCategory() ] );
+						)// By name (" " sorts before "-"); the category given by id and by name is there once
+						.toBe( [ "#variables.MARKER# News", category.getCategory() ] );
 						expect( details.entry.categories[ 1 ].slug ).toBe( "#variables.MARKER#-news" );
 						expect( details.entry.excerpt ).toBe( "<p>Short &lt;b&gt;</p>" );
 						expect( details.entry.featuredImage ).toBe( "/__media/summer.jpg" );

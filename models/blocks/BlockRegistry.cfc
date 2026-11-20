@@ -27,6 +27,7 @@ component singleton {
 		inject="coldbox:moduleConfig:contentbox-studio";
 
 	property name="log" inject="logbox:logger:{this}";
+	variables.CONTENT_TYPES = [ "page", "entry", "contentStore" ];
 
 	function init() {
 		variables.sources = [];
@@ -174,6 +175,34 @@ component singleton {
 		return types;
 	}
 
+	/**
+	 * Content types the editor offers a block type for (page, entry, contentStore); all if none are given. Blocks of
+	 * a type stay editable everywhere they already are.
+	 */
+	private array function contentTypes( any value ) {
+		var types = isSimpleValue( arguments.value ) ? listToArray( arguments.value ) : arguments.value;
+		if ( !isArray( types ) ) {
+			types = [];
+		}
+		if ( !types.len() ) {
+			return variables.CONTENT_TYPES.duplicate();
+		}
+		var result = [];
+		for ( var type in types ) {
+			var known = isSimpleValue( type ) ? variables.CONTENT_TYPES.findNoCase( type ) : 0;
+			if ( !known ) {
+				throw(
+					type    = "BlockDefinition.Invalid",
+					message = "contentTypes may only contain #variables.CONTENT_TYPES.toList( ", " )#"
+				);
+			}
+			if ( !result.find( variables.CONTENT_TYPES[ known ] ) ) {
+				result.append( variables.CONTENT_TYPES[ known ] );
+			}
+		}
+		return result;
+	}
+
 	private struct function readDefinition(
 		required string folderPath,
 		required string renderTemplate,
@@ -208,6 +237,7 @@ component singleton {
 			"category"      : json.category ?: "other",
 			"version"       : isNumeric( json.version ?: "" ) && json.version >= 1 ? int( json.version ) : 1,
 			"fields"        : variables.blockData.normalizeFields( json.fields ?: [], name ),
+			"contentTypes"  : contentTypes( json.contentTypes ?: [] ),
 			"source"        : arguments.source,
 			"renderTemplate": arguments.renderTemplate
 		};

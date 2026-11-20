@@ -6,6 +6,7 @@ import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
 import { CanvasStyles } from '../editor/CanvasStyles'
+import { CONTENT_LABELS, TEMPLATE_TARGETS } from '../editor/contentLabels'
 import { sameSettings, settingsOf, settingsPayload, type ContentSettings } from '../editor/contentSettings'
 import { EditorActionsContext, EditorFields, EditorHeader, rememberedPanels, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
@@ -14,7 +15,7 @@ import { buildConfig } from '../editor/puckConfig'
 import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
-import type { BlockDefinition, BlockError, ContentDetails, EditorContent, TreePage } from '../types'
+import type { BlockDefinition, BlockError, EditorContent, TreePage } from '../types'
 import { Alert, Button, Loading } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
@@ -24,7 +25,6 @@ const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   modified: 'changed outside Studio; saving renders it again from its fields and drops those changes',
 }
 
-const CONTENT_LABELS: Record<ContentDetails['contentType'], string> = { page: 'Page', entry: 'Blog entry', contentStore: 'Content store item' }
 
 // Stable (module-level): Puck remounts overrides whose identity changes
 const PUCK_OVERRIDES = { header: EditorHeader, iframe: CanvasStyles, fields: EditorFields }
@@ -131,7 +131,11 @@ function ContentEditor({ contentID }: { contentID: string }) {
   }, [unsaved])
 
   const puckConfig = useMemo(
-    () => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml, CONTENT_LABELS[loaded.editor.content.contentType]) : null),
+    () => {
+      if (!loaded) return null
+      const { contentType } = loaded.editor.content
+      return buildConfig(loaded.definitions, loaded.editor.canEditHtml, CONTENT_LABELS[contentType], contentType)
+    },
     [loaded],
   )
 
@@ -301,11 +305,16 @@ function ContentEditor({ contentID }: { contentID: string }) {
         <SaveTemplateDialog
           contentID={contentID}
           title={editor.content.title}
+          contentType={editor.content.contentType}
           dirty={dirty}
           onClose={() => setTemplateDialog(false)}
-          onSaved={(name) => {
+          onSaved={(name, isGlobal) => {
             setTemplateDialog(false)
-            setMessage({ tone: 'success', text: `Saved as the template “${name}”. New pages can start from it.` })
+            const what = TEMPLATE_TARGETS[editor.content.contentType]
+            setMessage({
+              tone: 'success',
+              text: isGlobal ? `Saved as the template “${name}”: new ${what} start from it.` : `Saved as the template “${name}”. New ${what} can start from it.`,
+            })
           }}
         />
       )}

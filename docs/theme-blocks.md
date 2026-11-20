@@ -43,6 +43,7 @@ After adding or changing a block type, reinit the application (block types are c
 | `name` | folder name | Block type, `[A-Za-z][A-Za-z0-9_-]*`; stored in every block of this type |
 | `label`, `description`, `icon`, `category` | name, "", `block`, `other` | Shown in the editor |
 | `version` | 1 | Raise it when the meaning of the data changes, so old blocks can be migrated |
+| `contentTypes` | all | Content the editor offers the block for: `page`, `entry` (blog), `contentStore`; e.g. `[ "page" ]` for a hero that has no place in posts. Existing blocks stay editable anywhere |
 | `fields` | `[]` | See below |
 
 ### Fields

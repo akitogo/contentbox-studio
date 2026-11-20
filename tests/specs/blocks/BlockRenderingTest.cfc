@@ -43,6 +43,17 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						expect( types.html.source ).toBe( "core" );
 						expect( types ).notToHaveKey( "broken" );
 						expect( types ).notToHaveKey( "norender" );
+						expect( types ).notToHaveKey( "wrongtypes" );
+					}
+				);
+
+				it(
+					"offers block types for the content types of their block.json, by default for all",
+					() => {
+						var types = registry.forTheme( fixtureTheme() );
+						expect( types.hero.contentTypes ).toBe( [ "page" ] );
+						expect( types.heading.contentTypes ).toBe( [ "page", "entry", "contentStore" ] );
+						expect( types.html.contentTypes ).toBe( [ "page", "entry", "contentStore" ] );
 					}
 				);
 
