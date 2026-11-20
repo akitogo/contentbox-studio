@@ -1,9 +1,12 @@
 import { ExternalLink, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { messageOf, useStudio } from '../studio'
-import type { ContentDetails, TranslationGroup, TreePage } from '../types'
+import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
 import { Alert, Badge, Button, Field, Input, Select } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
+
+/** Content that can be linked as a translation: pages for a page, entries for an entry */
+type Candidate = Pick<TreePage, 'contentID' | 'title' | 'slug' | 'language'>
 
 const ADMIN_EDITORS: Record<ContentDetails['contentType'], string> = {
   page: 'pages/editor',
@@ -21,11 +24,12 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
   const [group, setGroup] = useState<TranslationGroup | null>(null)
   const [language, setLanguage] = useState('')
   const [linkSiteID, setLinkSiteID] = useState(content.siteID)
-  const [candidates, setCandidates] = useState<TreePage[]>([])
+  const [candidates, setCandidates] = useState<Candidate[]>([])
   const [linkID, setLinkID] = useState('')
   const [error, setError] = useState('')
   const canChange = canEdit && me.permissions.siteTree
   const base = `${config.studioApi}/content/${content.contentID}`
+  const isEntry = content.contentType === 'entry'
 
   useEffect(() => {
     api.get<TranslationGroup>(`${base}/translations`).then(
@@ -39,10 +43,12 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
 
   useEffect(() => {
     if (!canChange || !linkSiteID) return
-    api
-      .get<TreePage[]>(`${config.studioApi}/sites/${encodeURIComponent(linkSiteID)}/tree`)
-      .then(setCandidates, (e: unknown) => setError(messageOf(e)))
-  }, [api, config, linkSiteID, canChange])
+    const site = `${config.studioApi}/sites/${encodeURIComponent(linkSiteID)}`
+    const loaded: Promise<Candidate[]> = isEntry
+      ? api.get<BlogEntryList>(`${site}/entries?max=500`).then((list) => list.entries)
+      : api.get<TreePage[]>(`${site}/tree`)
+    loaded.then(setCandidates, (e: unknown) => setError(messageOf(e)))
+  }, [api, config, linkSiteID, canChange, isEntry])
 
   const linkable = useMemo(() => {
     const members = new Set([content.contentID, ...(group?.members.map((member) => member.contentID) ?? [])])
@@ -152,8 +158,8 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
               ))}
             </Select>
           )}
-          <Select value={linkID} onChange={(event) => setLinkID(event.target.value)} aria-label="Page that is a translation">
-            <option value="">Choose a page…</option>
+          <Select value={linkID} onChange={(event) => setLinkID(event.target.value)} aria-label={isEntry ? 'Entry that is a translation' : 'Page that is a translation'}>
+            <option value="">{isEntry ? 'Choose an entry…' : 'Choose a page…'}</option>
             {linkable.map((candidate) => (
               <option key={candidate.contentID} value={candidate.contentID}>
                 /{candidate.slug} {candidate.language ? `(${candidate.language})` : ''}

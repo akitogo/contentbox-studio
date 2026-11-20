@@ -187,18 +187,24 @@ component singleton {
 			.list( sortOrder = "name asc" )
 			.map(
 				( template ) => {
-					var definition = template.getDefinition();
-					var body = isStruct( definition ) && isStruct( definition.content ?: "" )
-						? toString( definition.content.value ?: "" )
-						: "";
 					return {
 						"templateID" : template.getTemplateID(),
 						"name"       : template.getName(),
 						"description": template.getDescription() ?: "",
-						"hasBlocks"  : variables.format.hasBlocks( body )
+						"hasBlocks"  : variables.format.hasBlocks( templateBody( template ) )
 					};
 				}
 			);
+	}
+
+	/**
+	 * The body a content template starts new content with ("" if it has none)
+	 */
+	string function templateBody( required template ) {
+		var definition = arguments.template.getDefinition();
+		return isStruct( definition ) && isStruct( definition.content ?: "" )
+			? toString( definition.content.value ?: "" )
+			: "";
 	}
 
 	/**

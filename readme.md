@@ -57,9 +57,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 - `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
   block content and the language. Search keeps matches in place.
+- Tabs switch between the pages and the blog (see [Blog](#blog)).
 - Clicking a page opens it in the editor, and the tree becomes a column next to it: drag its edge to resize it
   (double-click resets), hide it to a narrow strip; the wider it is, the more it shows (addresses, badges, move
-  buttons). Width and visibility are remembered per browser.
+  buttons). Width, visibility and the tab are remembered per browser.
 - Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
   `PAGES_EDITOR`. Drop onto a page to make it a subpage, or on its top or bottom edge to place it before or after
   (the bottom edge of an open page makes it the first subpage); a line shows where it lands, collapsed pages open
@@ -71,6 +72,17 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   Each page gets a language code; the public pages get `hreflang` links, and themes can build a language switcher
   from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
   `cbstudio_language` and `cbstudio_translationGroup`.
+
+## Blog
+
+- The **Blog** tab lists the site's entries newest first, drafts, scheduled and expired ones included, with date,
+  author, categories, status and language. Search (title or address) and filters for status and category (or no
+  category); long blogs load 50 more at a time.
+- Clicking an entry opens it in the same block editor as pages, with the blog as the column next to it. Opening an
+  entry or a page switches the column to the matching tab.
+- **New entry** creates a draft with a title and address, empty or from a content template for entries. Needs
+  `ENTRIES_ADMIN` or `ENTRIES_EDITOR`.
+- Categories, excerpt, comments and the blog's settings are set in the classic admin for now.
 
 ## Editor
 

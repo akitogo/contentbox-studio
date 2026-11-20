@@ -158,6 +158,87 @@ component extends="tests.resources.BaseTest" {
 	}
 
 	/**
+	 * Create and save a blog entry on the default site with one content version
+	 *
+	 * @categories Categories to put it in
+	 */
+	function createTestEntry(
+		required string slug,
+		boolean isPublished = true,
+		any publishedDate   = dateAdd(
+			"n",
+			-5,
+			now()
+		),
+		any expireDate      = "",
+		array categories    = [],
+		string body         = "<p>Studio test entry</p>"
+	) {
+		var entryService = getInstance( "entryService@contentbox" );
+		var author = getAdministrator();
+		var entry = entryService.new(
+			{
+				"title"        : arguments.slug,
+				"slug"         : arguments.slug,
+				"isPublished"  : arguments.isPublished,
+				"publishedDate": arguments.publishedDate,
+				"site"         : getInstance( "siteService@contentbox" ).getDefaultSite(),
+				"creator"      : author
+			}
+		);
+		if ( isDate( arguments.expireDate ) ) {
+			entry.setExpireDate( arguments.expireDate );
+		}
+		if ( arguments.categories.len() ) {
+			entry.setCategories( arguments.categories );
+		}
+		entry.addNewContentVersion(
+			content   = arguments.body,
+			changelog = "ContentBox Studio test",
+			author    = author
+		);
+		return entryService.save( entry );
+	}
+
+	/**
+	 * Create and save a category on the default site
+	 */
+	function createTestCategory( required string slug ) {
+		var categoryService = getInstance( "categoryService@contentbox" );
+		return categoryService.save(
+			categoryService.new(
+				{
+					"category": arguments.slug,
+					"slug"    : arguments.slug,
+					"site"    : getInstance( "siteService@contentbox" ).getDefaultSite()
+				}
+			)
+		);
+	}
+
+	/**
+	 * Delete test entries and categories whose slug contains the marker
+	 */
+	function deleteTestEntries( required string marker ) {
+		ormClearSession();
+		var entryService = getInstance( "entryService@contentbox" );
+		for ( var entry in entryService
+			.newCriteria()
+			.like( "slug", "%#arguments.marker#%" )
+			.list() ) {
+			entryService.delete( entry );
+		}
+		var categoryService = getInstance( "categoryService@contentbox" );
+		for ( var category in categoryService
+			.newCriteria()
+			.like( "slug", "%#arguments.marker#%" )
+			.list() ) {
+			categoryService.delete( category );
+		}
+		ormClearSession();
+	}
+
+	/**
 	 * A unique slug segment for test content
 	 */
 	string function testSlug( required string prefix ) {

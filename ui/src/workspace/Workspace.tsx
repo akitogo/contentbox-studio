@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useMatch, useNavigate, useSearchParams } from 'react-router'
 import { Header } from '../components/Header'
+import { store, stored } from '../lib/storage'
 import { messageOf, useStudio } from '../studio'
 import type { TreePage } from '../types'
 import { Button, Dialog, Select } from '../ui'
-import { SiteTreePane } from './SiteTreePane'
-import { WorkspaceContext, type WorkspaceValue } from './WorkspaceContext'
+import { SidePane } from './SidePane'
+import { WorkspaceContext, type Section, type WorkspaceValue } from './WorkspaceContext'
+
+const SECTION_KEY = 'cbstudio.section'
 
 /**
- * Studio's layout: the site tree fills the screen until content is opened, then it becomes a column (resizable,
- * collapsible) next to the editor
+ * Studio's layout: the pages (site tree) or the blog fill the screen until content is opened, then they become a
+ * column (resizable, collapsible) next to the editor
  */
 export function Workspace() {
   const { config, api, sites } = useStudio()
@@ -21,10 +24,12 @@ export function Workspace() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [pendingPath, setPendingPath] = useState<string | null>(null)
+  const [revision, setRevision] = useState(0)
+  const [section, setSection] = useState<Section>(() => (stored(SECTION_KEY) === 'blog' ? 'blog' : 'pages'))
   const unsaved = useRef(false)
   const currentID = useMatch('/content/:contentID')?.params.contentID ?? ''
 
-  const reload = useCallback(async () => {
+  const loadPages = useCallback(async () => {
     if (!site) return
     setLoading(true)
     try {
@@ -39,8 +44,19 @@ export function Workspace() {
 
   useEffect(() => {
     setPages([])
-    void reload()
-  }, [reload])
+    void loadPages()
+  }, [loadPages])
+
+  // After changes (save, publish, new content): the pages, and lists with their own data (the blog) via revision
+  const reload = useCallback(async () => {
+    setRevision((value) => value + 1)
+    await loadPages()
+  }, [loadPages])
+
+  const showSection = useCallback((value: Section) => {
+    setSection(value)
+    store(SECTION_KEY, value)
+  }, [])
 
   const goTo = useCallback(
     (path: string) => {
@@ -59,6 +75,9 @@ export function Workspace() {
       loading,
       loadError,
       reload,
+      revision,
+      section,
+      showSection,
       currentID,
       openPage: (contentID: string) => goTo(`/content/${contentID}`),
       goTo,
@@ -66,7 +85,7 @@ export function Workspace() {
         unsaved.current = value
       },
     }),
-    [site, pages, loading, loadError, reload, currentID, goTo],
+    [site, pages, loading, loadError, reload, revision, section, showSection, currentID, goTo],
   )
 
   return (
@@ -84,7 +103,7 @@ export function Workspace() {
           )}
         </Header>
         <div className="flex min-h-0 flex-1">
-          <SiteTreePane mode={currentID ? 'column' : 'full'} />
+          <SidePane mode={currentID ? 'column' : 'full'} />
           {currentID && (
             <main className="min-h-0 min-w-0 flex-1">
               <Outlet />

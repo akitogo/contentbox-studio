@@ -36,6 +36,43 @@ export interface TreePage {
   url: string
 }
 
+export interface EntryCategory {
+  categoryID: string
+  name: string
+  slug: string
+}
+
+/** An entry of GET /sites/:site/entries */
+export interface BlogEntry {
+  contentID: string
+  title: string
+  slug: string
+  status: PageStatus
+  isPublished: boolean
+  publishedDate: string
+  expireDate: string
+  author: string
+  categories: EntryCategory[]
+  hasBlocks: boolean
+  language: string
+  translationGroup: string
+  url: string
+}
+
+/** GET /sites/:site/entries */
+export interface BlogEntryList {
+  entries: BlogEntry[]
+  total: number
+  offset: number
+  max: number
+}
+
+/** GET /sites/:site/categories */
+export interface BlogCategory extends EntryCategory {
+  /** Number of entries in it */
+  entries: number
+}
+
 export interface TranslationMember {
   contentID: string
   title: string

@@ -10,15 +10,12 @@ import {
   ExternalLink,
   FileText,
   GripVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   Search,
   Settings2,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { NewPageDialog } from '../components/NewPageDialog'
-import { store, stored } from '../lib/storage'
 import {
   applyMove,
   buildTree,
@@ -32,15 +29,9 @@ import {
 } from '../lib/tree'
 import { messageOf, useStudio } from '../studio'
 import type { TreePage as Page } from '../types'
-import { Alert, Badge, Button, Card, cx, IconButton, Input, Loading, type BadgeTone } from '../ui'
+import { Alert, Badge, Button, Card, cx, IconButton, Input, Loading } from '../ui'
+import { STATUS } from './status'
 import { useWorkspace } from './WorkspaceContext'
-
-const STATUS: Record<Page['status'], { label: string; tone: BadgeTone; dot: string }> = {
-  published: { label: 'Published', tone: 'success', dot: 'bg-emerald-500' },
-  draft: { label: 'Draft', tone: 'neutral', dot: 'bg-slate-300' },
-  scheduled: { label: 'Scheduled', tone: 'warning', dot: 'bg-amber-500' },
-  expired: { label: 'Expired', tone: 'danger', dot: 'bg-red-500' },
-}
 
 /** Indentation per level and the room for the drag handle (px) */
 const INDENT = 20
@@ -51,17 +42,13 @@ const guideX = (depth: number) => ROW_LEFT + depth * INDENT + 10
 const EXPAND_DELAY = 600
 /** Drop target id of the "top level" zone below the tree */
 const ROOT_END = ''
-/** Width of the column next to the editor (px) */
-const COLUMN = { default: 300, min: 220, max: 640 }
-const STORAGE = { width: 'cbstudio.treeWidth', hidden: 'cbstudio.treeHidden' }
-
-const clampWidth = (width: number) => Math.min(COLUMN.max, Math.max(COLUMN.min, Math.round(width)))
 
 /**
- * The site's pages as a tree. `full`: the whole screen (no content open). `column`: next to the editor, resizable by
- * dragging its edge and collapsible; rows show more (address, badges, move buttons) the wider it is.
+ * The site's pages as a tree, in the left column (SidePane). `full`: the whole screen (no content open). `column`:
+ * next to the editor; rows show more (address, badges, move buttons) the wider it is. Hidden (not unmounted) while the
+ * column shows the blog, so open folders and the search stay.
  */
-export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
+export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden: boolean }) {
   const { config, api, me } = useStudio()
   const { site, pages, setPages, loading, loadError, reload, currentID, openPage } = useWorkspace()
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null)
@@ -70,10 +57,6 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
   const [dragID, setDragID] = useState('')
   const [drop, setDrop] = useState<{ id: string; position: DropPosition } | null>(null)
   const [newPageParent, setNewPageParent] = useState<string | null>(null)
-  const [width, setWidth] = useState(() => clampWidth(Number(stored(STORAGE.width)) || COLUMN.default))
-  const [hidden, setHidden] = useState(() => stored(STORAGE.hidden) === '1')
-  const [resizing, setResizing] = useState(false)
-  const resizeStart = useRef({ x: 0, width: 0 })
   const expandTimer = useRef<{ id: string; timer: number } | null>(null)
   const currentRow = useRef<HTMLDivElement>(null)
   const canMove = me.permissions.siteTree
@@ -84,19 +67,8 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
 
   // Keep the open page in view when switching to the column
   useEffect(() => {
-    if (mode === 'column') currentRow.current?.scrollIntoView({ block: 'nearest' })
-  }, [mode, currentID])
-
-  function setColumnHidden(value: boolean) {
-    setHidden(value)
-    store(STORAGE.hidden, value ? '1' : '0')
-  }
-
-  function setColumnWidth(value: number) {
-    const next = clampWidth(value)
-    setWidth(next)
-    store(STORAGE.width, String(next))
-  }
+    if (mode === 'column' && !hidden) currentRow.current?.scrollIntoView({ block: 'nearest' })
+  }, [mode, currentID, hidden])
 
   async function move(pageID: string, target: Move | null) {
     if (!target) return
@@ -199,32 +171,6 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
       else next.add(id)
       return next
     })
-  }
-
-  // Resizing the column by its right edge (pointer or arrow keys; double-click resets)
-  function startResize(event: PointerEvent<HTMLDivElement>) {
-    event.preventDefault()
-    event.currentTarget.setPointerCapture(event.pointerId)
-    resizeStart.current = { x: event.clientX, width }
-    setResizing(true)
-  }
-
-  function resize(event: PointerEvent<HTMLDivElement>) {
-    if (resizing) setWidth(clampWidth(resizeStart.current.width + event.clientX - resizeStart.current.x))
-  }
-
-  function endResize(event: PointerEvent<HTMLDivElement>) {
-    if (!resizing) return
-    event.currentTarget.releasePointerCapture(event.pointerId)
-    setResizing(false)
-    setColumnWidth(resizeStart.current.width + event.clientX - resizeStart.current.x)
-  }
-
-  function resizeByKey(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'ArrowLeft') setColumnWidth(width - 16)
-    else if (event.key === 'ArrowRight') setColumnWidth(width + 16)
-    else return
-    event.preventDefault()
   }
 
   function renderNode(node: TreeNode) {
@@ -371,24 +317,6 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
   const rootMove = dragID ? moveToRootEnd(pages, dragID) : null
   const column = mode === 'column'
 
-  // Hidden column: a strip to bring it back
-  if (column && hidden) {
-    return (
-      <div className="flex w-10 shrink-0 flex-col items-center gap-3 border-r border-slate-200 bg-white py-2">
-        <IconButton label="Show the pages" onClick={() => setColumnHidden(false)}>
-          <PanelLeftOpen className="size-4" />
-        </IconButton>
-        <button
-          type="button"
-          onClick={() => setColumnHidden(false)}
-          className="cursor-pointer text-xs font-medium tracking-wide text-slate-500 [writing-mode:vertical-rl] hover:text-slate-900"
-        >
-          Pages
-        </button>
-      </div>
-    )
-  }
-
   const list = loading && !pages.length ? (
     <Loading />
   ) : tree.length ? (
@@ -452,21 +380,13 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
   )
 
   return (
-    <aside
-      aria-label="Pages"
-      className={cx(
-        '@container relative flex min-h-0 shrink-0 flex-col',
-        column ? 'border-r border-slate-200 bg-white' : 'bg-slate-50',
-        !resizing && 'transition-[width] duration-300 ease-out',
-      )}
-      style={{ width: column ? width : '100%' }}
-    >
+    <div role="tabpanel" aria-label="Pages" hidden={hidden} className={cx('min-h-0 flex-1 flex-col', hidden ? 'hidden' : 'flex')}>
       {column ? (
         <>
           <div className="grid gap-2 border-b border-slate-200 p-3">
             <div className="flex items-center gap-1">
-              <h2 className="mr-auto text-sm font-semibold text-slate-900">
-                Pages <span className="font-normal text-slate-400">{pages.length}</span>
+              <h2 className="mr-auto text-sm text-slate-500">
+                {pages.length} {pages.length === 1 ? 'page' : 'pages'}
               </h2>
               <IconButton label="New page" onClick={() => setNewPageParent('')}>
                 <Plus className="size-4" />
@@ -477,9 +397,6 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
               <IconButton label="Collapse all" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>
                 <ChevronsDownUp className="size-4" />
               </IconButton>
-              <IconButton label="Hide the pages" onClick={() => setColumnHidden(true)}>
-                <PanelLeftClose className="size-4" />
-              </IconButton>
             </div>
             {searchField}
             {alerts}
@@ -488,32 +405,10 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
             {list}
             {rootZone}
           </div>
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Width of the pages column"
-            aria-valuenow={width}
-            aria-valuemin={COLUMN.min}
-            aria-valuemax={COLUMN.max}
-            tabIndex={0}
-            title="Drag to resize, double-click to reset"
-            className={cx(
-              'absolute inset-y-0 -right-1 z-30 w-2 cursor-col-resize touch-none outline-none hover:bg-primary-500/30 focus-visible:bg-primary-500/40',
-              resizing && 'bg-primary-500/40',
-            )}
-            onPointerDown={startResize}
-            onPointerMove={resize}
-            onPointerUp={endResize}
-            onPointerCancel={endResize}
-            onDoubleClick={() => setColumnWidth(COLUMN.default)}
-            onKeyDown={resizeByKey}
-          />
-          {/* Keeps the editor's iframe from taking the pointer while resizing */}
-          {resizing && <div className="fixed inset-0 z-20 cursor-col-resize" />}
         </>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="mx-auto grid max-w-6xl content-start gap-4 px-6 py-6">
+          <div className="mx-auto grid max-w-6xl content-start gap-4 px-6 pt-4 pb-6">
             <div className="flex flex-wrap items-end gap-3">
               <div className="mr-auto">
                 <h1 className="text-xl font-semibold text-slate-900">Pages</h1>
@@ -550,7 +445,7 @@ export function SiteTreePane({ mode }: { mode: 'full' | 'column' }) {
       {site && newPageParent !== null && (
         <NewPageDialog site={site} pages={pages} parentID={newPageParent} onClose={() => setNewPageParent(null)} />
       )}
-    </aside>
+    </div>
   )
 }
 

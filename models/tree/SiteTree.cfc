@@ -19,6 +19,10 @@ component singleton {
 
 	property name="htmlHelper" inject="HTMLHelper@coldbox";
 
+	property name="contentStatus" inject="ContentStatus@contentbox-studio";
+
+	property name="contentEditor" inject="ContentEditor@contentbox-studio";
+
 	/**
 	 * All pages of a site as a flat list, sorted by parent order (order, then title)
 	 *
@@ -54,15 +58,15 @@ component singleton {
 					"title"    : row[ 2 ],
 					"slug"     : row[ 3 ],
 					"order"    : isNumeric( row[ 5 ] ?: "" ) ? row[ 5 ] : 0,
-					"status"   : status(
+					"status"   : variables.contentStatus.of(
 						row[ 6 ],
 						row[ 7 ] ?: "",
 						row[ 8 ] ?: "",
 						now
 					),
 					"isPublished"     : row[ 6 ],
-					"publishedDate"   : isoDate( row[ 7 ] ?: "" ),
-					"expireDate"      : isoDate( row[ 8 ] ?: "" ),
+					"publishedDate"   : variables.contentStatus.isoDate( row[ 7 ] ?: "" ),
+					"expireDate"      : variables.contentStatus.isoDate( row[ 8 ] ?: "" ),
 					"showInMenu"      : row[ 9 ],
 					"hasBlocks"       : withBlocks.keyExists( contentID ),
 					"language"        : info.language ?: "",
@@ -216,10 +220,7 @@ component singleton {
 			if ( isNull( template ) || template.getSite().getSiteID() != arguments.site.getSiteID() ) {
 				invalidPage( "The template does not exist on this site" );
 			}
-			var definition = template.getDefinition();
-			body = isStruct( definition ) && isStruct( definition.content ?: "" )
-				? toString( definition.content.value ?: "" )
-				: "";
+			body = variables.contentEditor.templateBody( template );
 		}
 
 		// Last among the new siblings (orders need not be contiguous, e.g. after changes in the classic admin)
@@ -260,28 +261,6 @@ component singleton {
 	}
 
 	/********************************* PRIVATE *********************************/
-
-	private string function status(
-		required boolean isPublished,
-		publishedDate,
-		expireDate,
-		required date now
-	) {
-		if ( !arguments.isPublished ) {
-			return "draft";
-		}
-		if ( isDate( arguments.expireDate ) && arguments.expireDate <= arguments.now ) {
-			return "expired";
-		}
-		if ( isDate( arguments.publishedDate ) && arguments.publishedDate > arguments.now ) {
-			return "scheduled";
-		}
-		return "published";
-	}
-
-	private string function isoDate( any value ) {
-		return isDate( arguments.value ?: "" ) ? dateTimeFormat( arguments.value, "yyyy-mm-dd'T'HH:nn:ss" ) : "";
-	}
 
 	private void function invalidPage( required string message ) {
 		throw( type = "SiteTree.InvalidPage", message = arguments.message );

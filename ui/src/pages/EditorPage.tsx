@@ -13,7 +13,7 @@ import { buildConfig } from '../editor/puckConfig'
 import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
-import type { BlockDefinition, BlockError, EditorContent, TreePage } from '../types'
+import type { BlockDefinition, BlockError, ContentDetails, EditorContent, TreePage } from '../types'
 import { Alert, Button, Loading } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
@@ -22,6 +22,8 @@ const NOTICE_TEXT: Record<BlockNotice['status'], string> = {
   invalid: 'a block Studio could not read, shown as an HTML block',
   modified: 'changed outside Studio; saving renders it again from its fields and drops those changes',
 }
+
+const CONTENT_LABELS: Record<ContentDetails['contentType'], string> = { page: 'Page', entry: 'Blog entry', contentStore: 'Content store item' }
 
 // Stable (module-level): Puck remounts overrides whose identity changes
 const PUCK_OVERRIDES = { header: EditorHeader, iframe: CanvasStyles, fields: EditorFields }
@@ -44,7 +46,7 @@ export function EditorPage() {
 
 function ContentEditor({ contentID }: { contentID: string }) {
   const { config, api } = useStudio()
-  const { setUnsaved, setSiteID, reload: reloadTree, goTo } = useWorkspace()
+  const { setUnsaved, setSiteID, showSection, reload: reloadTree, goTo } = useWorkspace()
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [initial, setInitial] = useState<{ data: PuckData; notices: BlockNotice[]; key: number } | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -80,8 +82,10 @@ function ContentEditor({ contentID }: { contentID: string }) {
         // Core block styles first: the theme's CSS comes later and wins anyway (blocks.css uses :where())
         const stylesheets = [config.blockStyles, ...themeStylesheets].filter(Boolean)
         if (cancelled) return
-        // The tree shows the site of the open content
+        // The left column shows the site of the open content, and the blog for an entry
         setSiteID(editor.content.siteID)
+        if (editor.content.contentType === 'entry') showSection('blog')
+        else if (editor.content.contentType === 'page') showSection('pages')
         setLoaded({
           editor,
           definitions,
@@ -96,7 +100,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
     return () => {
       cancelled = true
     }
-  }, [api, config, contentID, show, setSiteID])
+  }, [api, config, contentID, show, setSiteID, showSection])
 
   // Warn before leaving with unsaved changes: within Studio (workspace) and when closing or reloading the page
   useEffect(() => {
@@ -111,7 +115,10 @@ function ContentEditor({ contentID }: { contentID: string }) {
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
 
-  const puckConfig = useMemo(() => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml) : null), [loaded])
+  const puckConfig = useMemo(
+    () => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml, CONTENT_LABELS[loaded.editor.content.contentType]) : null),
+    [loaded],
+  )
 
   async function save() {
     if (!loaded || !current.current) return

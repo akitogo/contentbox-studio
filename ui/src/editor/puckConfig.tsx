@@ -16,7 +16,10 @@ const CATEGORY_TITLES: Record<string, string> = {
   other: 'Other',
 }
 
-export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean): Config {
+/**
+ * @rootLabel What the content is ("Page", "Blog entry"): Puck's title for it in the fields panel and breadcrumbs
+ */
+export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean, rootLabel = 'Page'): Config {
   const components: Record<string, ComponentConfig> = {}
   const categories: Record<string, { title: string; components: string[]; visible?: boolean }> = {}
 
@@ -53,7 +56,7 @@ export function buildConfig(definitions: BlockDefinition[], canEditHtml: boolean
     categories,
     // No root fields: page settings (title, slug, SEO) stay in ContentBox
     // Inline style: the canvas only has the theme's CSS
-    root: { fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div style={{ padding: 24 }}>{children}</div> },
+    root: { label: rootLabel, fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div style={{ padding: 24 }}>{children}</div> },
   } as Config
 }
 
