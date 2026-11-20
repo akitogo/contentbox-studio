@@ -31,11 +31,10 @@ export function PageDetails({
   seo: Seo | null
   onSeoChange: (seo: Seo) => void
 }) {
-  const { config, api, me, sites } = useStudio()
+  const { config, api, me } = useStudio()
   const { reload, openPage } = useWorkspace()
   const [group, setGroup] = useState<TranslationGroup | null>(null)
   const [language, setLanguage] = useState('')
-  const [linkSiteID, setLinkSiteID] = useState(content.siteID)
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [linkID, setLinkID] = useState('')
   const [error, setError] = useState('')
@@ -54,13 +53,14 @@ export function PageDetails({
   }, [api, base])
 
   useEffect(() => {
-    if (!canChange || !linkSiteID) return
-    const site = `${config.studioApi}/sites/${encodeURIComponent(linkSiteID)}`
+    if (!canChange) return
+    // Translations are content of the same site: each site has its own content
+    const site = `${config.studioApi}/sites/${encodeURIComponent(content.siteID)}`
     const loaded: Promise<Candidate[]> = isEntry
       ? api.get<BlogEntryList>(`${site}/entries?max=500`).then((list) => list.entries)
       : api.get<TreePage[]>(`${site}/tree`)
     loaded.then(setCandidates, (e: unknown) => setError(messageOf(e)))
-  }, [api, config, linkSiteID, canChange, isEntry])
+  }, [api, config, content.siteID, canChange, isEntry])
 
   const linkable = useMemo(() => {
     const members = new Set([content.contentID, ...(group?.members.map((member) => member.contentID) ?? [])])
@@ -141,7 +141,6 @@ export function PageDetails({
                     {member.title}
                   </a>
                 )}
-                {member.siteID !== content.siteID && <span className="ml-auto truncate text-xs text-slate-400">{member.siteName}</span>}
               </li>
             ))}
           </ul>
@@ -163,15 +162,6 @@ export function PageDetails({
       {canChange && (
         <form onSubmit={link} className="grid gap-2 border-t border-slate-200 pt-4">
           <span className="text-sm font-medium text-slate-700">Link a translation</span>
-          {sites.length > 1 && (
-            <Select value={linkSiteID} onChange={(event) => setLinkSiteID(event.target.value)} aria-label="Site of the translation">
-              {sites.map((site) => (
-                <option key={site.siteID} value={site.siteID}>
-                  {site.name}
-                </option>
-              ))}
-            </Select>
-          )}
           <Select value={linkID} onChange={(event) => setLinkID(event.target.value)} aria-label={isEntry ? 'Entry that is a translation' : 'Page that is a translation'}>
             <option value="">{isEntry ? 'Choose an entry…' : 'Choose a page…'}</option>
             {linkable.map((candidate) => (

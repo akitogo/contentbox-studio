@@ -74,6 +74,23 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"links only content of the same site",
+					() => {
+						var page = createTestPage( testSlug( variables.MARKER ) );
+						var otherSite = createStub().$( "getSiteID", "another-site" );
+						var elsewhere = createStub()
+							.$( "getContentID", "elsewhere" )
+							.$( "getContentType", "Page" )
+							.$( "getSite", otherSite );
+						expect( () => translations.link( page, elsewhere ) ).toThrow(
+							type = "Translations.Invalid",
+							regex = "same site"
+						);
+						expect( translations.forContent( page ).group ).toBe( "" );
+					}
+				);
+
+				it(
 					"dissolves a group of two when one leaves it",
 					() => {
 						var one = createTestPage( testSlug( variables.MARKER ) );

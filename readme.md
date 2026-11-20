@@ -68,7 +68,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   page and its subpages; ContentBox redirects the old ones.
 - **New page** (or the + of a page for a subpage) creates a draft with a title, address and parent, empty or from a
   template, and opens it in the editor. Needs `PAGES_ADMIN` or `PAGES_EDITOR`.
-- **Translation groups:** pages and blog entries in different languages, also on different sites, can be linked.
+- **Translation groups:** pages and blog entries of a site in different languages can be linked (only within the
+  site: each site has its own content).
   Each page gets a language code; the public pages get `hreflang` links, and themes can build a language switcher
   from `getInstance( "Translations@contentbox-studio" ).forContent( prc.page ).members`. Stored as the custom fields
   `cbstudio_language` and `cbstudio_translationGroup`.

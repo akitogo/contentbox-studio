@@ -1,5 +1,6 @@
 /**
- * Translation groups: pages or blog entries that are the same content in different languages, also across sites.
+ * Translation groups: pages or blog entries of a site that are the same content in different languages. Groups stay
+ * within one site: each site has its own content.
  *
  * Stored as two ContentBox custom fields on each member, so no extra tables are needed and the data travels with
  * exports: cbstudio_language (e.g. "de", "en-GB") and cbstudio_translationGroup (a shared id). Each language occurs at
@@ -104,6 +105,18 @@ component singleton {
 			if ( !listFindNoCase( "page,entry", item.getContentType() ) ) {
 				invalid( "Only pages and blog entries can have translations" );
 			}
+		}
+		if (
+			arguments
+					.content
+					.getSite()
+					.getSiteID() !=
+				arguments
+					.other
+					.getSite()
+					.getSiteID()
+		) {
+			invalid( "Translations must be on the same site" );
 		}
 
 		var group = getField( arguments.content, variables.GROUP_KEY );
