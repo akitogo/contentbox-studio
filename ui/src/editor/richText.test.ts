@@ -38,8 +38,21 @@ describe('editableDoc', () => {
     expect(editableDoc(doc, extensions)).toBe(doc)
   })
 
+  it('takes an empty document', () => {
+    expect(editableDoc({ type: 'doc', content: [] }, extensions)).toEqual({ type: 'doc', content: [] })
+    expect(editableDoc({ type: 'doc' }, extensions)).toEqual({ type: 'doc' })
+  })
+
+  it('takes subscript and superscript, which exclude each other', () => {
+    const doc = { type: 'doc', content: [paragraph(text('H'), text('2', [{ type: 'subscript' }]), text('O'), text('2', [{ type: 'superscript' }]))] }
+    expect(editableDoc(doc, extensions)).toBe(doc)
+    const { subscript, superscript } = getSchema(extensions).marks
+    expect(subscript.excludes(superscript)).toBe(true)
+    expect(superscript.excludes(subscript)).toBe(true)
+  })
+
   it('refuses unknown formatting (TipTap would show the text empty) and anything not a document', () => {
-    expect(editableDoc({ type: 'doc', content: [paragraph(text('H', [{ type: 'subscript' }]))] }, extensions)).toBeNull()
+    expect(editableDoc({ type: 'doc', content: [paragraph(text('H', [{ type: 'highlight' }]))] }, extensions)).toBeNull()
     expect(editableDoc({ type: 'doc', content: [{ type: 'table' }] }, extensions)).toBeNull()
     expect(editableDoc('<p>Hi</p>', extensions)).toBeNull()
     expect(editableDoc(undefined, extensions)).toBeNull()

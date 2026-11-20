@@ -142,6 +142,18 @@ export interface Seo {
   keywords: string
 }
 
+/** Settings of a blog entry (GET /content/:id) */
+export interface EntryDetails {
+  categories: EntryCategory[]
+  /** HTML, as ContentBox stores it */
+  excerpt: string
+  /** As stored (a path or URL) */
+  featuredImage: string
+  /** Address to show it */
+  featuredImageURL: string
+  allowComments: boolean
+}
+
 export interface ContentDetails {
   contentID: string
   contentType: 'page' | 'entry' | 'contentStore'
@@ -153,8 +165,16 @@ export interface ContentDetails {
   parentID: string
   isPublished: boolean
   version: number
+  status: PageStatus
+  /** yyyy-mm-ddTHH:nn:ss, local time; "" for none */
+  publishedDate: string
+  expireDate: string
+  /** Language code of a page or entry, "" for none */
+  language: string
   url: string
   seo: Seo
+  /** Only for blog entries */
+  entry?: EntryDetails
 }
 
 /** GET /content/:id and PUT /content/:id/blocks */

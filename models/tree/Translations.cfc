@@ -67,6 +67,37 @@ component singleton {
 	 * @throws Translations.Invalid
 	 */
 	void function setLanguage( required content, required string language ) {
+		applyLanguage( arguments.content, arguments.language );
+		variables.contentService.save( arguments.content );
+	}
+
+	/**
+	 * The content's language code, "" if it has none
+	 */
+	string function languageOf( required content ) {
+		return getField( arguments.content, variables.LANGUAGE_KEY );
+	}
+
+	/**
+	 * Like setLanguage() without saving: the caller saves the content (e.g. with other changes)
+	 *
+	 * @throws Translations.Invalid
+	 */
+	void function applyLanguage( required content, required string language ) {
+		checkLanguage( arguments.content, arguments.language );
+		setField(
+			arguments.content,
+			variables.LANGUAGE_KEY,
+			trim( arguments.language )
+		);
+	}
+
+	/**
+	 * Whether the content could get this language: a valid code, not used by another member of its group
+	 *
+	 * @throws Translations.Invalid
+	 */
+	void function checkLanguage( required content, required string language ) {
 		var code = trim( arguments.language );
 		if ( len( code ) && !reFind( variables.LANGUAGE_PATTERN, code ) ) {
 			invalid( "[#code#] is not a language code like de, en or en-GB" );
@@ -84,12 +115,6 @@ component singleton {
 				}
 			}
 		}
-		setField(
-			arguments.content,
-			variables.LANGUAGE_KEY,
-			code
-		);
-		variables.contentService.save( arguments.content );
 	}
 
 	/**

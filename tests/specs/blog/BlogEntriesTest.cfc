@@ -326,6 +326,136 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					}
 				);
 
+				it(
+					"saves entry settings and the language with the blocks",
+					() => {
+						var entry = createTestEntry( testSlug( variables.MARKER ) );
+						var category = createTestCategory( testSlug( variables.MARKER ) );
+						var later = dateAdd(
+							"d",
+							10,
+							now()
+						);
+
+						var result = editor.save(
+							content  = entry,
+							blocks   = [],
+							author   = getAdministrator(),
+							language = "en",
+							entry    = {
+								"publishedDate": dateTimeFormat( later, "yyyy-mm-dd'T'HH:nn" ),
+								"expireDate"   : "",
+								"categories"   : [
+									{ "categoryID": category.getCategoryID() },
+									{ "name": "#variables.MARKER# News" },
+									{ "name": category.getCategory() }
+								],
+								"excerpt": {
+									"type"   : "doc",
+									"content": [
+										{
+											"type"   : "paragraph",
+											"content": [ { "type": "text", "text": "Short <b>" } ]
+										}
+									]
+								},
+								"featuredImage": "/__media/summer.jpg",
+								"allowComments": false
+							}
+						);
+
+						expect( result.saved ).toBeTrue();
+						var details = result.content;
+						expect( details.status ).toBe( "scheduled" );
+						expect( details.publishedDate ).toBe( dateTimeFormat( later, "yyyy-mm-dd'T'HH:nn:00" ) );
+						expect( details.language ).toBe( "en" );
+						expect(
+							details
+								.entry
+								.categories
+								.map( ( item ) => item.name )
+						// By name (" " sorts before "-"); the category given by id and by name is there once
+						).toBe( [ "#variables.MARKER# News", category.getCategory() ] );
+						expect( details.entry.categories[ 1 ].slug ).toBe( "#variables.MARKER#-news" );
+						expect( details.entry.excerpt ).toBe( "<p>Short &lt;b&gt;</p>" );
+						expect( details.entry.featuredImage ).toBe( "/__media/summer.jpg" );
+						expect( details.entry.allowComments ).toBeFalse();
+
+						ormClearSession();
+						var stored = entryService.get( entry.getContentID() );
+						expect( stored.getCategories().len() ).toBe( 2 );
+						expect( isNull( stored.getExpireDate() ) ).toBeTrue();
+						expect( getInstance( "Translations@contentbox-studio" ).languageOf( stored ) ).toBe( "en" );
+					}
+				);
+
+				it(
+					"refuses invalid entry settings before changing anything",
+					() => {
+						var entry = createTestEntry( testSlug( variables.MARKER ) );
+						var save = ( settings ) => {
+							editor.save(
+								content = entryService.get( entry.getContentID() ),
+								blocks  = [],
+								author  = getAdministrator(),
+								entry   = settings
+							);
+						};
+						expect(
+							() => save(
+								{
+									"publishedDate": "2026-12-01T10:00",
+									"expireDate"   : "2026-11-01T10:00"
+								}
+							)
+						).toThrow( "ContentEditor.Invalid" );
+						expect( () => save( { "publishedDate": "2026-02-30T10:00" } ) ).toThrow(
+							"ContentEditor.Invalid"
+						);
+						expect(
+							() => save( { "categories": [ { "categoryID": "nope" } ] } )
+						).toThrow( "ContentEditor.Invalid" );
+						expect( () => save( { "featuredImage": "javascript:alert(1)" } ) ).toThrow(
+							"ContentEditor.Invalid"
+						);
+						expect(
+							() => {
+								editor.save(
+									content = createTestPage( testSlug( variables.MARKER ) ),
+									blocks  = [],
+									author  = getAdministrator(),
+									entry   = {}
+								);
+							}
+						).toThrow( "ContentEditor.Invalid" );
+
+						ormClearSession();
+						expect( editor.versions( entryService.get( entry.getContentID() ) ).len() ).toBe( 1 );
+					}
+				);
+
+				it(
+					"needs STUDIO_SITE_TREE to set the language",
+					() => {
+						var entry = createTestEntry( testSlug( variables.MARKER ) );
+						withTemporaryAuthor(
+							[ "STUDIO_ACCESS", "ENTRIES_EDITOR" ],
+							( author ) => {
+								expect(
+									() => {
+										editor.save(
+											content  = entry,
+											blocks   = [],
+											author   = author,
+											language = "de"
+										);
+									}
+								).toThrow( "ContentEditor.Forbidden" );
+							}
+						);
+					}
+				);
+
 				describe(
 					"API",
 					() => {

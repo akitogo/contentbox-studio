@@ -10,12 +10,14 @@ import {
   Minus,
   Quote,
   Strikethrough,
+  Subscript,
+  Superscript,
   Underline,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Button, IconButton, Input } from '../../ui'
-import { EMPTY_DOC, isDoc, richTextExtensions, type RichTextDoc } from '../richText'
+import { editableDoc, EMPTY_DOC, isDoc, richTextExtensions, type RichTextDoc } from '../richText'
 
 export type { RichTextDoc } from '../richText'
 
@@ -31,8 +33,11 @@ export function RichTextField({
 }) {
   // The value this editor shows, to tell changes made elsewhere (the canvas) from its own
   const shown = useRef(JSON.stringify(value))
+  const extensions = useMemo(() => richTextExtensions(), [])
+  // A document with nodes or marks the editor does not know would show (and save) empty: it is not edited here
+  const unsupported = isDoc(value) && !editableDoc(value, extensions)
   const editor = useEditor({
-    extensions: richTextExtensions(),
+    extensions,
     content: (isDoc(value) ? value : EMPTY_DOC) as JSONContent,
     editable: !readOnly,
     editorProps: { attributes: { class: 'studio-prose' } },
@@ -45,11 +50,18 @@ export function RichTextField({
 
   useEffect(() => {
     const json = JSON.stringify(value)
-    if (!editor || json === shown.current || !isDoc(value)) return
+    if (!editor || json === shown.current || !isDoc(value) || unsupported) return
     shown.current = json
     editor.commands.setContent(value as JSONContent, { emitUpdate: false })
-  }, [editor, value])
+  }, [editor, value, unsupported])
 
+  if (unsupported) {
+    return (
+      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        This text has formatting the editor cannot show, so it is not edited here and stays as it is.
+      </p>
+    )
+  }
   if (!editor) return null
   return (
     <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-xs focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20">
@@ -74,6 +86,8 @@ export function formattingTools(editor: Editor): FormattingTool[] {
     { label: 'Italic', Icon: Italic, active: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
     { label: 'Underline', Icon: Underline, active: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
     { label: 'Strikethrough', Icon: Strikethrough, active: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
+    { label: 'Subscript', Icon: Subscript, active: editor.isActive('subscript'), run: () => chain().toggleMark('subscript').run() },
+    { label: 'Superscript', Icon: Superscript, active: editor.isActive('superscript'), run: () => chain().toggleMark('superscript').run() },
     { label: 'Heading 2', Icon: Heading2, active: editor.isActive('heading', { level: 2 }), run: () => chain().toggleHeading({ level: 2 }).run() },
     { label: 'Heading 3', Icon: Heading3, active: editor.isActive('heading', { level: 3 }), run: () => chain().toggleHeading({ level: 3 }).run() },
     { label: 'Bullet list', Icon: List, active: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },

@@ -6,6 +6,7 @@ import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
 import { CanvasStyles } from '../editor/CanvasStyles'
+import { sameSettings, settingsOf, settingsPayload, type ContentSettings } from '../editor/contentSettings'
 import { EditorActionsContext, EditorFields, EditorHeader, rememberedPanels, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
 import { openPreview, previewFields, previewUrl } from '../editor/preview'
@@ -13,7 +14,7 @@ import { buildConfig } from '../editor/puckConfig'
 import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
-import type { BlockDefinition, BlockError, ContentDetails, EditorContent, Seo, TreePage } from '../types'
+import type { BlockDefinition, BlockError, ContentDetails, EditorContent, TreePage } from '../types'
 import { Alert, Button, Loading } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
@@ -38,7 +39,6 @@ interface Loaded {
 
 type Message = { tone: 'danger' | 'success' | 'info'; text: string }
 
-const sameSeo = (a: Seo, b: Seo) => a.title === b.title && a.description === b.description && a.keywords === b.keywords
 
 /** Route element: a fresh editor for each content (no state carried over from the previous one) */
 export function EditorPage() {
@@ -47,7 +47,7 @@ export function EditorPage() {
 }
 
 function ContentEditor({ contentID }: { contentID: string }) {
-  const { config, api } = useStudio()
+  const { config, api, me } = useStudio()
   const { setUnsaved, setSiteID, showSection, reload: reloadTree, goTo } = useWorkspace()
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [initial, setInitial] = useState<{ data: PuckData; notices: BlockNotice[]; key: number } | null>(null)
@@ -57,18 +57,23 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const [changelog, setChangelog] = useState('')
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
-  // SEO fields as edited; saved with the blocks
-  const [seo, setSeo] = useState<Seo | null>(null)
+  // The content's settings as edited (right column); saved with the blocks
+  const [settings, setSettings] = useState<ContentSettings | null>(null)
   const [showVersions, setShowVersions] = useState(false)
   const [templateDialog, setTemplateDialog] = useState(false)
   const current = useRef<PuckData | null>(null)
   const [puckUi] = useState(rememberedPanels)
 
-  const show = useCallback((blocks: ParsedBlock[], definitions: BlockDefinition[]) => {
+  // The saved blocks as a save would send them: a change is unsaved only while the blocks differ (undo ends it)
+  const savedBlocks = useRef('')
+
+  /** Show blocks in the editor; `saved`: they are the saved state (else, e.g. an old version, they are a change) */
+  const show = useCallback((blocks: ParsedBlock[], definitions: BlockDefinition[], saved = true) => {
     const converted = toPuckData(blocks, typesByName(definitions))
     current.current = converted.data
+    if (saved) savedBlocks.current = JSON.stringify(fromPuckData(converted.data))
     setInitial((previous) => ({ ...converted, key: (previous?.key ?? 0) + 1 }))
-    setDirty(false)
+    setDirty(!saved)
   }, [])
 
   useEffect(() => {
@@ -96,7 +101,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
           context: { siteID: editor.content.siteID, canEdit: editor.canEdit, canEditHtml: editor.canEditHtml, pages, contentStoreItems, stylesheets },
         })
         show(editor.blocks, definitions)
-        setSeo(editor.content.contentType === 'contentStore' ? null : editor.content.seo)
+        setSettings(settingsOf(editor.content, { canSetLanguage: editor.canEdit && me.permissions.siteTree }))
       } catch (error) {
         if (!cancelled) setLoadError(messageOf(error))
       }
@@ -105,11 +110,13 @@ function ContentEditor({ contentID }: { contentID: string }) {
     return () => {
       cancelled = true
     }
-  }, [api, config, contentID, show, setSiteID, showSection])
+  }, [api, config, contentID, show, setSiteID, showSection, me])
 
   // Warn before leaving with unsaved changes: within Studio (workspace) and when closing or reloading the page
-  const seoChanged = Boolean(loaded && seo && !sameSeo(seo, loaded.editor.content.seo))
-  const unsaved = dirty || seoChanged
+  // The saved settings, to tell whether the edited ones differ
+  const canSetLanguage = Boolean(loaded?.editor.canEdit && me.permissions.siteTree)
+  const savedSettings = useMemo(() => (loaded ? settingsOf(loaded.editor.content, { canSetLanguage }) : null), [loaded, canSetLanguage])
+  const unsaved = dirty || Boolean(settings && savedSettings && !sameSettings(settings, savedSettings))
 
   useEffect(() => {
     setUnsaved(unsaved)
@@ -138,13 +145,13 @@ function ContentEditor({ contentID }: { contentID: string }) {
         blocks: fromPuckData(current.current),
         changelog,
         baseVersion: loaded.editor.content.version,
-        ...(seo ? { seo } : {}),
+        ...(settings ? settingsPayload(settings) : {}),
       })
       setLoaded({ ...loaded, editor: result })
       show(result.blocks, loaded.definitions)
-      if (seo) setSeo(result.content.seo)
+      setSettings(settingsOf(result.content, { canSetLanguage }))
       setChangelog('')
-      // No new version when only the SEO fields changed
+      // No new version when only the settings changed
       const newVersion = result.content.version !== loaded.editor.content.version
       setMessage({ tone: 'success', text: newVersion ? `Saved as version ${result.content.version}.` : 'Saved.' })
       void reloadTree()
@@ -242,8 +249,8 @@ function ContentEditor({ contentID }: { contentID: string }) {
     content: editor.content,
     canEdit: editor.canEdit,
     dirty: unsaved,
-    seo,
-    setSeo,
+    settings,
+    setSettings,
     saving,
     changelog,
     setChangelog,
@@ -268,7 +275,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
                 data={initial.data}
                 onChange={(data) => {
                   current.current = data as PuckData
-                  setDirty(true)
+                  setDirty(JSON.stringify(fromPuckData(current.current)) !== savedBlocks.current)
                 }}
                 overrides={PUCK_OVERRIDES}
                 ui={puckUi}
@@ -284,8 +291,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
             currentVersion={editor.content.version}
             onClose={() => setShowVersions(false)}
             onLoad={(blocks, version) => {
-              show(blocks, loaded.definitions)
-              setDirty(true)
+              show(blocks, loaded.definitions, false)
               setMessage({ tone: 'info', text: `Version ${version} is in the editor. Save to make it the current version.` })
             }}
           />

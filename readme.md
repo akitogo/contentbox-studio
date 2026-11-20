@@ -83,7 +83,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   entry or a page switches the column to the matching tab.
 - **New entry** creates a draft with a title and address, empty or from a content template for entries. Needs
   `ENTRIES_ADMIN` or `ENTRIES_EDITOR`.
-- Categories, excerpt, comments and the blog's settings are set in the classic admin for now.
+- An entry's own settings are in the editor's right column and saved with **Save**: publish date (a later one
+  schedules it), optional unpublish date, categories (pick one or type a new name; new ones are created on save),
+  excerpt (rich text, stored as HTML like ContentBox does), featured image (media library) and comments.
+- Comment moderation, managing categories and the blog's settings stay in the classic admin.
 
 ## Editor
 
@@ -92,7 +95,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   theme's template, so it is what will be saved.
 - Text, headings and running text of a block can be edited directly in the canvas (fields of type text, textarea
   and rich text that the template shows unchanged). Rich text gets a formatting toolbar above it (bold, italic,
-  headings, lists, links, ...) and keeps the theme's look while editing; Esc or a click elsewhere ends editing.
+  subscript, superscript, headings, lists, links, ...) and keeps the theme's look while editing; Esc or a click elsewhere ends editing.
   Everything else is edited in the fields on the right.
 - Field types get suitable inputs: rich text (TipTap, stored as a structured document), links with a page picker
   (`page:[slug]`, resolved by ContentBox), images and galleries from ContentBox's media library (with upload),
@@ -102,13 +105,15 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   else's changes unknowingly.
 - The canvas loads the stylesheets of the site's theme (the `<link rel="stylesheet">` tags of the site's home page,
   plus the theme's `blocks/editor.css` if it has one), so blocks look like on the site.
-- **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`) and the status are
-  in the editor's header, as are buttons to hide the blocks and fields columns.
-- With no block selected, the right column shows the content's settings: address, search engine fields (title,
-  meta description and keywords, with length hints and a preview of the search result; saved with **Save**),
-  language and translations, and a link to the other settings (layout, ...) in the classic admin.
-- **Save** only adds a version when the blocks changed; saving only the search engine fields keeps the version
-  (ContentBox does not version them).
+- **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`) and the status
+  (draft, scheduled, published, expired) are in the editor's header, as are buttons to hide the blocks and fields
+  columns. Undoing every change clears the unsaved marker.
+- With no block selected, the right column shows the content's settings: address, a blog entry's settings (see
+  [Blog](#blog)), search engine fields (title, meta description and keywords, with length hints and a preview of the
+  search result), language (needs `STUDIO_SITE_TREE`), translations, and a link to the other settings (layout, ...)
+  in the classic admin. Everything but the translation links is saved with **Save**, like the blocks.
+- **Save** only adds a version when the blocks changed; saving only settings keeps the version (ContentBox does not
+  version them).
 - Opening other content with unsaved changes asks first.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.

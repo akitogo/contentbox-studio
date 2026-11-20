@@ -26,9 +26,10 @@ component extends="BaseHandler" {
 
 	/**
 	 * PUT /cbstudio/api/content/:contentID/blocks with JSON { blocks: [ { type, id, data } ], changelog, baseVersion,
-	 * seo: { title, description, keywords } (optional) }
-	 * Saves a new version. 422 with { errors } if blocks are invalid, 400 if an SEO value is too long, 403 without
-	 * permission, 409 on a conflict.
+	 * and optionally seo: { title, description, keywords }, language, entry: { publishedDate, expireDate, categories,
+	 * excerpt, featuredImage, allowComments } (see ContentEditor.save()) }
+	 * Saves a new version if the blocks changed. 422 with { errors } if blocks are invalid, 400 for invalid settings,
+	 * 403 without permission, 409 on a conflict.
 	 */
 	function save( event, rc, prc ) {
 		var content = findContent( rc.contentID ?: "" );
@@ -47,8 +48,15 @@ component extends="BaseHandler" {
 			author     : jwtAuth().getUser(),
 			baseVersion: isNumeric( rc.baseVersion ?: "" ) ? rc.baseVersion : 0
 		};
+		// Optional parts: left unchanged when not sent
 		if ( isStruct( rc.seo ?: "" ) ) {
 			args.seo = rc.seo;
+		}
+		if ( isSimpleValue( rc.language ?: [] ) ) {
+			args.language = toString( rc.language );
+		}
+		if ( isStruct( rc.entry ?: "" ) ) {
+			args.entry = rc.entry;
 		}
 		try {
 			var result = variables.editor.save( argumentCollection = args );

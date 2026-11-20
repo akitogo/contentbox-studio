@@ -172,7 +172,7 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     const item = getPuck().getItemById(id)
     if (!path || !item) return
     const extensions = richTextExtensions(tagClasses(element))
-    // Formatting the editor does not know (subscript, ...) would get lost: such text is not editable here
+    // Formatting the editor does not know would get lost: such text is not editable here
     const content = editableDoc(getPath(item.props, path), extensions)
     if (!content) return
     const offset = offsetAtPoint(element, x, y)

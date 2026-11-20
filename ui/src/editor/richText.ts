@@ -2,7 +2,7 @@
  * TipTap setup shared by the rich text field (panel) and rich text edited in place in the canvas, plus the helpers
  * the canvas needs: the theme's classes on the editor's elements, and the cursor where the text was clicked.
  */
-import { Extension, getSchema, mergeAttributes, type AnyExtension, type JSONContent } from '@tiptap/react'
+import { Extension, getSchema, Mark, mergeAttributes, type AnyExtension, type JSONContent } from '@tiptap/react'
 import Link from '@tiptap/extension-link'
 import type { DOMOutputSpec, Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Plugin } from '@tiptap/pm/state'
@@ -21,11 +21,11 @@ export function isDoc(value: unknown): value is RichTextDoc {
 /** Classes by tag name (p, h2, a, strong, ...), as a theme's template puts them on rich text */
 export type TagClasses = Record<string, string>
 
-const MARK_TAGS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code' } as const
+const MARK_TAGS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code', subscript: 'sub', superscript: 'sup' } as const
 
 /**
  * The nodes and marks the server allows: paragraphs, headings 2-4, lists, quotes, rules, line breaks, bold, italic,
- * underline, strike, code and links. With classes, the editor's elements get the classes the theme gives them, so
+ * underline, strike, code, subscript, superscript and links. With classes, the editor's elements get the classes the theme gives them, so
  * text edited in the canvas keeps its look.
  */
 export function richTextExtensions(classes: TagClasses = {}): AnyExtension[] {
@@ -44,6 +44,8 @@ export function richTextExtensions(classes: TagClasses = {}): AnyExtension[] {
       strike: mark('strike'),
       code: mark('code'),
     }),
+    scriptMark('subscript', 'superscript').configure(mark('subscript')),
+    scriptMark('superscript', 'subscript').configure(mark('superscript')),
     Link.extend({
       renderHTML(props) {
         const [tag, attributes, hole] = this.parent?.(props) as [string, Record<string, unknown>, 0]
@@ -59,9 +61,25 @@ export function richTextExtensions(classes: TagClasses = {}): AnyExtension[] {
   ]
 }
 
+/** Subscript or superscript (<sub>, <sup>); one excludes the other. Toggled with toggleMark(name). */
+function scriptMark(name: 'subscript' | 'superscript', other: string) {
+  const tag = MARK_TAGS[name]
+  return Mark.create<{ HTMLAttributes: Record<string, unknown> }>({
+    name,
+    excludes: other,
+    addOptions: () => ({ HTMLAttributes: {} }),
+    parseHTML: () => [{ tag }],
+    renderHTML({ HTMLAttributes }) {
+      return [tag, mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0]
+    },
+  })
+}
+
 /** The document, if the editor knows all its nodes and marks (else TipTap would show it empty), or null */
 export function editableDoc(value: unknown, extensions: AnyExtension[]): JSONContent | null {
   if (!isDoc(value)) return null
+  // An empty document fails the schema (a doc needs a block) but TipTap shows it as an empty paragraph
+  if (!value.content?.length) return value as JSONContent
   try {
     getSchema(extensions).nodeFromJSON(value).check()
     return value as JSONContent

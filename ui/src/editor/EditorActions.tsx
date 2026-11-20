@@ -6,7 +6,9 @@
 import { createUsePuck } from '@puckeditor/core'
 import { Eye, History, LayoutTemplate, PanelLeft, PanelRight, Redo2, Save, Undo2 } from 'lucide-react'
 import { createContext, useContext, type ReactNode } from 'react'
-import type { ContentDetails, Seo } from '../types'
+import type { ContentDetails } from '../types'
+import { STATUS } from '../workspace/status'
+import type { ContentSettings } from './contentSettings'
 import { store, stored } from '../lib/storage'
 import { Badge, Button, IconButton, Input } from '../ui'
 import { PageDetails } from './PageDetails'
@@ -14,11 +16,11 @@ import { PageDetails } from './PageDetails'
 export interface EditorActions {
   content: ContentDetails
   canEdit: boolean
-  /** Unsaved changes: blocks or SEO fields */
+  /** Unsaved changes: blocks or settings */
   dirty: boolean
-  /** SEO fields as edited (saved with the blocks), null for content without them (content store items) */
-  seo: Seo | null
-  setSeo: (seo: Seo) => void
+  /** The content's settings as edited (saved with the blocks) */
+  settings: ContentSettings | null
+  setSettings: (settings: ContentSettings) => void
   saving: boolean
   changelog: string
   setChangelog: (value: string) => void
@@ -70,7 +72,7 @@ export function EditorHeader() {
         <h1 className="ml-1 min-w-0 truncate text-sm font-semibold text-slate-900" title={content.title}>
           {content.title}
         </h1>
-        <Badge tone={content.isPublished ? 'success' : 'neutral'}>{content.isPublished ? 'Published' : 'Draft'}</Badge>
+        <Badge tone={STATUS[content.status].tone}>{STATUS[content.status].label}</Badge>
         <span className="hidden text-xs whitespace-nowrap text-slate-400 @3xl:inline">
           Version {content.version}
           {actions.dirty && <span className="ml-1.5 text-amber-600">· unsaved</span>}
@@ -144,5 +146,13 @@ export function EditorHeader() {
 export function EditorFields({ children, itemSelector }: { children: ReactNode; itemSelector?: unknown }) {
   const actions = useContext(EditorActionsContext)
   if (itemSelector || !actions) return <>{children}</>
-  return <PageDetails key={actions.content.contentID} content={actions.content} canEdit={actions.canEdit} seo={actions.seo} onSeoChange={actions.setSeo} />
+  return (
+    <PageDetails
+      key={actions.content.contentID}
+      content={actions.content}
+      canEdit={actions.canEdit}
+      settings={actions.settings}
+      onSettingsChange={actions.setSettings}
+    />
+  )
 }

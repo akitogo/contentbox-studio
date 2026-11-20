@@ -18,6 +18,12 @@ component singleton {
 	property name="cbHelper" inject="provider:CBHelper@contentbox";
 
 	property name="templateService" inject="contentTemplateService@contentbox";
+
+	property name="translations" inject="Translations@contentbox-studio";
+
+	property name="contentStatus" inject="ContentStatus@contentbox-studio";
+
+	property name="entrySettings" inject="EntrySettings@contentbox-studio";
 	variables.ADMIN_PERMISSIONS = {
 		"page"        : "PAGES_ADMIN",
 		"entry"       : "ENTRIES_ADMIN",
@@ -62,7 +68,9 @@ component singleton {
 	 * @changelog   Note for the new version
 	 * @baseVersion Version number the editor started from (0 to skip the check)
 	 * @seo         { title, description, keywords } for ContentBox's HTML title, meta description and keywords; not
-	 * versioned by ContentBox. Left unchanged if not given.
+	 * versioned by ContentBox. Left unchanged if not given (like language and entry).
+	 * @language    Language code of a page or entry ("" for none); needs STUDIO_SITE_TREE, like translations
+	 * @entry       Settings of a blog entry, see EntrySettings.prepare()
 	 *
 	 * @return { saved: true, ...load() } or { saved: false, errors: [ { blockID, field, message } ] }
 	 *
@@ -74,7 +82,9 @@ component singleton {
 		string changelog    = "",
 		required author,
 		numeric baseVersion = 0,
-		struct seo
+		struct seo,
+		string language,
+		struct entry
 	) {
 		if ( !canEdit( arguments.content, arguments.author ) ) {
 			throw(
@@ -92,7 +102,32 @@ component singleton {
 		if ( !arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" ) ) {
 			checkHtmlBlocks( arguments.content, arguments.blocks );
 		}
+		// Everything is checked before anything changes
+		var type = normalizedType( arguments.content );
 		var seoUpdate = isNull( arguments.seo ) ? {} : seoValues( arguments.seo );
+		if ( !isNull( arguments.language ) ) {
+			if ( !listFindNoCase( "page,entry", type ) ) {
+				invalid( "Only pages and blog entries have a language" );
+			}
+			if ( !arguments.author.hasPermission( "STUDIO_SITE_TREE" ) ) {
+				throw(
+					type    = "ContentEditor.Forbidden",
+					message = "Setting the language needs the STUDIO_SITE_TREE permission"
+				);
+			}
+			try {
+				variables.translations.checkLanguage( arguments.content, arguments.language );
+			} catch (Translations.Invalid e) {
+				invalid( e.message );
+			}
+		}
+		var entryUpdate = {};
+		if ( !isNull( arguments.entry ) ) {
+			if ( type != "entry" ) {
+				invalid( "Only blog entries have entry settings" );
+			}
+			entryUpdate = variables.entrySettings.prepare( arguments.content, arguments.entry );
+		}
 
 		var result = variables.renderer.renderBlocks( arguments.content.getSite(), arguments.blocks );
 		if ( result.errors.len() ) {
@@ -113,6 +148,12 @@ component singleton {
 				arguments.content.setHTMLTitle( seoUpdate.title );
 				arguments.content.setHTMLDescription( seoUpdate.description );
 				arguments.content.setHTMLKeywords( seoUpdate.keywords );
+			}
+			if ( !entryUpdate.isEmpty() ) {
+				variables.entrySettings.apply( arguments.content, entryUpdate );
+			}
+			if ( !isNull( arguments.language ) ) {
+				variables.translations.applyLanguage( arguments.content, arguments.language );
 			}
 			variables.contentService.save( entity = arguments.content, transactional = false );
 		}
@@ -275,6 +316,10 @@ component singleton {
 
 	/********************************* PRIVATE *********************************/
 
+	private void function invalid( required string message ) {
+		throw( type = "ContentEditor.Invalid", message = arguments.message );
+	}
+
 	/**
 	 * Trimmed SEO values from the editor, missing ones as ""
 	 *
@@ -305,7 +350,7 @@ component singleton {
 			len( type )
 		);
 		var parent = item.hasParent() ? item.getParent() : "";
-		return {
+		var details = {
 			"contentID"  : item.getContentID(),
 			"contentType": type,
 			"title"      : item.getTitle(),
@@ -316,13 +361,25 @@ component singleton {
 			"parentID"   : isObject( parent ) ? parent.getContentID() : "",
 			"isPublished": item.getIsPublished(),
 			"version"    : activeVersion( item ),
-			"seo"        : {
+			"status"     : variables.contentStatus.of(
+				item.getIsPublished(),
+				item.getPublishedDate() ?: "",
+				item.getExpireDate() ?: ""
+			),
+			"publishedDate": variables.contentStatus.isoDate( item.getPublishedDate() ?: "" ),
+			"expireDate"   : variables.contentStatus.isoDate( item.getExpireDate() ?: "" ),
+			"language"     : listFindNoCase( "page,entry", type ) ? variables.translations.languageOf( item ) : "",
+			"seo"          : {
 				"title"      : item.getHTMLTitle() ?: "",
 				"description": item.getHTMLDescription() ?: "",
 				"keywords"   : item.getHTMLKeywords() ?: ""
 			},
 			"url": listFindNoCase( "page,entry", type ) ? variables.cbHelper.linkContent( item ) : ""
 		};
+		if ( type == "entry" ) {
+			details[ "entry" ] = variables.entrySettings.describe( item );
+		}
+		return details;
 	}
 
 	/**

@@ -2,9 +2,11 @@ import { ExternalLink, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { urlPath } from '../lib/url'
 import { messageOf, useStudio } from '../studio'
-import type { BlogEntryList, ContentDetails, Seo, TranslationGroup, TreePage } from '../types'
+import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
 import { Alert, Badge, Button, Field, Input, Select } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
+import type { ContentSettings } from './contentSettings'
+import { EntrySettingsFields } from './EntrySettingsFields'
 import { SeoFields } from './SeoFields'
 
 /** Content that can be linked as a translation: pages for a page, entries for an entry */
@@ -17,24 +19,24 @@ const ADMIN_EDITORS: Record<ContentDetails['contentType'], string> = {
 }
 
 /**
- * Settings of the open content, shown in the editor's right column when no block is selected: address, language
- * and translation group, and a link to the other settings in the classic admin
+ * Settings of the open content, shown in the editor's right column when no block is selected: address, the settings
+ * saved with Save (entry settings, search engine fields, language), the translation group, and a link to the other
+ * settings in the classic admin
  */
 export function PageDetails({
   content,
   canEdit,
-  seo,
-  onSeoChange,
+  settings,
+  onSettingsChange,
 }: {
   content: ContentDetails
   canEdit: boolean
-  seo: Seo | null
-  onSeoChange: (seo: Seo) => void
+  settings: ContentSettings | null
+  onSettingsChange: (settings: ContentSettings) => void
 }) {
   const { config, api, me } = useStudio()
   const { reload, openPage } = useWorkspace()
   const [group, setGroup] = useState<TranslationGroup | null>(null)
-  const [language, setLanguage] = useState('')
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [linkID, setLinkID] = useState('')
   const [error, setError] = useState('')
@@ -42,15 +44,10 @@ export function PageDetails({
   const base = `${config.studioApi}/content/${content.contentID}`
   const isEntry = content.contentType === 'entry'
 
+  // Again after a save changed the language (members show their languages)
   useEffect(() => {
-    api.get<TranslationGroup>(`${base}/translations`).then(
-      (loaded) => {
-        setGroup(loaded)
-        setLanguage(loaded.language)
-      },
-      (e: unknown) => setError(messageOf(e)),
-    )
-  }, [api, base])
+    api.get<TranslationGroup>(`${base}/translations`).then(setGroup, (e: unknown) => setError(messageOf(e)))
+  }, [api, base, content.language])
 
   useEffect(() => {
     if (!canChange) return
@@ -73,17 +70,11 @@ export function PageDetails({
     try {
       const updated = await action()
       setGroup(updated)
-      setLanguage(updated.language)
       setLinkID('')
       await reload()
     } catch (e) {
       setError(messageOf(e))
     }
-  }
-
-  function saveLanguage(event: FormEvent) {
-    event.preventDefault()
-    void change(() => api.put<TranslationGroup>(`${base}/language`, { language }))
   }
 
   function link(event: FormEvent) {
@@ -103,20 +94,46 @@ export function PageDetails({
         </a>
       </div>
 
-      {seo && <SeoFields seo={seo} onChange={onSeoChange} title={content.title} url={content.url} disabled={!canEdit} />}
+      {settings?.entry && (
+        <div className="border-t border-slate-200 pt-4">
+          <EntrySettingsFields
+            entry={settings.entry}
+            onChange={(entry) => onSettingsChange({ ...settings, entry })}
+            siteID={content.siteID}
+            disabled={!canEdit}
+          />
+        </div>
+      )}
 
-      <form onSubmit={saveLanguage} className="border-t border-slate-200 pt-4">
-        <Field label="Language" htmlFor="content-language" help="A code like de, en or en-GB, for hreflang links.">
-          <div className="flex gap-2">
-            <Input id="content-language" value={language} onChange={(event) => setLanguage(event.target.value)} placeholder="e.g. de" disabled={!canChange} />
-            {canChange && (
-              <Button type="submit" disabled={!group || language === group.language}>
-                Save
-              </Button>
-            )}
-          </div>
-        </Field>
-      </form>
+      {settings?.seo && (
+        <div className="border-t border-slate-200 pt-4">
+          <SeoFields
+            seo={settings.seo}
+            onChange={(seo) => onSettingsChange({ ...settings, seo })}
+            title={content.title}
+            url={content.url}
+            disabled={!canEdit}
+          />
+        </div>
+      )}
+
+      {content.contentType !== 'contentStore' && (
+        <div className="border-t border-slate-200 pt-4">
+          <Field
+            label="Language"
+            htmlFor="content-language"
+            help={settings && settings.language !== null ? 'A code like de, en or en-GB, for hreflang links. Saved with Save.' : 'A code like de, en or en-GB, for hreflang links.'}
+          >
+            <Input
+              id="content-language"
+              value={settings?.language ?? content.language}
+              onChange={(event) => settings && onSettingsChange({ ...settings, language: event.target.value })}
+              placeholder="e.g. de"
+              disabled={!settings || settings.language === null}
+            />
+          </Field>
+        </div>
+      )}
 
       <div className="grid gap-2">
         <span className="text-sm font-medium text-slate-700">Translations</span>
