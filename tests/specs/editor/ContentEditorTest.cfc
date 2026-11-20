@@ -76,7 +76,16 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"lets ContentBox clear its cached rendering of the content after a save",
 					() => {
 						var page = createTestPage( slug = testSlug( variables.MARKER ) );
-						var heading = ( text ) => [ { "type": "heading", "id": "h1", "data": { "text": text } } ];
+						// A block body: Adobe ColdFusion 2023 cannot parse "=> [ ... ]"
+						var heading = ( text ) => {
+							return [
+								{
+									"type": "heading",
+									"id"  : "h1",
+									"data": { "text": text }
+								}
+							];
+						};
 						editor.save(
 							content = page,
 							blocks  = heading( "First text" ),
