@@ -114,6 +114,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 
 						var event = getRequestContext();
 						event.setPrivateValue( "page", pageService.get( german.getContentID() ) );
+						// On, whatever the site's config says (a theme with its own links turns them off)
+						var settings = getController().getSetting( "modules" )[ "contentbox-studio" ].settings;
+						var configured = settings.hreflangLinks;
+						settings.hreflangLinks = true;
 						var buffer = createObject( "java", "java.lang.StringBuilder" ).init();
 						getController()
 							.getInterceptorService()
@@ -127,6 +131,23 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						expect( buffer.toString() ).toInclude( "hreflang=""de""" );
 						expect( buffer.toString() ).toInclude( "hreflang=""en""" );
 						expect( buffer.toString() ).toInclude( english.getSlug() );
+
+						// Off for themes that write their own
+						settings.hreflangLinks = false;
+						try {
+							var none = createObject( "java", "java.lang.StringBuilder" ).init();
+							getController()
+								.getInterceptorService()
+								.getInterceptor( "Translations@contentbox-studio" )
+								.cbui_beforeHeadEnd(
+									event,
+									{},
+									none
+								);
+							expect( none.toString() ).toBe( "" );
+						} finally {
+							settings.hreflangLinks = configured;
+						}
 					}
 				);
 

@@ -131,6 +131,7 @@ In `config/ColdBox.cfc` of the site, `moduleSettings[ "contentbox-studio" ]`:
 | Setting | Default | |
 |---|---|---|
 | `coreBlockStyles` | `true` | Links `includes/blocks.css` (base styles of the core blocks) on public pages with blocks and in the editor canvas. Its selectors have no specificity, so theme rules always win; set it to `false` if the theme styles the core blocks completely. |
+| `hreflangLinks` | `true` | Adds `hreflang` links for translated pages and entries to public pages. Set it to `false` if the theme writes its own, e.g. from canonical URLs, with `getInstance( "Translations@contentbox-studio" ).forContent( page ).members`. |
 | `devServer` | `CBSTUDIO_DEV_SERVER` | See Development. |
 
 ## Development

@@ -1,9 +1,12 @@
 /**
  * hreflang links for pages and blog entries in a translation group (models/tree/Translations.cfc):
  * <link rel="alternate" hreflang="de" href="..."> for every member with a language, including the page itself.
+ * Off with the module setting hreflangLinks = false, for themes that write their own.
  */
 component {
 	property name="translations" inject="Translations@contentbox-studio";
+
+	property name="settings" inject="coldbox:moduleSettings:contentbox-studio";
 
 	property name="markup" inject="Markup@contentbox-studio";
 
@@ -14,7 +17,7 @@ component {
 		if ( !isObject( content ) ) {
 			content = arguments.event.getPrivateValue( "entry", "" );
 		}
-		if ( !isObject( content ) || !content.isLoaded() ) {
+		if ( !isObject( content ) || !content.isLoaded() || !variables.settings.hreflangLinks ) {
 			return;
 		}
 		try {

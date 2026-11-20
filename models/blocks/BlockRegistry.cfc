@@ -185,7 +185,7 @@ component singleton {
 			types = [];
 		}
 		if ( !types.len() ) {
-			return variables.CONTENT_TYPES.duplicate();
+			return duplicate( variables.CONTENT_TYPES );
 		}
 		var result = [];
 		for ( var type in types ) {

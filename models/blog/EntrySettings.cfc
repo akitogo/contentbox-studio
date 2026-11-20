@@ -21,7 +21,9 @@ component singleton {
 	 * allowComments }
 	 */
 	struct function describe( required entry ) {
-		var categories = ( arguments.entry.getCategories() ?: [] ).map(
+		// Not ( ... ?: [] ).map(): Adobe ColdFusion cannot call methods on a parenthesized expression
+		var assigned = arguments.entry.getCategories() ?: [];
+		var categories = assigned.map(
 			( category ) => {
 				return {
 					"categoryID": category.getCategoryID(),

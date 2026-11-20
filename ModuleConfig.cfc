@@ -26,6 +26,9 @@ component {
 			// includes/blocks.css on public pages with blocks and in the editor canvas; false if the theme styles
 			// the core blocks itself
 			"coreBlockStyles": true,
+			// hreflang links for translated pages and entries on the public site; false if the theme writes its own
+			// (e.g. from canonical URLs) with Translations@contentbox-studio
+			"hreflangLinks"  : true,
 			"cbsecurity"     : {
 				"firewall": {
 					// Not logged in: classic admin login, which returns to Studio afterwards
