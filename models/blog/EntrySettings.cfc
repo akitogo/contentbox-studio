@@ -38,7 +38,8 @@ component singleton {
 			"excerpt"         : arguments.entry.getExcerpt() ?: "",
 			"featuredImage"   : arguments.entry.getFeaturedImage() ?: "",
 			"featuredImageURL": arguments.entry.getFeaturedImageURL(),
-			"allowComments"   : arguments.entry.getAllowComments() ?: true
+			// Not "?: true": Adobe ColdFusion's Elvis operator also replaces false
+			"allowComments"   : isNull( arguments.entry.getAllowComments() ) ? true : arguments.entry.getAllowComments()
 		};
 	}
 
