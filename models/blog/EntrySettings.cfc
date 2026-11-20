@@ -127,7 +127,10 @@ component singleton {
 			"newCategories": newNames,
 			"excerpt"      : excerpt,
 			"featuredImage": image,
-			"allowComments": isBoolean( values.allowComments ?: "" ) ? values.allowComments : true
+			// Not "values.allowComments ?: ...": Adobe ColdFusion's Elvis operator also replaces false
+			"allowComments": values.keyExists( "allowComments" ) && isBoolean( values.allowComments )
+				? values.allowComments
+				: true
 		};
 	}
 

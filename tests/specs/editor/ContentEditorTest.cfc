@@ -369,6 +369,23 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						);
 
 						it(
+							"publishes and unpublishes through the API",
+							() => {
+								var page = createTestPage( slug = testSlug( variables.MARKER ), isPublished = false );
+								var token = tokenFor( getAdministrator() );
+								for ( var state in [ true, false ] ) {
+									setup();
+									var response = put(
+										route  = "/cbstudio/api/content/#page.getContentID()#/status",
+										params = { "x-auth-token": token, "isPublished": state }
+									).getResponse();
+									expect( response.getStatusCode() ).toBe( 200, response.getMessagesString() );
+									expect( response.getData().content.isPublished ).toBe( state );
+								}
+							}
+						);
+
+						it(
 							"lets editors save but not publish (the admin permission does)",
 							() => {
 								var page = createTestPage( slug = testSlug( variables.MARKER ), isPublished = false );

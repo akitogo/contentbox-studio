@@ -115,7 +115,8 @@ component extends="BaseHandler" {
 			prc.response.setErrorMessage( "Content not found", 404 );
 			return;
 		}
-		if ( !isBoolean( rc.isPublished ?: "" ) ) {
+		// Not "rc.isPublished ?: ...": Adobe ColdFusion's Elvis operator also replaces false (unpublishing)
+		if ( !rc.keyExists( "isPublished" ) || !isBoolean( rc.isPublished ) ) {
 			prc.response.setErrorMessage( "isPublished must be true or false", 400 );
 			return;
 		}
@@ -151,7 +152,7 @@ component extends="BaseHandler" {
 						name        = toString( rc.name ?: "" ),
 						description = toString( rc.description ?: "" ),
 						author      = jwtAuth().getUser(),
-						isGlobal    = isBoolean( rc.isGlobal ?: "" ) && rc.isGlobal
+						isGlobal    = rc.keyExists( "isGlobal" ) && isBoolean( rc.isGlobal ) && rc.isGlobal
 					)
 				)
 				.setStatusCode( 201 );
