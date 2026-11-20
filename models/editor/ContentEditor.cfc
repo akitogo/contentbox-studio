@@ -24,6 +24,13 @@ component singleton {
 		"contentStore": "CONTENTSTORE_ADMIN"
 	};
 
+	// Column lengths of ContentBox's SEO fields
+	variables.SEO_LENGTHS = {
+		"title"      : 255,
+		"description": 160,
+		"keywords"   : 160
+	};
+
 	variables.EDIT_PERMISSIONS = {
 		"page"        : "PAGES_ADMIN,PAGES_EDITOR",
 		"entry"       : "ENTRIES_ADMIN,ENTRIES_EDITOR",
@@ -49,20 +56,25 @@ component singleton {
 	}
 
 	/**
+	 * Saves the blocks as a new version (none if the body stays the same, e.g. only the SEO fields changed)
+	 *
 	 * @blocks      [ { type, id, data } ] from the editor
 	 * @changelog   Note for the new version
 	 * @baseVersion Version number the editor started from (0 to skip the check)
+	 * @seo         { title, description, keywords } for ContentBox's HTML title, meta description and keywords; not
+	 * versioned by ContentBox. Left unchanged if not given.
 	 *
 	 * @return { saved: true, ...load() } or { saved: false, errors: [ { blockID, field, message } ] }
 	 *
-	 * @throws ContentEditor.Forbidden, ContentEditor.Conflict
+	 * @throws ContentEditor.Forbidden, ContentEditor.Conflict, ContentEditor.Invalid
 	 */
 	struct function save(
 		required content,
 		required array blocks,
 		string changelog    = "",
 		required author,
-		numeric baseVersion = 0
+		numeric baseVersion = 0,
+		struct seo
 	) {
 		if ( !canEdit( arguments.content, arguments.author ) ) {
 			throw(
@@ -80,6 +92,7 @@ component singleton {
 		if ( !arguments.author.hasPermission( "STUDIO_HTML_BLOCKS" ) ) {
 			checkHtmlBlocks( arguments.content, arguments.blocks );
 		}
+		var seoUpdate = isNull( arguments.seo ) ? {} : seoValues( arguments.seo );
 
 		var result = variables.renderer.renderBlocks( arguments.content.getSite(), arguments.blocks );
 		if ( result.errors.len() ) {
@@ -87,13 +100,20 @@ component singleton {
 		}
 
 		transaction {
-			arguments.content.addNewContentVersion(
-				content   = result.body,
-				changelog = len( trim( arguments.changelog ) )
-					? trim( arguments.changelog )
-					: "Edited in ContentBox Studio",
-				author    = arguments.author
-			);
+			if ( compare( result.body, arguments.content.getContent() ) != 0 ) {
+				arguments.content.addNewContentVersion(
+					content   = result.body,
+					changelog = len( trim( arguments.changelog ) )
+						? trim( arguments.changelog )
+						: "Edited in ContentBox Studio",
+					author    = arguments.author
+				);
+			}
+			if ( !seoUpdate.isEmpty() ) {
+				arguments.content.setHTMLTitle( seoUpdate.title );
+				arguments.content.setHTMLDescription( seoUpdate.description );
+				arguments.content.setHTMLKeywords( seoUpdate.keywords );
+			}
 			variables.contentService.save( entity = arguments.content, transactional = false );
 		}
 
@@ -255,6 +275,26 @@ component singleton {
 
 	/********************************* PRIVATE *********************************/
 
+	/**
+	 * Trimmed SEO values from the editor, missing ones as ""
+	 *
+	 * @throws ContentEditor.Invalid if one is longer than ContentBox stores
+	 */
+	private struct function seoValues( required struct seo ) {
+		var values = {};
+		for ( var key in variables.SEO_LENGTHS ) {
+			var value = arguments.seo[ key ] ?: "";
+			values[ key ] = isSimpleValue( value ) ? trim( value ) : "";
+			if ( len( values[ key ] ) > variables.SEO_LENGTHS[ key ] ) {
+				throw(
+					type    = "ContentEditor.Invalid",
+					message = "The SEO #key# may have at most #variables.SEO_LENGTHS[ key ]# characters"
+				);
+			}
+		}
+		return values;
+	}
+
 	private struct function describe( required content ) {
 		var item = arguments.content;
 		// ContentBox stores "Page", "Entry", "ContentStore"; the API uses page, entry, contentStore
@@ -276,7 +316,12 @@ component singleton {
 			"parentID"   : isObject( parent ) ? parent.getContentID() : "",
 			"isPublished": item.getIsPublished(),
 			"version"    : activeVersion( item ),
-			"url"        : listFindNoCase( "page,entry", type ) ? variables.cbHelper.linkContent( item ) : ""
+			"seo"        : {
+				"title"      : item.getHTMLTitle() ?: "",
+				"description": item.getHTMLDescription() ?: "",
+				"keywords"   : item.getHTMLKeywords() ?: ""
+			},
+			"url": listFindNoCase( "page,entry", type ) ? variables.cbHelper.linkContent( item ) : ""
 		};
 	}
 

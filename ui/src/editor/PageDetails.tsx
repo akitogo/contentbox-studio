@@ -2,9 +2,10 @@ import { ExternalLink, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { urlPath } from '../lib/url'
 import { messageOf, useStudio } from '../studio'
-import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
+import type { BlogEntryList, ContentDetails, Seo, TranslationGroup, TreePage } from '../types'
 import { Alert, Badge, Button, Field, Input, Select } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
+import { SeoFields } from './SeoFields'
 
 /** Content that can be linked as a translation: pages for a page, entries for an entry */
 type Candidate = Pick<TreePage, 'contentID' | 'title' | 'slug' | 'language'>
@@ -19,7 +20,17 @@ const ADMIN_EDITORS: Record<ContentDetails['contentType'], string> = {
  * Settings of the open content, shown in the editor's right column when no block is selected: address, language
  * and translation group, and a link to the other settings in the classic admin
  */
-export function PageDetails({ content, canEdit }: { content: ContentDetails; canEdit: boolean }) {
+export function PageDetails({
+  content,
+  canEdit,
+  seo,
+  onSeoChange,
+}: {
+  content: ContentDetails
+  canEdit: boolean
+  seo: Seo | null
+  onSeoChange: (seo: Seo) => void
+}) {
   const { config, api, me, sites } = useStudio()
   const { reload, openPage } = useWorkspace()
   const [group, setGroup] = useState<TranslationGroup | null>(null)
@@ -92,7 +103,9 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
         </a>
       </div>
 
-      <form onSubmit={saveLanguage}>
+      {seo && <SeoFields seo={seo} onChange={onSeoChange} title={content.title} url={content.url} disabled={!canEdit} />}
+
+      <form onSubmit={saveLanguage} className="border-t border-slate-200 pt-4">
         <Field label="Language" htmlFor="content-language" help="A code like de, en or en-GB, for hreflang links.">
           <div className="flex gap-2">
             <Input id="content-language" value={language} onChange={(event) => setLanguage(event.target.value)} placeholder="e.g. de" disabled={!canChange} />
@@ -180,7 +193,7 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
         className="flex items-center gap-1.5 border-t border-slate-200 pt-4 text-slate-600 no-underline hover:text-slate-900"
       >
         <Settings2 className="size-4" />
-        SEO, layout and other settings in the classic admin
+        Layout and other settings in the classic admin
       </a>
     </div>
   )

@@ -6,7 +6,7 @@
 import { createUsePuck } from '@puckeditor/core'
 import { Eye, History, LayoutTemplate, PanelLeft, PanelRight, Redo2, Save, Undo2 } from 'lucide-react'
 import { createContext, useContext, type ReactNode } from 'react'
-import type { ContentDetails } from '../types'
+import type { ContentDetails, Seo } from '../types'
 import { store, stored } from '../lib/storage'
 import { Badge, Button, IconButton, Input } from '../ui'
 import { PageDetails } from './PageDetails'
@@ -14,7 +14,11 @@ import { PageDetails } from './PageDetails'
 export interface EditorActions {
   content: ContentDetails
   canEdit: boolean
+  /** Unsaved changes: blocks or SEO fields */
   dirty: boolean
+  /** SEO fields as edited (saved with the blocks), null for content without them (content store items) */
+  seo: Seo | null
+  setSeo: (seo: Seo) => void
   saving: boolean
   changelog: string
   setChangelog: (value: string) => void
@@ -140,5 +144,5 @@ export function EditorHeader() {
 export function EditorFields({ children, itemSelector }: { children: ReactNode; itemSelector?: unknown }) {
   const actions = useContext(EditorActionsContext)
   if (itemSelector || !actions) return <>{children}</>
-  return <PageDetails key={actions.content.contentID} content={actions.content} canEdit={actions.canEdit} />
+  return <PageDetails key={actions.content.contentID} content={actions.content} canEdit={actions.canEdit} seo={actions.seo} onSeoChange={actions.setSeo} />
 }

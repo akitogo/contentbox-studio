@@ -73,6 +73,74 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"saves the SEO fields, without a new version when the blocks stay the same",
+					() => {
+						var page = createTestPage( slug = testSlug( variables.MARKER ) );
+						var blocks = [
+							{
+								"type": "heading",
+								"id"  : "h1",
+								"data": { "text": "Rooms" }
+							}
+						];
+						expect(
+							editor.save(
+								content = page,
+								blocks  = blocks,
+								author  = getAdministrator()
+							).content.version
+						).toBe( 2 );
+
+						var result = editor.save(
+							content = page,
+							blocks  = blocks,
+							author  = getAdministrator(),
+							seo     = {
+								"title"      : "  Rooms by the sea  ",
+								"description": "Quiet rooms with a view.",
+								"keywords"   : "rooms, sea"
+							}
+						);
+						expect( result.saved ).toBeTrue();
+						expect( result.content.version ).toBe( 2 );
+						expect( result.content.seo ).toBe(
+							{
+								"title"      : "Rooms by the sea",
+								"description": "Quiet rooms with a view.",
+								"keywords"   : "rooms, sea"
+							}
+						);
+
+						ormClearSession();
+						var stored = pageService.get( page.getContentID() );
+						expect( stored.getHTMLTitle() ).toBe( "Rooms by the sea" );
+						expect( editor.versions( stored ).len() ).toBe( 2 );
+
+						// Without seo the fields stay as they are
+						editor.save(
+							content = stored,
+							blocks  = blocks,
+							author  = getAdministrator()
+						);
+						ormClearSession();
+						expect( pageService.get( page.getContentID() ).getHTMLDescription() ).toBe(
+							"Quiet rooms with a view."
+						);
+
+						expect(
+							() => {
+								editor.save(
+									content = pageService.get( page.getContentID() ),
+									blocks  = blocks,
+									author  = getAdministrator(),
+									seo     = { "description": repeatString( "x", 161 ) }
+								);
+							}
+						).toThrow( "ContentEditor.Invalid" );
+					}
+				);
+
+				it(
 					"refuses a save based on an older version",
 					() => {
 						var page = createTestPage( slug = testSlug( variables.MARKER ) );

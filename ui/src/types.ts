@@ -135,6 +135,13 @@ export interface BlockDefinition {
   fields: FieldDefinition[]
 }
 
+/** ContentBox's HTML title, meta description and keywords */
+export interface Seo {
+  title: string
+  description: string
+  keywords: string
+}
+
 export interface ContentDetails {
   contentID: string
   contentType: 'page' | 'entry' | 'contentStore'
@@ -147,6 +154,7 @@ export interface ContentDetails {
   isPublished: boolean
   version: number
   url: string
+  seo: Seo
 }
 
 /** GET /content/:id and PUT /content/:id/blocks */

@@ -103,8 +103,11 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   plus the theme's `blocks/editor.css` if it has one), so blocks look like on the site.
 - **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`) and the status are
   in the editor's header, as are buttons to hide the blocks and fields columns.
-- With no block selected, the right column shows the content's settings: address, language and translations, and
-  a link to the other settings (SEO, layout) in the classic admin.
+- With no block selected, the right column shows the content's settings: address, search engine fields (title,
+  meta description and keywords, with length hints and a preview of the search result; saved with **Save**),
+  language and translations, and a link to the other settings (layout, ...) in the classic admin.
+- **Save** only adds a version when the blocks changed; saving only the search engine fields keeps the version
+  (ContentBox does not version them).
 - Opening other content with unsaved changes asks first.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.

@@ -13,7 +13,7 @@ import { buildConfig } from '../editor/puckConfig'
 import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
 import { messageOf, useStudio } from '../studio'
-import type { BlockDefinition, BlockError, ContentDetails, EditorContent, TreePage } from '../types'
+import type { BlockDefinition, BlockError, ContentDetails, EditorContent, Seo, TreePage } from '../types'
 import { Alert, Button, Loading } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
@@ -38,6 +38,8 @@ interface Loaded {
 
 type Message = { tone: 'danger' | 'success' | 'info'; text: string }
 
+const sameSeo = (a: Seo, b: Seo) => a.title === b.title && a.description === b.description && a.keywords === b.keywords
+
 /** Route element: a fresh editor for each content (no state carried over from the previous one) */
 export function EditorPage() {
   const { contentID = '' } = useParams()
@@ -55,6 +57,8 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const [changelog, setChangelog] = useState('')
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // SEO fields as edited; saved with the blocks
+  const [seo, setSeo] = useState<Seo | null>(null)
   const [showVersions, setShowVersions] = useState(false)
   const [templateDialog, setTemplateDialog] = useState(false)
   const current = useRef<PuckData | null>(null)
@@ -92,6 +96,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
           context: { siteID: editor.content.siteID, canEdit: editor.canEdit, canEditHtml: editor.canEditHtml, pages, contentStoreItems, stylesheets },
         })
         show(editor.blocks, definitions)
+        setSeo(editor.content.contentType === 'contentStore' ? null : editor.content.seo)
       } catch (error) {
         if (!cancelled) setLoadError(messageOf(error))
       }
@@ -103,17 +108,20 @@ function ContentEditor({ contentID }: { contentID: string }) {
   }, [api, config, contentID, show, setSiteID, showSection])
 
   // Warn before leaving with unsaved changes: within Studio (workspace) and when closing or reloading the page
-  useEffect(() => {
-    setUnsaved(dirty)
-    return () => setUnsaved(false)
-  }, [dirty, setUnsaved])
+  const seoChanged = Boolean(loaded && seo && !sameSeo(seo, loaded.editor.content.seo))
+  const unsaved = dirty || seoChanged
 
   useEffect(() => {
-    if (!dirty) return
+    setUnsaved(unsaved)
+    return () => setUnsaved(false)
+  }, [unsaved, setUnsaved])
+
+  useEffect(() => {
+    if (!unsaved) return
     const warn = (event: BeforeUnloadEvent) => event.preventDefault()
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty])
+  }, [unsaved])
 
   const puckConfig = useMemo(
     () => (loaded ? buildConfig(loaded.definitions, loaded.editor.canEditHtml, CONTENT_LABELS[loaded.editor.content.contentType]) : null),
@@ -130,11 +138,15 @@ function ContentEditor({ contentID }: { contentID: string }) {
         blocks: fromPuckData(current.current),
         changelog,
         baseVersion: loaded.editor.content.version,
+        ...(seo ? { seo } : {}),
       })
       setLoaded({ ...loaded, editor: result })
       show(result.blocks, loaded.definitions)
+      if (seo) setSeo(result.content.seo)
       setChangelog('')
-      setMessage({ tone: 'success', text: `Saved as version ${result.content.version}.` })
+      // No new version when only the SEO fields changed
+      const newVersion = result.content.version !== loaded.editor.content.version
+      setMessage({ tone: 'success', text: newVersion ? `Saved as version ${result.content.version}.` : 'Saved.' })
       void reloadTree()
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
@@ -229,7 +241,9 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const actions: EditorActions = {
     content: editor.content,
     canEdit: editor.canEdit,
-    dirty,
+    dirty: unsaved,
+    seo,
+    setSeo,
     saving,
     changelog,
     setChangelog,
