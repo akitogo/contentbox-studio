@@ -1,5 +1,6 @@
 import { ExternalLink, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { urlPath } from '../lib/url'
 import { messageOf, useStudio } from '../studio'
 import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
 import { Alert, Badge, Button, Field, Input, Select } from '../ui'
@@ -85,8 +86,8 @@ export function PageDetails({ content, canEdit }: { content: ContentDetails; can
     <div className="grid gap-5 p-4 text-sm">
       <div className="grid gap-1">
         <span className="text-xs font-medium tracking-wide text-slate-500 uppercase">Address</span>
-        <a href={content.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 font-mono text-xs break-all">
-          {content.url}
+        <a href={content.url} target="_blank" rel="noreferrer" title={content.url} className="flex items-center gap-1.5 font-mono text-xs break-all">
+          {urlPath(content.url)}
           <ExternalLink className="size-3 shrink-0" />
         </a>
       </div>
