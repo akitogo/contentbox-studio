@@ -241,14 +241,15 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
     setRefresh((count) => count + 1)
   }
 
-  // A click into editable text is not a click on the block for Puck (a second click would deselect it)
+  // A click into editable text is not a click on the block for Puck (a second click would deselect it). It only edits
+  // the text: a link around it or in it is not followed, a submit button does not send its form, and a <label> does not
+  // move the cursor into its input (which would end the editing at once)
   function onClick(event: MouseEvent) {
     const field = fieldOf(event.target)
     if (!field) return
     event.stopPropagation()
-    if (!isRichText(field)) return
-    // Links in the text are not followed
     event.preventDefault()
+    if (!isRichText(field)) return
     if (canEdit && !richText.current) startRichText(field, event.clientX, event.clientY)
   }
 
