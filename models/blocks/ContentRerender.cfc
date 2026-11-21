@@ -2,13 +2,16 @@
  * Re-renders all block content of a site with the current block templates, e.g. after a theme update.
  *
  * Pages, blog entries and content store items whose active version has blocks are rendered again; where the HTML
- * changes, a new version is saved (and so goes live) with a changelog note. Content with blocks changed outside
+ * changes, a new version is saved (and so goes live) with a changelog note, and ContentBox's post-save event is
+ * announced so its caches show the new HTML. Content with blocks changed outside
  * Studio is skipped and reported, see BlockRenderer.rerenderBody().
  */
 component singleton {
 	property name="renderer" inject="BlockRenderer@contentbox-studio";
 
 	property name="contentService" inject="contentService@contentbox";
+
+	property name="contentEvents" inject="ContentEvents@contentbox-studio";
 
 	property name="log" inject="logbox:logger:{this}";
 	variables.CHANGELOG = "Re-rendered by ContentBox Studio with the current block templates";
@@ -38,6 +41,9 @@ component singleton {
 						author    = arguments.author
 					);
 					variables.contentService.save( entity = content, transactional = false );
+					// Like a save in the editor: ContentBox clears its cached rendering (in the transaction: the
+					// content may not be used after the commit, see above)
+					variables.contentEvents.saved( content );
 					result.updated.append( content.getSlug() );
 				}
 			}

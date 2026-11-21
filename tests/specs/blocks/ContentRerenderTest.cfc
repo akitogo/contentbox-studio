@@ -18,6 +18,46 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"lets ContentBox clear its cached rendering of re-rendered content",
+					() => {
+						var outdated = createPage(
+							format.serialize(
+								[
+									{
+										"type": "heading",
+										"id"  : "c1",
+										"data": { "text": "Cached", "level": "2" },
+										"html": "<h2 class=""old-template"">Cached</h2>"
+									}
+								]
+							)
+						);
+						try {
+							// Rendered once: in ContentBox's content cache now (if caching is on)
+							expect( pageService.get( outdated.getContentID() ).renderContent() ).toInclude(
+								"old-template"
+							);
+
+							rerender.rerenderSite( site, getAdministrator() );
+
+							// ContentBox clears the cache asynchronously
+							var rendered = "";
+							for ( var i = 1; i <= 30; i++ ) {
+								ormClearSession();
+								rendered = pageService.get( outdated.getContentID() ).renderContent();
+								if ( rendered contains "cbs-heading" ) {
+									break;
+								}
+								sleep( 100 );
+							}
+							expect( rendered ).toInclude( "<h2 class=""cbs-heading"">Cached</h2>" );
+						} finally {
+							deletePage( outdated );
+						}
+					}
+				);
+
+				it(
 					"saves a new version where an old template's HTML changes and skips content edited outside Studio",
 					() => {
 						// Rendered by an "old template": consistent hash, but not what the heading template renders today
