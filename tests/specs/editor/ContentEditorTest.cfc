@@ -116,6 +116,74 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"saves whether a page shows in the menu, only for pages",
+					() => {
+						var page = createTestPage( slug = testSlug( variables.MARKER ) );
+						var blocks = [
+							{
+								"type": "heading",
+								"id"  : "m1",
+								"data": { "text": "Menu" }
+							}
+						];
+						var first = editor.save(
+							content = page,
+							blocks  = blocks,
+							author  = getAdministrator()
+						);
+						expect( first.content.showInMenu ).toBeTrue();
+
+						var result = editor.save(
+							content    = page,
+							blocks     = blocks,
+							author     = getAdministrator(),
+							showInMenu = false
+						);
+						expect( result.content.showInMenu ).toBeFalse();
+						expect( result.content.version ).toBe( first.content.version );
+						ormClearSession();
+						expect( pageService.get( page.getContentID() ).getShowInMenu() ).toBeFalse();
+
+						// Left as it is when not given
+						editor.save(
+							content = pageService.get( page.getContentID() ),
+							blocks  = blocks,
+							author  = getAdministrator()
+						);
+						ormClearSession();
+						expect( pageService.get( page.getContentID() ).getShowInMenu() ).toBeFalse();
+
+						var entry = createTestEntry( testSlug( variables.MARKER ) );
+						try {
+							expect( editor.load( entry, getAdministrator() ).content ).notToHaveKey( "showInMenu" );
+							expect(
+								() => {
+									editor.save(
+										content    = entry,
+										blocks     = [],
+										author     = getAdministrator(),
+										showInMenu = false
+									);
+								}
+							).toThrow( "ContentEditor.Invalid" );
+						} finally {
+							deleteTestEntries( variables.MARKER );
+						}
+
+						setup();
+						var invalidEvent = put(
+							route  = "/cbstudio/api/content/#page.getContentID()#/blocks",
+							params = {
+								"x-auth-token": tokenFor( getAdministrator() ),
+								"blocks"      : blocks,
+								"showInMenu"  : "sometimes"
+							}
+						);
+						expect( renderedStatus( invalidEvent ) ).toBe( 400 );
+					}
+				);
+
+				it(
 					"saves the SEO fields, without a new version when the blocks stay the same",
 					() => {
 						var page = createTestPage( slug = testSlug( variables.MARKER ) );

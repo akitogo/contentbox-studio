@@ -58,6 +58,14 @@ component extends="BaseHandler" {
 		if ( isStruct( rc.entry ?: "" ) ) {
 			args.entry = rc.entry;
 		}
+		// Not "rc.showInMenu ?: ...": Adobe ColdFusion's Elvis operator also replaces false
+		if ( rc.keyExists( "showInMenu" ) ) {
+			if ( !isBoolean( rc.showInMenu ) ) {
+				prc.response.setErrorMessage( "showInMenu must be true or false", 400 );
+				return;
+			}
+			args.showInMenu = rc.showInMenu;
+		}
 		try {
 			var result = variables.editor.save( argumentCollection = args );
 			prc.response.setData( result );

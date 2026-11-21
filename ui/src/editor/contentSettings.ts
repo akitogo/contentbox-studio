@@ -1,6 +1,6 @@
 /**
- * The content's settings as the editor edits them (right column, no block selected): search engine fields, language
- * and, for blog entries, publish dates, categories, excerpt, featured image and comments. They are saved with the
+ * The content's settings as the editor edits them (right column, no block selected): search engine fields, language,
+ * for pages whether they appear in the menu, and for blog entries publish dates, categories, excerpt, featured image and comments. They are saved with the
  * blocks (PUT /content/:id/blocks), so Save, the unsaved marker and the leave warning cover them.
  */
 import { generateJSON } from '@tiptap/react'
@@ -30,6 +30,8 @@ export interface ContentSettings {
   seo: Seo | null
   /** null when it cannot be changed here (content store items, or no STUDIO_SITE_TREE permission) */
   language: string | null
+  /** null for blog entries and content store items (only pages are in the menu) */
+  showInMenu: boolean | null
   entry: EntryEdit | null
 }
 
@@ -50,6 +52,7 @@ export function settingsOf(
   return {
     seo: hasPage ? { ...content.seo } : null,
     language: hasPage && canSetLanguage ? content.language : null,
+    showInMenu: content.contentType === 'page' ? content.showInMenu !== false : null,
     entry: entry
       ? {
           publishedDate: toLocalInput(content.publishedDate),
@@ -68,10 +71,11 @@ export const sameSettings = (a: ContentSettings, b: ContentSettings) => JSON.str
 
 /** The settings' part of the save request: only what can be changed here */
 export function settingsPayload(settings: ContentSettings) {
-  const { seo, language, entry } = settings
+  const { seo, language, showInMenu, entry } = settings
   return {
     ...(seo ? { seo } : {}),
     ...(language !== null ? { language: language.trim() } : {}),
+    ...(showInMenu !== null ? { showInMenu } : {}),
     ...(entry
       ? {
           entry: {

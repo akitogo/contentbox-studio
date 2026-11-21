@@ -83,6 +83,7 @@ component singleton {
 	 * versioned by ContentBox. Left unchanged if not given (like language and entry).
 	 * @language    Language code of a page or entry ("" for none); needs STUDIO_SITE_TREE, like translations
 	 * @entry       Settings of a blog entry, see EntrySettings.prepare()
+	 * @showInMenu  Whether a page appears in the site's menu (pages only)
 	 *
 	 * @return { saved: true, ...load() } or { saved: false, errors: [ { blockID, field, message } ] }
 	 *
@@ -96,7 +97,8 @@ component singleton {
 		numeric baseVersion = 0,
 		struct seo,
 		string language,
-		struct entry
+		struct entry,
+		boolean showInMenu
 	) {
 		if ( !canEdit( arguments.content, arguments.author ) ) {
 			throw(
@@ -140,6 +142,13 @@ component singleton {
 			}
 			entryUpdate = variables.entrySettings.prepare( arguments.content, arguments.entry );
 		}
+		var menuChanged = false;
+		if ( !isNull( arguments.showInMenu ) ) {
+			if ( type != "page" ) {
+				invalid( "Only pages have a menu setting" );
+			}
+			menuChanged = arguments.showInMenu != showsInMenu( arguments.content );
+		}
 
 		var result = variables.renderer.renderBlocks( arguments.content.getSite(), arguments.blocks );
 		if ( result.errors.len() ) {
@@ -167,9 +176,16 @@ component singleton {
 			if ( !isNull( arguments.language ) ) {
 				variables.translations.applyLanguage( arguments.content, arguments.language );
 			}
+			if ( menuChanged ) {
+				arguments.content.setShowInMenu( arguments.showInMenu );
+			}
 			variables.contentService.save( entity = arguments.content, transactional = false );
 		}
 		variables.contentEvents.saved( arguments.content );
+		// The menu is part of every page: ContentBox's post-save cleanup only clears this page's cached copy
+		if ( menuChanged ) {
+			variables.contentService.clearAllPageWrapperCaches();
+		}
 
 		var loaded = load( arguments.content, arguments.author );
 		loaded[ "saved" ] = true;
@@ -350,6 +366,14 @@ component singleton {
 
 	/********************************* PRIVATE *********************************/
 
+	/**
+	 * Whether a page appears in the site's menu (ContentBox's default when not set: yes)
+	 */
+	private boolean function showsInMenu( required page ) {
+		var value = arguments.page.getShowInMenu();
+		return isNull( value ) || !isBoolean( value ) || value;
+	}
+
 	private void function invalid( required string message ) {
 		throw( type = "ContentEditor.Invalid", message = arguments.message );
 	}
@@ -412,6 +436,9 @@ component singleton {
 		};
 		if ( type == "entry" ) {
 			details[ "entry" ] = variables.entrySettings.describe( item );
+		}
+		if ( type == "page" ) {
+			details[ "showInMenu" ] = showsInMenu( item );
 		}
 		return details;
 	}

@@ -177,6 +177,8 @@ export interface ContentDetails {
   language: string
   url: string
   seo: Seo
+  /** Only for pages: whether the page appears in the site's menu */
+  showInMenu?: boolean
   /** Only for blog entries */
   entry?: EntryDetails
 }
