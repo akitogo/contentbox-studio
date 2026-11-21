@@ -7,11 +7,18 @@
  * - the editor shows a notice with a link to Studio and the body editor is read-only
  * - on save, the body of the previous version is kept, whatever the editor posted; all other settings (title,
  * slug, SEO, categories, publishing) still save normally
+ *
+ * It also keeps Studio's editor canvas in step with the theme: when a theme is activated or its settings are saved, the
+ * cached stylesheets of the canvas (and ContentBox's cached pages they are read from) are cleared.
  */
 component {
 	property name="format" inject="BlockFormat@contentbox-studio";
 
 	property name="markup" inject="Markup@contentbox-studio";
+
+	property name="themeStyles" inject="ThemeStyles@contentbox-studio";
+
+	property name="contentService" inject="contentService@contentbox";
 
 	property name="log" inject="logbox:logger:{this}";
 
@@ -75,6 +82,22 @@ component {
 		variables.log.info(
 			"ContentBox Studio kept the block body of [#content.getSlug()#]: block content is edited in Studio, not in the classic editor"
 		);
+	}
+
+	/**
+	 * A theme was activated: the editor canvas needs its stylesheets
+	 */
+	void function cbadmin_onThemeActivation( event, data ) {
+		variables.themeStyles.clearCache();
+	}
+
+	/**
+	 * Theme settings saved (e.g. another design preset): the stylesheets can change. The canvas reads them from the
+	 * site's home page, and ContentBox does not clear its cached pages here (CONTENTBOX-1578), so both are cleared.
+	 */
+	void function cbadmin_postThemeSettingsSave( event, data ) {
+		variables.contentService.clearAllPageWrapperCaches();
+		variables.themeStyles.clearCache();
 	}
 
 }

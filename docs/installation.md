@@ -22,6 +22,9 @@ In the root of the ContentBox site:
 box install contentbox-studio
 ```
 
+It goes to the site's modules folder: `modules/contentbox-studio`, or `lib/modules/contentbox-studio` on sites made
+from ContentBox 7's ColdBox 8 template (both are loaded).
+
 ### From a release zip
 
 Download `contentbox-studio-<version>.zip` from the

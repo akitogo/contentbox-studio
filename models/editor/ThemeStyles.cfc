@@ -4,7 +4,9 @@
  * - all <link rel="stylesheet"> of the site's home page (fetched by the server, so it works for every site domain)
  * - plus blocks/editor.css of the active theme, if it has one: CSS a theme can add for the editor only
  *
- * Cached per site for 10 minutes. If the home page cannot be fetched, only editor.css is used.
+ * Cached per site and active theme for 10 minutes, so activating another theme shows at once; Studio's ClassicAdmin
+ * interceptor clears the cache when a theme is activated or its settings are saved (a preset changes the stylesheets).
+ * If the home page cannot be fetched, only editor.css is used.
  */
 component singleton {
 	property name="themeService" inject="provider:themeService@contentbox";
@@ -21,7 +23,7 @@ component singleton {
 	 * @return Absolute URLs of stylesheets
 	 */
 	array function stylesheets( required site ) {
-		var key = arguments.site.getSiteID();
+		var key = cacheKey( arguments.site );
 		var cached = variables.cache[ key ] ?: {};
 		if (
 			!cached.isEmpty() &&
@@ -53,6 +55,17 @@ component singleton {
 
 	void function clearCache() {
 		variables.cache = {};
+	}
+
+	/**
+	 * Whether the stylesheets of a site (and its active theme) are cached
+	 */
+	boolean function isCached( required site ) {
+		return variables.cache.keyExists( cacheKey( arguments.site ) );
+	}
+
+	private string function cacheKey( required site ) {
+		return arguments.site.getSiteID() & "|" & arguments.site.getActiveTheme();
 	}
 
 	/**

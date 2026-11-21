@@ -226,6 +226,31 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						).toBe( [] );
 					}
 				);
+
+				it(
+					"caches per site and theme, and forgets when a theme is activated or its settings are saved",
+					() => {
+						var styles = getInstance( "ThemeStyles@contentbox-studio" );
+						var site = createStub()
+							.$( "getSiteID", "cbstudio-styles-test" )
+							.$( "getSiteRoot", "http://127.0.0.1:1" )
+							.$( "getActiveTheme", "default" );
+						styles.clearCache();
+						styles.stylesheets( site );
+						expect( styles.isCached( site ) ).toBeTrue();
+						// Another active theme: not the cached list
+						var otherTheme = createStub()
+							.$( "getSiteID", "cbstudio-styles-test" )
+							.$( "getActiveTheme", "another-theme" );
+						expect( styles.isCached( otherTheme ) ).toBeFalse();
+
+						for ( var point in [ "cbadmin_postThemeSettingsSave", "cbadmin_onThemeActivation" ] ) {
+							styles.stylesheets( site );
+							getController().getInterceptorService().announce( point, { "name": "default" } );
+							expect( styles.isCached( site ) ).toBeFalse( point );
+						}
+					}
+				);
 			}
 		);
 	}

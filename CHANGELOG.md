@@ -3,6 +3,14 @@
 All notable changes to ContentBox Studio. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/). Upgrading: see [docs/installation.md](docs/installation.md#upgrade).
 
+## [Unreleased]
+
+### Fixed
+
+- After activating another theme or saving theme settings (e.g. another design preset), the editor canvas showed
+  the previous stylesheets for up to 10 minutes. They are now cached per theme and cleared on both events, together
+  with ContentBox's cached pages they are read from.
+
 ## [0.1.1] - 2026-11-21
 
 ### Fixed
