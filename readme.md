@@ -148,6 +148,22 @@ In `config/ColdBox.cfc` of the site, `moduleSettings[ "contentbox-studio" ]`:
 
 The module is developed inside a ContentBox 7 site, linked as `modules_app/contentbox-studio`.
 
+**Code layout:**
+
+| Path | What |
+|---|---|
+| `ModuleConfig.cfc`, `handlers/`, `views/` | The `/cbstudio` page (serves the app) and the classic admin integration |
+| `modules/contentbox-studio-api/` | The Studio API at `/cbstudio/api`: routes and thin handlers only |
+| `models/` | All logic: `blocks/` (format, registry, renderer), `tree/` (site tree, status, translations), `blog/`, `editor/` (save, versions, media, theme styles) |
+| `blocks/`, `includes/`, `interceptors/` | Core block types, their CSS, block output on the public site and the classic admin guard |
+| `ui/` → `dist/` | The React app (Vite, Puck, TipTap) and its build, which the module serves |
+| `tests/`, `docs/` | TestBox specs and fixtures; block format, theme blocks, engine notes |
+
+The API is a submodule because cbsecurity has one firewall per module, and the two parts authenticate differently:
+the page needs the classic admin session and redirects to the admin login, the API checks JWT tokens (the same ones
+as `/cbapi/v1`) and answers 401/403 as JSON. ContentBox splits its admin and its REST API the same way
+(`contentbox-admin`, `contentbox-api`).
+
 ```bash
 cd ui
 npm ci
