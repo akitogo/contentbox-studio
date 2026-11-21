@@ -7,6 +7,10 @@ Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, ru
 
 ![ContentBox Studio: the site tree, the page as it looks on the site, and the fields of the selected section](docs/images/editor.jpg)
 
+**A theme to start with:** [Studio Starter](https://github.com/akitogo/studio-starter) is a ContentBox theme with
+ready-made blocks for Studio (hero, content with image, features, pricing, call to action, blog) and switchable design
+presets, built with Tailwind CSS. The screenshots here show it.
+
 ## Documentation
 
 | | |
@@ -68,7 +72,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   data, followed by its rendered HTML ([block format](docs/block-format.md)). Versions, search, the REST API and
   exports keep working; on the public site Studio removes the comments.
 - Block types come from Studio (HTML, text, heading, image, gallery, button, quote, content store item), from the
-  site's theme and from other modules ([theme blocks](docs/theme-blocks.md)).
+  site's theme and from other modules ([theme blocks](docs/theme-blocks.md)). For a theme with ready-made blocks, see
+  [Studio Starter](https://github.com/akitogo/studio-starter).
 - The server renders blocks when they are saved. Rich text is stored as a structured document and rendered by the
   server, so it cannot carry arbitrary HTML; raw HTML needs the `HTML` block and the `STUDIO_HTML_BLOCKS` permission.
 - In the classic admin, block content shows a notice with a link to Studio and its body is read-only; saving there

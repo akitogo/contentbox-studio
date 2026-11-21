@@ -47,7 +47,8 @@ The built editor (`dist/`) is not in git, so a clone needs the build step (Node.
 
 Studio works with any theme: pages are built from Studio's core blocks (text, heading, image, gallery, quote, button,
 content store item, HTML). Blocks that fit the theme's design are added in the theme, see
-[Blocks in themes](theme-blocks.md).
+[Blocks in themes](theme-blocks.md). [Studio Starter](https://github.com/akitogo/studio-starter) is a theme with
+ready-made blocks and design presets to start from.
 
 ## Configure
 

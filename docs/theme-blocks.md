@@ -3,6 +3,9 @@
 A theme defines its own block types in a `blocks/` folder, one subfolder per type. Studio finds them in the site's
 active theme; a theme block with the same name as a core block replaces it (except `html`).
 
+A complete example is [Studio Starter](https://github.com/akitogo/studio-starter): section blocks with background
+tones, design presets, `blocks/editor.css` and the header of blog entries in the editor, all built with Tailwind CSS.
+
 ```
 mytheme/
 └── blocks/
