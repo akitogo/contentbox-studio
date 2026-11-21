@@ -1,0 +1,1 @@
+<cfoutput><ol class="steps"><cfloop array="#args.data.items#" index="local.step"><li><h3>#args.studio.esc( local.step.title )#</h3><div class="body">#args.studio.richText( local.step.body )#</div></li></cfloop></ol></cfoutput>

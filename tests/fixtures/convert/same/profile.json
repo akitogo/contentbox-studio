@@ -1,0 +1,27 @@
+{
+	"label": "Fixture: same markup",
+	"theme": "convert",
+	"compare": "markup",
+	"rules": [
+		{
+			"block": "banner",
+			"match": "section.banner",
+			"fields": {
+				"title": "h2",
+				"text": "p",
+				"tone": { "classes": { "banner--light": "light", "banner--dark": "dark" } },
+				"wide": { "classes": { "banner--wide": true } },
+				"image": "img",
+				"linkLabel": "a.btn",
+				"link": "a.btn"
+			}
+		},
+		{
+			"block": "steps",
+			"match": "ol.steps",
+			"fields": {
+				"items": { "each": "li", "fields": { "title": "h3", "body": "div.body" } }
+			}
+		}
+	]
+}

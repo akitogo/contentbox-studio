@@ -1,0 +1,5 @@
+{
+	"label": "Fixture: broken",
+	"compare": "both",
+	"rules": [ { "match": "div" }, { "block": "banner", "reader": "missing" } ]
+}

@@ -42,11 +42,17 @@ component {
 		router.route( "/sites/:site/styles" ).to( "sites.styles" );
 		router.route( "/sites/:site/pages" ).to( "tree.create" );
 		router
+			.route( "/sites/:site/convert" )
+			.withAction( { "GET": "report", "POST": "apply" } )
+			.toHandler( "convert" );
+		router.route( "/sites/:site/copy" ).to( "convert.copy" );
+		router
 			.route( "/sites/:site/entries" )
 			.withAction( { "GET": "index", "POST": "create" } )
 			.toHandler( "blog" );
 		router.route( "/sites/:site/categories" ).to( "blog.categories" );
 		router.route( "/sites" ).to( "sites.index" );
+		router.route( "/convert" ).to( "convert.index" );
 		router.route( "/pages/:contentID/move" ).to( "tree.move" );
 		router.route( "/content/:contentID/language" ).to( "translations.setLanguage" );
 		router

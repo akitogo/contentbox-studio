@@ -1,0 +1,16 @@
+{
+	"label": "Steps",
+	"icon": "list",
+	"category": "sections",
+	"fields": [
+		{
+			"name": "items",
+			"type": "list",
+			"label": "Steps",
+			"fields": [
+				{ "name": "title", "type": "text", "label": "Title" },
+				{ "name": "body", "type": "richtext", "label": "Text" }
+			]
+		}
+	]
+}

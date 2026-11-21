@@ -1,0 +1,9 @@
+{
+	"label": "Fixture: unknown blocks",
+	"theme": "convert",
+	"rules": [
+		{ "block": "nope", "match": "div", "fields": {} },
+		{ "block": "banner", "match": "section[", "fields": { "title": "h2", "subtitle": "h3" } },
+		{ "block": "steps", "match": "ol", "fields": { "items": { "each": "li", "fields": { "heading": "h3" } } } }
+	]
+}

@@ -1,0 +1,13 @@
+{
+	"label": "Fixture: new look",
+	"theme": "convert",
+	"compare": "content",
+	"rules": [
+		{ "block": "banner", "reader": "promo" },
+		{
+			"block": "banner",
+			"match": "div.teaser",
+			"fields": { "title": "h4", "text": "p.lead", "image": "img", "tone": { "value": "dark" } }
+		}
+	]
+}

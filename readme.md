@@ -33,6 +33,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 | `STUDIO_ACCESS` | Opening Studio and using its API | Administrator, Editor |
 | `STUDIO_SITE_TREE` | Moving and reordering pages in the site tree | Administrator, Editor |
 | `STUDIO_HTML_BLOCKS` | Adding and editing raw HTML blocks | Administrator |
+| `STUDIO_CONVERT` | Converting the HTML of existing content into blocks, copying a site for that (also needs `SITES_ADMIN`) | Administrator |
 
 ## How it works
 
@@ -143,6 +144,14 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   preselected for new pages or entries. Templates are also listed in the classic admin.
 - Content written in the classic editor opens as one HTML block; blocks changed outside Studio are pointed out.
 
+## Converting existing pages
+
+Existing pages are hand-written HTML and open as one HTML block. The conversion tool turns them into blocks with a
+**conversion profile** (CSS selectors per block field, or code for complex sections), page by page and only where
+nothing is lost: each block is rendered and compared with the section it replaces. For a new look it works on a
+**copy of the site** with another theme, so the original stays as it is. API only for now; see
+[docs/conversion.md](docs/conversion.md).
+
 ## Settings
 
 In `config/ColdBox.cfc` of the site, `moduleSettings[ "contentbox-studio" ]`:
@@ -163,10 +172,10 @@ The module is developed inside a ContentBox 7 site, linked as `modules_app/conte
 |---|---|
 | `ModuleConfig.cfc`, `handlers/`, `views/` | The `/cbstudio` page (serves the app) and the classic admin integration |
 | `modules/contentbox-studio-api/` | The Studio API at `/cbstudio/api`: routes and thin handlers only |
-| `models/` | All logic: `blocks/` (format, registry, renderer), `tree/` (site tree, status, translations), `blog/`, `editor/` (save, versions, media, theme styles) |
+| `models/` | All logic: `blocks/` (format, registry, renderer), `tree/` (site tree, status, translations), `blog/`, `editor/` (save, versions, media, theme styles), `convert/` (conversion tool, site copy) |
 | `blocks/`, `includes/`, `interceptors/` | Core block types, their CSS, block output on the public site and the classic admin guard |
 | `ui/` → `dist/` | The React app (Vite, Puck, TipTap) and its build, which the module serves |
-| `tests/`, `docs/` | TestBox specs and fixtures; block format, theme blocks, engine notes |
+| `tests/`, `docs/` | TestBox specs and fixtures; block format, theme blocks, conversion, engine notes |
 
 The API is a submodule because cbsecurity has one firewall per module, and the two parts authenticate differently:
 the page needs the classic admin session and redirects to the admin login, the API checks JWT tokens (the same ones

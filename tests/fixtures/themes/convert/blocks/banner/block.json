@@ -1,0 +1,14 @@
+{
+	"label": "Banner",
+	"icon": "megaphone",
+	"category": "sections",
+	"fields": [
+		{ "name": "title", "type": "text", "label": "Title", "required": true },
+		{ "name": "text", "type": "textarea", "label": "Text" },
+		{ "name": "tone", "type": "select", "label": "Tone", "default": "light", "options": [ "light", "dark" ] },
+		{ "name": "wide", "type": "boolean", "label": "Wide" },
+		{ "name": "image", "type": "image", "label": "Image" },
+		{ "name": "linkLabel", "type": "text", "label": "Link label" },
+		{ "name": "link", "type": "link", "label": "Link" }
+	]
+}

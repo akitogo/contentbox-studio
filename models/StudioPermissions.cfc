@@ -34,6 +34,11 @@ component singleton accessors="true" {
 				"permission" : "STUDIO_HTML_BLOCKS",
 				"description": "Add and edit raw HTML blocks in ContentBox Studio",
 				"roles"      : [ "Administrator" ]
+			},
+			{
+				"permission" : "STUDIO_CONVERT",
+				"description": "Convert the HTML of pages into blocks and copy sites for that in ContentBox Studio",
+				"roles"      : [ "Administrator" ]
 			}
 		];
 		return this;

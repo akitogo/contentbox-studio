@@ -23,7 +23,7 @@ component singleton {
 	 */
 	struct function forContent( required content ) {
 		var group = getField( arguments.content, variables.GROUP_KEY );
-		var members = len( group ) ? loadGroup( group ) : [];
+		var members = len( group ) ? loadGroup( group, arguments.content.getSite() ) : [];
 		var current = arguments.content.getContentID();
 		return {
 			"contentID": current,
@@ -104,7 +104,7 @@ component singleton {
 		}
 		var group = getField( arguments.content, variables.GROUP_KEY );
 		if ( len( group ) && len( code ) ) {
-			for ( var member in loadGroup( group ) ) {
+			for ( var member in loadGroup( group, arguments.content.getSite() ) ) {
 				if (
 					member.getContentID() != arguments.content.getContentID() &&
 						getField( member, variables.LANGUAGE_KEY ) == code
@@ -146,8 +146,8 @@ component singleton {
 
 		var group = getField( arguments.content, variables.GROUP_KEY );
 		var otherGroup = getField( arguments.other, variables.GROUP_KEY );
-		var members = len( group ) ? loadGroup( group ) : [ arguments.content ];
-		var joining = len( otherGroup ) ? loadGroup( otherGroup ) : [ arguments.other ];
+		var members = len( group ) ? loadGroup( group, arguments.content.getSite() ) : [ arguments.content ];
+		var joining = len( otherGroup ) ? loadGroup( otherGroup, arguments.other.getSite() ) : [ arguments.other ];
 		if ( !len( group ) ) {
 			group = len( otherGroup )
 				? otherGroup
@@ -209,7 +209,7 @@ component singleton {
 			);
 			variables.contentService.save( entity = arguments.content, transactional = false );
 			var contentID = arguments.content.getContentID();
-			var rest = loadGroup( group ).filter( ( member ) => member.getContentID() != contentID );
+			var rest = loadGroup( group, arguments.content.getSite() ).filter( ( member ) => member.getContentID() != contentID );
 			if ( rest.len() == 1 ) {
 				setField(
 					rest[ 1 ],
@@ -223,11 +223,19 @@ component singleton {
 
 	/********************************* PRIVATE *********************************/
 
-	private array function loadGroup( required string group ) {
+	/**
+	 * Members of a group within a site: a copied site has the same custom fields, ids included, until SiteCopy gives
+	 * it its own (and ContentBox's site import never does)
+	 */
+	private array function loadGroup( required string group, required site ) {
 		transaction {
 			var ids = ormExecuteQuery(
-				"select c.contentID from cbCustomField f join f.relatedContent c where f.key = :key and f.value = :group",
-				{ "key": variables.GROUP_KEY, "group": arguments.group }
+				"select c.contentID from cbCustomField f join f.relatedContent c where f.key = :key and f.value = :group and c.site.siteID = :siteID",
+				{
+					"key"   : variables.GROUP_KEY,
+					"group" : arguments.group,
+					"siteID": arguments.site.getSiteID()
+				}
 			);
 		}
 		return ids.map( ( id ) => variables.contentService.get( id ) );
