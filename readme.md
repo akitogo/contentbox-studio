@@ -56,7 +56,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 ## Site tree
 
 - `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
-  block content and the language. Search keeps matches in place.
+  block content, the language, and a menu icon (struck through when the page is not in the site's menu; shown also
+  in the narrow column next to the editor). Search keeps matches in place.
 - Tabs switch between the pages and the blog (see [Blog](#blog)).
 - Clicking a page opens it in the editor, and the tree becomes a column next to it: drag its edge to resize it
   (double-click resets), hide it to a narrow strip; the wider it is, the more it shows (addresses, badges, move
