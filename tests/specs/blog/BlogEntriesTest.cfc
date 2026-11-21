@@ -14,12 +14,21 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						blog = getInstance( "BlogEntries@contentbox-studio" );
 						editor = getInstance( "ContentEditor@contentbox-studio" );
 						entryService = getInstance( "entryService@contentbox" );
+						// New entries need the default site's blog turned on (a dev site may have it off); afterEach
+						// puts the setting back
+						blogWasEnabled = isBlogEnabled();
+						if ( !blogWasEnabled ) {
+							setBlogEnabled( true );
+						}
 						site = getInstance( "siteService@contentbox" ).getDefaultSite();
 					}
 				);
 
 				afterEach(
 					() => {
+						if ( isBlogEnabled() != blogWasEnabled ) {
+							setBlogEnabled( blogWasEnabled );
+						}
 						deleteTestEntries( variables.MARKER );
 						deleteTestPages( variables.MARKER );
 						queryExecute(
@@ -553,6 +562,32 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						);
 
 						it(
+							"refuses new entries while the site's blog is turned off",
+							() => {
+								var blogOff = createStub().$( "getIsBlogEnabled", false );
+								expect(
+									() => {
+										blog.createEntry(
+											site   = blogOff,
+											title  = "#variables.MARKER# off",
+											author = getAdministrator()
+										);
+									}
+								).toThrow( "BlogEntries.BlogDisabled" );
+
+								setBlogEnabled( false );
+								var response = post(
+									route  = "/cbstudio/api/sites/default/entries",
+									params = {
+										"x-auth-token": tokenFor( getAdministrator() ),
+										"title"       : "#variables.MARKER# off"
+									}
+								);
+								expect( renderedStatus( response ) ).toBe( 409 );
+							}
+						);
+
+						it(
 							"needs ENTRIES_ADMIN or ENTRIES_EDITOR to create entries",
 							() => {
 								withTemporaryAuthor(
@@ -574,6 +609,34 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 			}
 		);
+	}
+
+	/**
+	 * Whether the default site's blog is turned on (from the database)
+	 */
+	private boolean function isBlogEnabled() {
+		var rows = queryExecute(
+			"SELECT isBlogEnabled FROM cb_site WHERE slug = 'default'"
+		);
+		return rows.recordCount && rows.isBlogEnabled[ 1 ] == true;
+	}
+
+	/**
+	 * Turn the default site's blog on or off. In SQL, not by saving the site: sites are in Hibernate's second-level
+	 * cache, and specs clear the session, so a saved site instance can clash with a newer one.
+	 */
+	private function setBlogEnabled( required boolean enabled ) {
+		queryExecute(
+			"UPDATE cb_site SET isBlogEnabled = :enabled WHERE slug = 'default'",
+			{
+				"enabled": {
+					"value"    : arguments.enabled,
+					"cfsqltype": "cf_sql_bit"
+				}
+			}
+		);
+		ormEvictEntity( "cbSite" );
+		ormClearSession();
 	}
 
 }

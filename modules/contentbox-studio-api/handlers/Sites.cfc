@@ -13,7 +13,7 @@ component extends="BaseHandler" {
 	};
 
 	/**
-	 * GET /cbstudio/api/sites: active sites, sorted by name
+	 * GET /cbstudio/api/sites: active sites, sorted by name, with whether their blog is turned on
 	 */
 	function index( event, rc, prc ) {
 		var sites = variables
@@ -26,7 +26,8 @@ component extends="BaseHandler" {
 						"siteID"  : site.getSiteID(),
 						"slug"    : site.getSlug(),
 						"name"    : site.getName(),
-						"siteRoot": site.getSiteRoot()
+						"siteRoot"     : site.getSiteRoot(),
+						"isBlogEnabled": site.getIsBlogEnabled()
 					};
 				}
 			);

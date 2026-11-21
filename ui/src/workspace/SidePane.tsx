@@ -106,7 +106,9 @@ export function SidePane({ mode }: { mode: 'full' | 'column' }) {
       )}
       <SiteTreePane mode={mode} hidden={section !== 'pages'} />
       {/* A new list per site: its category filter belongs to the site */}
-      {blogShown && <BlogPane key={site?.siteID ?? ''} mode={mode} hidden={section !== 'blog'} />}
+      {blogShown && site?.isBlogEnabled !== false && (
+        <BlogPane key={site?.siteID ?? ''} mode={mode} hidden={section !== 'blog'} />
+      )}
       {column && (
         <div
           role="separator"
@@ -135,26 +137,32 @@ export function SidePane({ mode }: { mode: 'full' | 'column' }) {
   )
 }
 
-/** Pages | Blog */
+/** Pages | Blog; the blog tab is disabled when the site's blog is turned off */
 function SectionTabs({ className }: { className?: string }) {
-  const { section, showSection } = useWorkspace()
+  const { section, showSection, site } = useWorkspace()
+  const blogOff = site?.isBlogEnabled === false
   return (
     <div role="tablist" aria-label="Content" className={cx('inline-flex rounded-md bg-slate-100 p-0.5', className)}>
-      {(Object.keys(SECTION_LABELS) as Section[]).map((value) => (
-        <button
-          key={value}
-          type="button"
-          role="tab"
-          aria-selected={section === value}
-          onClick={() => showSection(value)}
-          className={cx(
-            'flex-1 cursor-pointer rounded px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
-            section === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900',
-          )}
-        >
-          {SECTION_LABELS[value]}
-        </button>
-      ))}
+      {(Object.keys(SECTION_LABELS) as Section[]).map((value) => {
+        const disabled = value === 'blog' && blogOff
+        return (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={section === value}
+            disabled={disabled}
+            title={disabled ? 'The blog is turned off for this site (ContentBox site settings)' : undefined}
+            onClick={() => showSection(value)}
+            className={cx(
+              'flex-1 cursor-pointer rounded px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-slate-300',
+              section === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900',
+            )}
+          >
+            {SECTION_LABELS[value]}
+          </button>
+        )
+      })}
     </div>
   )
 }

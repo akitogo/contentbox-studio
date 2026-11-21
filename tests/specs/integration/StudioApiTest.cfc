@@ -123,7 +123,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"GET /cbstudio/api/sites",
 					() => {
 						it(
-							"lists the active sites",
+							"lists the active sites with whether their blog is turned on",
 							() => {
 								var response = get(
 									route  = "/cbstudio/api/sites",
@@ -131,8 +131,11 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								).getResponse();
 
 								expect( response.getStatusCode() ).toBe( 200, response.getMessagesString() );
-								var slugs = response.getData().map( ( site ) => site.slug );
-								expect( slugs ).toInclude( "default" );
+								var defaultSite = response.getData().filter( ( site ) => site.slug == "default" );
+								expect( defaultSite ).toHaveLength( 1 );
+								expect( defaultSite[ 1 ].isBlogEnabled ).toBe(
+									getInstance( "siteService@contentbox" ).getDefaultSite().getIsBlogEnabled()
+								);
 							}
 						);
 					}

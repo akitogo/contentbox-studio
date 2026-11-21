@@ -25,7 +25,9 @@ export function Workspace() {
   const [loadError, setLoadError] = useState('')
   const [pendingPath, setPendingPath] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
-  const [section, setSection] = useState<Section>(() => (stored(SECTION_KEY) === 'blog' ? 'blog' : 'pages'))
+  const [chosenSection, setSection] = useState<Section>(() => (stored(SECTION_KEY) === 'blog' ? 'blog' : 'pages'))
+  // A site with its blog turned off shows its pages; the choice comes back on a site with a blog
+  const section: Section = site?.isBlogEnabled === false ? 'pages' : chosenSection
   const unsaved = useRef(false)
   const currentID = useMatch('/content/:contentID')?.params.contentID ?? ''
 

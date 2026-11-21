@@ -88,6 +88,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - An entry's own settings are in the editor's right column and saved with **Save**: publish date (a later one
   schedules it), optional unpublish date, categories (pick one or type a new name; new ones are created on save),
   excerpt (rich text, stored as HTML like ContentBox does), featured image (media library) and comments.
+- When a site's blog is turned off (ContentBox site settings, **Enable Blog**), the Blog tab is disabled and the API
+  refuses new entries for that site, as the classic admin does. Entries that already exist can still be opened by
+  their address.
 - Comment moderation, managing categories and the blog's settings stay in the classic admin.
 
 ## Editor

@@ -14,6 +14,8 @@ export interface Site {
   slug: string
   name: string
   siteRoot: string
+  /** Off in the site's ContentBox settings: Studio hides the blog and refuses new entries */
+  isBlogEnabled: boolean
 }
 
 export type PageStatus = 'published' | 'draft' | 'scheduled' | 'expired'

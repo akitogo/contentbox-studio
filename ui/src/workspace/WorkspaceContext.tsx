@@ -21,6 +21,7 @@ export interface WorkspaceValue {
   reload: () => Promise<void>
   /** Counts the reloads: lists that load their own data (the blog) reload when it changes */
   revision: number
+  /** Always 'pages' when the site's blog is turned off */
   section: Section
   showSection: (section: Section) => void
   /** Content open in the editor ("" when none) */

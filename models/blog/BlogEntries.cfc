@@ -179,7 +179,7 @@ component singleton {
 	 *
 	 * @return The new entry
 	 *
-	 * @throws BlogEntries.InvalidEntry
+	 * @throws BlogEntries.InvalidEntry, BlogEntries.BlogDisabled (the site's blog is turned off)
 	 */
 	function createEntry(
 		required site,
@@ -188,6 +188,12 @@ component singleton {
 		string templateID = "",
 		required author
 	) {
+		if ( !arguments.site.getIsBlogEnabled() ) {
+			throw(
+				type    = "BlogEntries.BlogDisabled",
+				message = "The blog is turned off for this site (ContentBox site settings)"
+			);
+		}
 		var entryTitle = trim( arguments.title );
 		if ( !len( entryTitle ) ) {
 			invalidEntry( "An entry needs a title" );

@@ -50,7 +50,8 @@ component extends="BaseHandler" {
 
 	/**
 	 * POST /cbstudio/api/sites/:site/entries with JSON { title, slug, templateID }: a new draft entry.
-	 * Needs ENTRIES_ADMIN or ENTRIES_EDITOR. Returns { contentID, slug }.
+	 * Needs ENTRIES_ADMIN or ENTRIES_EDITOR; 409 when the address is used or the site's blog is turned off.
+	 * Returns { contentID, slug }.
 	 */
 	function create( event, rc, prc ) {
 		if ( !hasAnyPermission( "ENTRIES_ADMIN,ENTRIES_EDITOR" ) ) {
@@ -83,6 +84,8 @@ component extends="BaseHandler" {
 				)
 				.setStatusCode( 201 );
 		} catch (BlogEntries.InvalidEntry e) {
+			prc.response.setErrorMessage( e.message, 409 );
+		} catch (BlogEntries.BlogDisabled e) {
 			prc.response.setErrorMessage( e.message, 409 );
 		}
 	}
