@@ -13,7 +13,8 @@ export function previewFields(config: StudioConfig, content: ContentDetails, bod
   return {
     content: encodeURIComponent(body),
     contentType: content.contentType,
-    layout: content.layout,
+    // Entries always preview in the theme's blog layout, as in the classic admin (they have no layout of their own)
+    layout: content.contentType === 'entry' ? 'blog' : content.layout,
     title: content.title,
     slug: content.slug,
     h: config.previewHash,
