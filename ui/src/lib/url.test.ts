@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { urlPath } from './url'
+import { readableURL, urlPath } from './url'
 
 describe('urlPath', () => {
   it('drops protocol and domain', () => {
@@ -15,5 +15,16 @@ describe('urlPath', () => {
   it('keeps what is not a full URL', () => {
     expect(urlPath('/blog/post')).toBe('/blog/post')
     expect(urlPath('')).toBe('')
+  })
+})
+
+describe('readableURL', () => {
+  it('keeps protocol and domain and decodes the rest', () => {
+    expect(readableURL('https://example.com/de/%C3%BCber-uns')).toBe('https://example.com/de/über-uns')
+    expect(readableURL('http://127.0.0.1:8589/de')).toBe('http://127.0.0.1:8589/de')
+  })
+
+  it('keeps what cannot be decoded', () => {
+    expect(readableURL('https://example.com/%E0%A4%A')).toBe('https://example.com/%E0%A4%A')
   })
 })

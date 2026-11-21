@@ -14,3 +14,12 @@ export function urlPath(url: string): string {
   }
   return path + parsed.search + parsed.hash
 }
+
+/** A full URL with encoded characters shown readably ("https://example.com/de/über-uns"); unchanged if not decodable */
+export function readableURL(url: string): string {
+  try {
+    return decodeURI(url)
+  } catch {
+    return url
+  }
+}

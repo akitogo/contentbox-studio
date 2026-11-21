@@ -24,22 +24,24 @@ export function EntrySettingsFields({
 }) {
   const set = (change: Partial<EntryEdit>) => onChange({ ...entry, ...change })
   const [picking, setPicking] = useState(false)
+  // Unique ids: Puck renders the fields twice (its narrow layout has its own, hidden copy)
+  const uid = useId()
 
   return (
-    <section className="grid gap-3" aria-labelledby="entry-heading">
+    <section className="grid gap-3" aria-labelledby={`${uid}-heading`}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 id="entry-heading" className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+        <h3 id={`${uid}-heading`} className="text-xs font-medium tracking-wide text-slate-500 uppercase">
           Blog entry
         </h3>
         <span className="text-xs text-slate-400">Saved with Save</span>
       </div>
 
-      <Field label="Publish on" htmlFor="entry-published" help="A later date schedules the entry: it appears then, once it is published.">
-        <Input id="entry-published" type="datetime-local" value={entry.publishedDate} onChange={(event) => set({ publishedDate: event.target.value })} disabled={disabled} />
+      <Field label="Publish on" htmlFor={`${uid}-published`} help="A later date schedules the entry: it appears then, once it is published.">
+        <Input id={`${uid}-published`} type="datetime-local" value={entry.publishedDate} onChange={(event) => set({ publishedDate: event.target.value })} disabled={disabled} />
       </Field>
-      <Field label="Unpublish on" htmlFor="entry-expires" help="Optional: the entry goes offline then.">
+      <Field label="Unpublish on" htmlFor={`${uid}-expires`} help="Optional: the entry goes offline then.">
         <div className="flex gap-2">
-          <Input id="entry-expires" type="datetime-local" value={entry.expireDate} onChange={(event) => set({ expireDate: event.target.value })} disabled={disabled} />
+          <Input id={`${uid}-expires`} type="datetime-local" value={entry.expireDate} onChange={(event) => set({ expireDate: event.target.value })} disabled={disabled} />
           {entry.expireDate && !disabled && (
             <Button variant="ghost" onClick={() => set({ expireDate: '' })}>
               Clear
@@ -48,8 +50,8 @@ export function EntrySettingsFields({
         </div>
       </Field>
 
-      <Field label="Categories" htmlFor="entry-category">
-        <CategoryPicker id="entry-category" value={entry.categories} onChange={(categories) => set({ categories })} siteID={siteID} disabled={disabled} />
+      <Field label="Categories" htmlFor={`${uid}-category`}>
+        <CategoryPicker id={`${uid}-category`} value={entry.categories} onChange={(categories) => set({ categories })} siteID={siteID} disabled={disabled} />
       </Field>
 
       <Field label="Excerpt" help="A short summary for blog lists and feeds, where the theme shows one.">

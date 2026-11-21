@@ -1,5 +1,5 @@
 import { ExternalLink, Settings2 } from 'lucide-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
 import { urlPath } from '../lib/url'
 import { messageOf, useStudio } from '../studio'
 import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
@@ -39,6 +39,8 @@ export function PageDetails({
   const [group, setGroup] = useState<TranslationGroup | null>(null)
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [linkID, setLinkID] = useState('')
+  // Unique ids: Puck renders the fields twice (its narrow layout has its own, hidden copy)
+  const uid = useId()
   const [error, setError] = useState('')
   const canChange = canEdit && me.permissions.siteTree
   const base = `${config.studioApi}/content/${content.contentID}`
@@ -121,11 +123,11 @@ export function PageDetails({
         <div className="border-t border-slate-200 pt-4">
           <Field
             label="Language"
-            htmlFor="content-language"
+            htmlFor={`${uid}-language`}
             help={settings && settings.language !== null ? 'A code like de, en or en-GB, for hreflang links. Saved with Save.' : 'A code like de, en or en-GB, for hreflang links.'}
           >
             <Input
-              id="content-language"
+              id={`${uid}-language`}
               value={settings?.language ?? content.language}
               onChange={(event) => settings && onSettingsChange({ ...settings, language: event.target.value })}
               placeholder="e.g. de"

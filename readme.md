@@ -116,8 +116,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   (draft, scheduled, published, expired) are in the editor's header, as are buttons to hide the blocks and fields
   columns. Undoing every change clears the unsaved marker.
 - With no block selected, the right column shows the content's settings: address, a blog entry's settings (see
-  [Blog](#blog)), search engine fields (title, meta description and keywords, with length hints and a preview of the
-  search result), language (needs `STUDIO_SITE_TREE`), translations, and a link to the other settings (layout, ...)
+  [Blog](#blog)), search engine fields (title, meta description and keywords, with length hints and a collapsible preview
+  of the search result with the full address), language (needs `STUDIO_SITE_TREE`), translations, and a link to the other settings (layout, ...)
   in the classic admin. Everything but the translation links is saved with **Save**, like the blocks.
 - After saving, publishing, creating, moving or linking translations, Studio announces ContentBox's
   `cbadmin_post<Type>Save` events like the classic admin: ContentBox clears its content, page, sitemap and RSS caches,
