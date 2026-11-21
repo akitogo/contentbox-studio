@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
 import { urlPath } from '../lib/url'
 import { messageOf, useStudio } from '../studio'
 import type { BlogEntryList, ContentDetails, TranslationGroup, TreePage } from '../types'
-import { Alert, Badge, Button, Checkbox, Field, Input, Select } from '../ui'
+import { Alert, Badge, Button, Field, Input, Select } from '../ui'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import type { ContentSettings } from './contentSettings'
 import { EntrySettingsFields } from './EntrySettingsFields'
@@ -20,7 +20,7 @@ const ADMIN_EDITORS: Record<ContentDetails['contentType'], string> = {
 
 /**
  * Settings of the open content, shown in the editor's right column when no block is selected: address, the settings
- * saved with Save (menu setting of pages, entry settings, search engine fields, language), the translation group, and a link to the other
+ * saved with Save (entry settings, search engine fields, language), the translation group, and a link to the other
  * settings in the classic admin
  */
 export function PageDetails({
@@ -94,17 +94,6 @@ export function PageDetails({
           {urlPath(content.url)}
           <ExternalLink className="size-3 shrink-0" />
         </a>
-        {settings && settings.showInMenu !== null && (
-          <div className="mt-1.5 grid gap-0.5">
-            <Checkbox
-              label="Show in the site's menu"
-              checked={settings.showInMenu}
-              onChange={(event) => onSettingsChange({ ...settings, showInMenu: event.target.checked })}
-              disabled={!canEdit}
-            />
-            <span className="pl-6 text-xs text-slate-500">Saved with Save.</span>
-          </div>
-        )}
       </div>
 
       {settings?.entry && (

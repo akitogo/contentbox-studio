@@ -10,7 +10,7 @@ import type { ContentDetails } from '../types'
 import { STATUS } from '../workspace/status'
 import type { ContentSettings } from './contentSettings'
 import { store, stored } from '../lib/storage'
-import { Badge, Button, IconButton, Input } from '../ui'
+import { Badge, Button, IconButton, Input, Switch } from '../ui'
 import { PageDetails } from './PageDetails'
 
 export interface EditorActions {
@@ -77,10 +77,7 @@ export function EditorHeader() {
           {content.title}
         </h1>
         <Badge tone={STATUS[content.status].tone}>{STATUS[content.status].label}</Badge>
-        <span className="hidden text-xs whitespace-nowrap text-slate-400 @3xl:inline">
-          Version {content.version}
-          {actions.dirty && <span className="ml-1.5 text-amber-600">· unsaved</span>}
-        </span>
+        {actions.dirty && <span className="hidden text-xs whitespace-nowrap text-amber-600 @3xl:inline">unsaved</span>}
         {actions.dirty && <span className="size-2 shrink-0 rounded-full bg-amber-500 @3xl:hidden" title="Unsaved changes" />}
         <div className="flex items-center">
           <IconButton label="Undo" onClick={() => history.back()} disabled={!history.hasPast}>
@@ -111,11 +108,12 @@ export function EditorHeader() {
             variant={actions.showVersions ? 'secondary' : 'ghost'}
             aria-pressed={actions.showVersions}
             onClick={actions.toggleVersions}
-            aria-label="Versions"
-            title="Versions"
+            aria-label={`Versions (current: version ${content.version})`}
+            title={`Versions (current: version ${content.version})`}
           >
             <History className="size-3.5" />
             <Label>Versions</Label>
+            <Badge className="px-1.5 py-0 text-[11px] tabular-nums">{content.version}</Badge>
           </Button>
           <Button
             size="sm"
@@ -128,6 +126,21 @@ export function EditorHeader() {
             <LayoutTemplate className="size-3.5" />
             <Label>Save as template</Label>
           </Button>
+          {/* Pages only; a setting like the search engine fields, saved with Save */}
+          {actions.settings && actions.settings.showInMenu !== null && (
+            <Switch
+              checked={actions.settings.showInMenu}
+              onChange={(showInMenu) => actions.settings && actions.setSettings({ ...actions.settings, showInMenu })}
+              label={<Label>Menu</Label>}
+              name="Show in the site's menu"
+              title={
+                actions.canEdit
+                  ? `${actions.settings.showInMenu ? "In the site's menu" : "Not in the site's menu"} (saved with Save)`
+                  : 'Needs the right to edit this page'
+              }
+              disabled={!actions.canEdit}
+            />
+          )}
           <Button
             size="sm"
             onClick={actions.togglePublished}

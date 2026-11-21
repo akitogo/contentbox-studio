@@ -112,6 +112,41 @@ export function Checkbox({ label, className, ...props }: InputHTMLAttributes<HTM
   )
 }
 
+/** An on/off switch acting at once (role="switch"); `label` is its visible text, `name` its accessible name */
+export function Switch({
+  checked,
+  onChange,
+  label,
+  name,
+  disabled,
+  title,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label?: ReactNode
+  name: string
+  disabled?: boolean
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={name}
+      title={title}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className={cx('relative inline-flex h-4 w-7 shrink-0 rounded-full transition-colors', checked ? 'bg-primary-600' : 'bg-slate-300')}>
+        <span className={cx('absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform', checked ? 'translate-x-3.5' : 'translate-x-0.5')} />
+      </span>
+      {label}
+    </button>
+  )
+}
+
 /** Label, control, help text and error in one block */
 export function Field({
   label,
