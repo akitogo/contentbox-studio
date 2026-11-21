@@ -14,6 +14,7 @@ import { openPreview, previewFields, previewUrl } from '../editor/preview'
 import { buildConfig } from '../editor/puckConfig'
 import { SaveTemplateDialog } from '../editor/SaveTemplateDialog'
 import { VersionsPanel } from '../editor/VersionsPanel'
+import { rememberContent } from '../lib/start'
 import { messageOf, useStudio } from '../studio'
 import type { BlockDefinition, BlockError, EditorContent, TreePage } from '../types'
 import { Alert, Button, Loading } from '../ui'
@@ -93,6 +94,9 @@ function ContentEditor({ contentID }: { contentID: string }) {
         if (cancelled) return
         // The left column shows the site of the open content, and the blog for an entry
         setSiteID(editor.content.siteID)
+        // Opened again first next time (StartPage)
+        const { contentType } = editor.content
+        if (contentType === 'page' || contentType === 'entry') rememberContent(editor.content.siteID, { contentID, contentType })
         if (editor.content.contentType === 'entry') showSection('blog')
         else if (editor.content.contentType === 'page') showSection('pages')
         setLoaded({

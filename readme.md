@@ -55,14 +55,15 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 ## Site tree
 
-- `/cbstudio` shows the pages of a site as a tree with status (published, draft, scheduled, expired), a badge for
-  block content, the language, and a menu icon (struck through when the page is not in the site's menu; shown also
-  in the narrow column next to the editor). Search keeps matches in place.
-- Tabs switch between the pages and the blog (see [Blog](#blog)).
-- Clicking a page opens it in the editor, and the tree becomes a column next to it: drag its edge to resize it
-  (double-click resets), hide it to a narrow strip; the wider it is, the more it shows (addresses, badges, move
-  buttons). Width, visibility and the tab are remembered per browser.
-- Drag and drop (or the arrow buttons) moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
+- `/cbstudio` opens the editor right away: on the site last worked on, the page or blog entry last edited there
+  (remembered per browser), else the site's home page; `?site=<slug>` picks a site. A site without pages offers to
+  create the first one. Switching sites asks about unsaved changes first.
+- Next to the editor, a column shows the pages of the site as a tree: status as a colored dot (its name on hover), a
+  menu icon (struck through when the page is not in the site's menu) and the language. Search keeps matches in
+  place. Tabs switch between the pages and the blog (see [Blog](#blog)).
+- Drag the column's edge to resize it (double-click resets; wide enough, it shows the addresses) or hide it to a
+  narrow strip. Width, visibility and the tab are remembered per browser.
+- Drag and drop moves and reorders pages; it needs `STUDIO_SITE_TREE` and `PAGES_ADMIN` or
   `PAGES_EDITOR`. Drop onto a page to make it a subpage, or on its top or bottom edge to place it before or after
   (the bottom edge of an open page makes it the first subpage); a line shows where it lands, collapsed pages open
   when you hover them, and a zone below the tree moves a page to the top level. Moving changes the address of the
@@ -80,8 +81,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - The **Blog** tab lists the site's entries newest first, drafts, scheduled and expired ones included, with date,
   author, categories, status and language. Search (title or address) and filters for status and category (or no
   category); long blogs load 50 more at a time.
-- Clicking an entry opens it in the same block editor as pages, with the blog as the column next to it. Opening an
-  entry or a page switches the column to the matching tab.
+- Clicking an entry opens it in the same block editor as pages. Opening an entry or a page switches the column to the
+  matching tab.
 - **New entry** creates a draft with a title and address, empty or from a content template for entries (the
   default template is preselected). Needs `ENTRIES_ADMIN` or `ENTRIES_EDITOR`.
 - Theme blocks can be limited to some content types (`contentTypes` in `block.json`), e.g. so a page hero is not

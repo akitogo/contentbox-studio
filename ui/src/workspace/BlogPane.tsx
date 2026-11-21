@@ -4,7 +4,8 @@ import { NewEntryDialog } from '../components/NewEntryDialog'
 import { entriesQuery, NO_FILTER, shortDate, type BlogFilter } from '../lib/blog'
 import { messageOf, useStudio } from '../studio'
 import type { BlogCategory, BlogEntry, BlogEntryList, PageStatus } from '../types'
-import { Alert, Badge, Button, Card, cx, IconButton, Input, Loading, Select, Spinner } from '../ui'
+import { Alert, Button, cx, IconButton, Input, Loading, Select, Spinner } from '../ui'
+import { LanguageTag } from './SiteTreePane'
 import { STATUS } from './status'
 import { useWorkspace } from './WorkspaceContext'
 
@@ -17,7 +18,7 @@ const SEARCH_DELAY = 250
  * The blog entries of the site, newest first, in the left column (SidePane): search, status and category filters,
  * new entries. Entries open in the same editor as pages. Hidden (not unmounted) while the column shows the pages.
  */
-export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: boolean }) {
+export function BlogPane({ hidden }: { hidden: boolean }) {
   const { config, api } = useStudio()
   const { site, revision, currentID, openPage } = useWorkspace()
   const [search, setSearch] = useState('')
@@ -29,7 +30,6 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const currentRow = useRef<HTMLDivElement>(null)
-  const column = mode === 'column'
   const base = site ? `${config.studioApi}/sites/${encodeURIComponent(site.siteID)}` : ''
 
   function changeFilter(change: Partial<BlogFilter>) {
@@ -74,10 +74,10 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
     api.get<BlogCategory[]>(`${base}/categories`).then(setCategories, () => setCategories([]))
   }, [api, base, revision])
 
-  // Keep the open entry in view when switching to the column
+  // Keep the open entry in view
   useEffect(() => {
-    if (column && !hidden) currentRow.current?.scrollIntoView({ block: 'nearest' })
-  }, [column, hidden, currentID, list])
+    if (!hidden) currentRow.current?.scrollIntoView({ block: 'nearest' })
+  }, [hidden, currentID, list])
 
   const entries = list?.entries ?? []
   const total = list?.total ?? 0
@@ -101,30 +101,24 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
         >
           <span className="relative shrink-0" title={status.label}>
             <Newspaper className="size-4 text-slate-400" aria-hidden />
-            <span className={cx('absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-white @3xl:hidden', status.dot)} />
+            <span className={cx('absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-white', status.dot)} />
           </span>
           <div className="min-w-0 flex-1">
-            <a
-              href={`${config.appBase}/content/${id}`}
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                openPage(id)
-              }}
-              className={cx('block truncate text-sm text-slate-900 no-underline hover:text-primary-700', isCurrent ? 'font-semibold' : 'font-medium')}
-            >
-              {entry.title}
-            </a>
+            <div className="flex min-w-0 items-center gap-2">
+              <a
+                href={`${config.appBase}/content/${id}`}
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  openPage(id)
+                }}
+                className={cx('block truncate text-sm text-slate-900 no-underline hover:text-primary-700', isCurrent ? 'font-semibold' : 'font-medium')}
+              >
+                {entry.title}
+              </a>
+              {entry.language && <LanguageTag language={entry.language} />}
+            </div>
             {details.length > 0 && <p className="truncate text-xs text-slate-500">{details.join(' · ')}</p>}
-          </div>
-          <div className="hidden shrink-0 items-center gap-1.5 @3xl:flex">
-            <Badge tone={status.tone}>{status.label}</Badge>
-            {entry.hasBlocks && <Badge tone="primary">Blocks</Badge>}
-            {entry.language && (
-              <Badge tone="info" className="uppercase">
-                {entry.language}
-              </Badge>
-            )}
           </div>
           <div
             className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
@@ -182,7 +176,7 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
 
   const statusFilter = (
     <Select aria-label="Status" value={filter.status} onChange={(event) => changeFilter({ status: event.target.value as PageStatus | '' })}>
-      <option value="">{column ? 'Status' : 'All statuses'}</option>
+      <option value="">Status</option>
       {(Object.keys(STATUS) as PageStatus[]).map((value) => (
         <option key={value} value={value}>
           {STATUS[value].label}
@@ -193,7 +187,7 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
 
   const categoryFilter = (
     <Select aria-label="Category" value={filter.category} onChange={(event) => changeFilter({ category: event.target.value })}>
-      <option value="">{column ? 'Category' : 'All categories'}</option>
+      <option value="">Category</option>
       <option value="none">No category</option>
       {categories.map((category) => (
         <option key={category.categoryID} value={category.categoryID}>
@@ -207,53 +201,24 @@ export function BlogPane({ mode, hidden }: { mode: 'full' | 'column'; hidden: bo
 
   return (
     <div role="tabpanel" aria-label="Blog" hidden={hidden} className={cx('min-h-0 flex-1 flex-col', hidden ? 'hidden' : 'flex')}>
-      {column ? (
-        <>
-          <div className="grid gap-2 border-b border-slate-200 p-3">
-            <div className="flex items-center gap-1">
-              <h2 className="mr-auto flex items-center gap-2 text-sm text-slate-500">
-                {list ? count : 'Entries'}
-                {loading && list && <Spinner className="size-3.5" />}
-              </h2>
-              <IconButton label="New entry" onClick={() => setCreating(true)}>
-                <Plus className="size-4" />
-              </IconButton>
-            </div>
-            {searchField}
-            <div className="grid grid-cols-2 gap-2">
-              {statusFilter}
-              {categoryFilter}
-            </div>
-            {alerts}
-          </div>
-          <div className="min-h-0 flex-1 overflow-auto">{listing}</div>
-        </>
-      ) : (
-        <div className="min-h-0 flex-1 overflow-auto">
-          <div className="mx-auto grid max-w-6xl content-start gap-4 px-6 pt-4 pb-6">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="mr-auto">
-                <h1 className="text-xl font-semibold text-slate-900">Blog</h1>
-                <p className="text-sm text-slate-500">
-                  {site?.name} · {list ? count : 'loading…'}
-                </p>
-              </div>
-              <div className="w-64">{searchField}</div>
-              <div className="w-40">{statusFilter}</div>
-              <div className="w-48">{categoryFilter}</div>
-              <Button variant="primary" onClick={() => setCreating(true)}>
-                <Plus className="size-4" />
-                New entry
-              </Button>
-            </div>
-            {alerts}
-            <Card className="overflow-hidden">{listing}</Card>
-            <p className="text-xs text-slate-500">
-              Click an entry to edit it. Categories, excerpt and comments are set in the classic admin for now (gear icon).
-            </p>
-          </div>
+      <div className="grid gap-2 border-b border-slate-200 p-3">
+        <div className="flex items-center gap-1">
+          <h2 className="mr-auto flex items-center gap-2 text-sm text-slate-500">
+            {list ? count : 'Entries'}
+            {loading && list && <Spinner className="size-3.5" />}
+          </h2>
+          <IconButton label="New entry" onClick={() => setCreating(true)}>
+            <Plus className="size-4" />
+          </IconButton>
         </div>
-      )}
+        {searchField}
+        <div className="grid grid-cols-2 gap-2">
+          {statusFilter}
+          {categoryFilter}
+        </div>
+        {alerts}
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">{listing}</div>
 
       {site && creating && <NewEntryDialog site={site} onClose={() => setCreating(false)} />}
     </div>

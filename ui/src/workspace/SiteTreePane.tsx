@@ -1,8 +1,4 @@
 import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   ChevronDown,
   ChevronRight,
   ChevronsDownUp,
@@ -21,7 +17,6 @@ import {
   applyMove,
   buildTree,
   filterPages,
-  keyboardMove,
   moveFor,
   moveToRootEnd,
   type DropPosition,
@@ -30,7 +25,7 @@ import {
 } from '../lib/tree'
 import { messageOf, useStudio } from '../studio'
 import type { TreePage as Page } from '../types'
-import { Alert, Badge, Button, Card, cx, IconButton, Input, Loading } from '../ui'
+import { Alert, cx, IconButton, Input, Loading } from '../ui'
 import { STATUS } from './status'
 import { useWorkspace } from './WorkspaceContext'
 
@@ -45,11 +40,11 @@ const EXPAND_DELAY = 600
 const ROOT_END = ''
 
 /**
- * The site's pages as a tree, in the left column (SidePane). `full`: the whole screen (no content open). `column`:
- * next to the editor; rows show more (address, badges, move buttons) the wider it is. Hidden (not unmounted) while the
- * column shows the blog, so open folders and the search stay.
+ * The site's pages as a tree, in the column next to the editor (SidePane); rows show the address when the column is
+ * wide enough. Pages are moved by dragging. Hidden (not unmounted) while the column shows the blog, so open folders and
+ * the search stay.
  */
-export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden: boolean }) {
+export function SiteTreePane({ hidden }: { hidden: boolean }) {
   const { config, api, me } = useStudio()
   const { site, pages, setPages, loading, loadError, reload, currentID, openPage } = useWorkspace()
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null)
@@ -66,10 +61,10 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
   const visible = useMemo(() => filterPages(pages, search), [pages, search])
   const tree = useMemo(() => buildTree(visible), [visible])
 
-  // Keep the open page in view when switching to the column
+  // Keep the open page in view
   useEffect(() => {
-    if (mode === 'column' && !hidden) currentRow.current?.scrollIntoView({ block: 'nearest' })
-  }, [mode, currentID, hidden])
+    if (!hidden) currentRow.current?.scrollIntoView({ block: 'nearest' })
+  }, [currentID, hidden])
 
   async function move(pageID: string, target: Move | null) {
     if (!target) return
@@ -225,7 +220,7 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
           </button>
           <span className="relative shrink-0" title={status.label}>
             <FileText className="size-4 text-slate-400" aria-hidden />
-            <span className={cx('absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-white @3xl:hidden', status.dot)} />
+            <span className={cx('absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-white', status.dot)} />
           </span>
           <div className="flex min-w-0 flex-1 items-baseline gap-2">
             <a
@@ -242,17 +237,9 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
               {page.title}
             </a>
             <MenuIndicator inMenu={page.showInMenu} />
+            {page.language && <LanguageTag language={page.language} />}
             <span className="hidden truncate font-mono text-xs text-slate-400 @md:inline">/{page.slug}</span>
             {isCollapsed && <span className="shrink-0 text-xs text-slate-400">{node.children.length}</span>}
-          </div>
-          <div className="hidden shrink-0 items-center gap-1.5 @3xl:flex">
-            <Badge tone={status.tone}>{status.label}</Badge>
-            {page.hasBlocks && <Badge tone="primary">Blocks</Badge>}
-            {page.language && (
-              <Badge tone="info" className="uppercase">
-                {page.language}
-              </Badge>
-            )}
           </div>
           <div
             className={cx(
@@ -261,22 +248,6 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
             )}
             onClick={(event) => event.stopPropagation()}
           >
-            {draggable && (
-              <div className="hidden items-center gap-0.5 @3xl:flex">
-                <IconButton label="Move up" onClick={() => void move(id, keyboardMove(pages, id, 'up'))}>
-                  <ArrowUp className="size-3.5" />
-                </IconButton>
-                <IconButton label="Move down" onClick={() => void move(id, keyboardMove(pages, id, 'down'))}>
-                  <ArrowDown className="size-3.5" />
-                </IconButton>
-                <IconButton label="Make it a subpage of the page above" onClick={() => void move(id, keyboardMove(pages, id, 'indent'))}>
-                  <ArrowRight className="size-3.5" />
-                </IconButton>
-                <IconButton label="Move it up one level" onClick={() => void move(id, keyboardMove(pages, id, 'outdent'))}>
-                  <ArrowLeft className="size-3.5" />
-                </IconButton>
-              </div>
-            )}
             <IconButton label="Add a subpage" onClick={() => setNewPageParent(id)}>
               <Plus className="size-3.5" />
             </IconButton>
@@ -316,7 +287,6 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
   }
 
   const rootMove = dragID ? moveToRootEnd(pages, dragID) : null
-  const column = mode === 'column'
 
   const list = loading && !pages.length ? (
     <Loading />
@@ -382,66 +352,28 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
 
   return (
     <div role="tabpanel" aria-label="Pages" hidden={hidden} className={cx('min-h-0 flex-1 flex-col', hidden ? 'hidden' : 'flex')}>
-      {column ? (
-        <>
-          <div className="grid gap-2 border-b border-slate-200 p-3">
-            <div className="flex items-center gap-1">
-              <h2 className="mr-auto text-sm text-slate-500">
-                {pages.length} {pages.length === 1 ? 'page' : 'pages'}
-              </h2>
-              <IconButton label="New page" onClick={() => setNewPageParent('')}>
-                <Plus className="size-4" />
-              </IconButton>
-              <IconButton label="Expand all" onClick={() => setCollapsed(new Set())}>
-                <ChevronsUpDown className="size-4" />
-              </IconButton>
-              <IconButton label="Collapse all" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>
-                <ChevronsDownUp className="size-4" />
-              </IconButton>
-            </div>
-            {searchField}
-            {alerts}
-          </div>
-          <div className="min-h-0 flex-1 overflow-auto">
-            {list}
-            {rootZone}
-          </div>
-        </>
-      ) : (
-        <div className="min-h-0 flex-1 overflow-auto">
-          <div className="mx-auto grid max-w-6xl content-start gap-4 px-6 pt-4 pb-6">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="mr-auto">
-                <h1 className="text-xl font-semibold text-slate-900">Pages</h1>
-                <p className="text-sm text-slate-500">
-                  {site?.name} · {pages.length} {pages.length === 1 ? 'page' : 'pages'}
-                </p>
-              </div>
-              <div className="w-64">{searchField}</div>
-              <Button variant="ghost" onClick={() => setCollapsed(new Set())}>
-                Expand all
-              </Button>
-              <Button variant="ghost" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>
-                Collapse all
-              </Button>
-              <Button variant="primary" onClick={() => setNewPageParent('')}>
-                <Plus className="size-4" />
-                New page
-              </Button>
-            </div>
-            {alerts}
-            <Card className="overflow-hidden">
-              {list}
-              {rootZone}
-            </Card>
-            <p className="text-xs text-slate-500">
-              {canMove
-                ? 'Click a page to edit it. Drag a page by its row: onto another page to make it a subpage, or to the top or bottom edge of a page to place it before or after. Moving changes the address; the old one redirects.'
-                : 'Click a page to edit it. Moving pages needs the STUDIO_SITE_TREE permission.'}
-            </p>
-          </div>
+      <div className="grid gap-2 border-b border-slate-200 p-3">
+        <div className="flex items-center gap-1">
+          <h2 className="mr-auto text-sm text-slate-500">
+            {pages.length} {pages.length === 1 ? 'page' : 'pages'}
+          </h2>
+          <IconButton label="New page" onClick={() => setNewPageParent('')}>
+            <Plus className="size-4" />
+          </IconButton>
+          <IconButton label="Expand all" onClick={() => setCollapsed(new Set())}>
+            <ChevronsUpDown className="size-4" />
+          </IconButton>
+          <IconButton label="Collapse all" onClick={() => setCollapsed(new Set(pages.map((page) => page.contentID)))}>
+            <ChevronsDownUp className="size-4" />
+          </IconButton>
         </div>
-      )}
+        {searchField}
+        {alerts}
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        {list}
+        {rootZone}
+      </div>
 
       {site && newPageParent !== null && (
         <NewPageDialog site={site} pages={pages} parentID={newPageParent} onClose={() => setNewPageParent(null)} />
@@ -471,6 +403,15 @@ function MenuIndicator({ inMenu }: { inMenu: boolean }) {
       <Menu className={cx('size-3.5', inMenu ? 'text-slate-500' : 'text-slate-300')} aria-hidden />
       {!inMenu && <span className="absolute top-1/2 left-1/2 h-px w-4.5 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-slate-400" aria-hidden />}
       <span className="sr-only">{label}</span>
+    </span>
+  )
+}
+
+/** The page's language, as a small tag */
+export function LanguageTag({ language }: { language: string }) {
+  return (
+    <span className="shrink-0 self-center rounded bg-sky-50 px-1 text-[10px] leading-4 font-medium text-sky-700 uppercase" title={`Language: ${language}`}>
+      {language}
     </span>
   )
 }

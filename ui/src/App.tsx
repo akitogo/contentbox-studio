@@ -4,6 +4,7 @@ import type { ApiClient } from './api'
 import { basePath, type StudioConfig } from './config'
 import { StudioProvider } from './studio'
 import { Loading } from './ui'
+import { StartPage } from './workspace/StartPage'
 import { Workspace } from './workspace/Workspace'
 
 // The editor (Puck, TipTap) is large: load it only when content is opened
@@ -16,7 +17,7 @@ export function App({ config, api }: { config: StudioConfig; api: ApiClient }) {
         <Routes>
           {/* The site tree; content opens next to it */}
           <Route element={<Workspace />}>
-            <Route index element={null} />
+            <Route index element={<StartPage />} />
             <Route
               path="content/:contentID"
               element={

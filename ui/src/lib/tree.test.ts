@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TreePage } from '../types'
-import { applyMove, buildTree, childrenOf, filterPages, isWithin, keyboardMove, moveFor, moveToRootEnd } from './tree'
+import { applyMove, buildTree, childrenOf, filterPages, isWithin, moveFor, moveToRootEnd } from './tree'
 
 function page(contentID: string, parentID = '', order = 0, title = contentID): TreePage {
   return {
@@ -84,15 +84,6 @@ describe('moveFor', () => {
   })
 })
 
-describe('keyboardMove', () => {
-  it('moves up, down, indents and outdents', () => {
-    expect(keyboardMove(pages, 'contact', 'up')).toEqual({ parentID: '', index: 1 })
-    expect(keyboardMove(pages, 'home', 'up')).toBeNull()
-    expect(keyboardMove(pages, 'contact', 'indent')).toEqual({ parentID: 'about', index: 2 })
-    expect(keyboardMove(pages, 'team', 'outdent')).toEqual({ parentID: '', index: 2 })
-    expect(keyboardMove(pages, 'home', 'outdent')).toBeNull()
-  })
-})
 
 describe('applyMove', () => {
   it('changes the parent and renumbers the new siblings', () => {

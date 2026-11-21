@@ -13,7 +13,7 @@ component extends="BaseHandler" {
 	};
 
 	/**
-	 * GET /cbstudio/api/sites: active sites, sorted by name, with whether their blog is turned on
+	 * GET /cbstudio/api/sites: active sites, sorted by name, with whether their blog is turned on and their home page
 	 */
 	function index( event, rc, prc ) {
 		var sites = variables
@@ -27,7 +27,9 @@ component extends="BaseHandler" {
 						"slug"    : site.getSlug(),
 						"name"    : site.getName(),
 						"siteRoot"     : site.getSiteRoot(),
-						"isBlogEnabled": site.getIsBlogEnabled()
+						"isBlogEnabled": site.getIsBlogEnabled(),
+						// Slug of the page ContentBox shows at the site root, or "cbBlog" for the blog
+						"homepage"     : site.getHomepage() ?: ""
 					};
 				}
 			);

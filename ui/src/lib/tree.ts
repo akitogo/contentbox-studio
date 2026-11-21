@@ -86,36 +86,6 @@ export function moveToRootEnd(pages: TreePage[], draggedID: string): Move | null
   return last ? moveFor(pages, draggedID, last.contentID, 'after') : null
 }
 
-/** Keyboard moves: one up/down among siblings, into the previous sibling (indent), next to the parent (outdent) */
-export function keyboardMove(
-  pages: TreePage[],
-  pageID: string,
-  direction: 'up' | 'down' | 'indent' | 'outdent',
-): Move | null {
-  const page = pages.find((item) => item.contentID === pageID)
-  if (!page) return null
-  const siblings = childrenOf(pages, page.parentID)
-  const index = siblings.findIndex((item) => item.contentID === pageID)
-
-  switch (direction) {
-    case 'up':
-      return index > 0 ? { parentID: page.parentID, index: index - 1 } : null
-    case 'down':
-      return index < siblings.length - 1 ? { parentID: page.parentID, index: index + 1 } : null
-    case 'indent': {
-      const previous = siblings[index - 1]
-      return previous ? { parentID: previous.contentID, index: childrenOf(pages, previous.contentID).length } : null
-    }
-    case 'outdent': {
-      if (!page.parentID) return null
-      const parent = pages.find((item) => item.contentID === page.parentID)
-      if (!parent) return null
-      const parentSiblings = childrenOf(pages, parent.parentID)
-      return { parentID: parent.parentID, index: parentSiblings.findIndex((item) => item.contentID === parent.contentID) + 1 }
-    }
-  }
-}
-
 /** The list after a move, as the server will store it (parent changed, new siblings renumbered from 1) */
 export function applyMove(pages: TreePage[], pageID: string, move: Move): TreePage[] {
   const moving = pages.find((page) => page.contentID === pageID)

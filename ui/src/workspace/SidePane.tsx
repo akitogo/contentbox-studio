@@ -13,10 +13,10 @@ const STORAGE = { width: 'cbstudio.treeWidth', hidden: 'cbstudio.treeHidden' }
 const clampWidth = (width: number) => Math.min(COLUMN.max, Math.max(COLUMN.min, Math.round(width)))
 
 /**
- * Studio's left side: the pages (site tree) or the blog, switched by tabs. `full`: the whole screen (no content open).
- * `column`: next to the editor, resizable by dragging its edge (double-click resets) and collapsible to a strip.
+ * Studio's left column next to the editor: the pages (site tree) or the blog, switched by tabs. Resizable by dragging
+ * its edge (double-click resets) and collapsible to a strip.
  */
-export function SidePane({ mode }: { mode: 'full' | 'column' }) {
+export function SidePane() {
   const { section, site } = useWorkspace()
   const [width, setWidth] = useState(() => clampWidth(Number(stored(STORAGE.width)) || COLUMN.default))
   const [hidden, setHidden] = useState(() => stored(STORAGE.hidden) === '1')
@@ -25,7 +25,6 @@ export function SidePane({ mode }: { mode: 'full' | 'column' }) {
   // The blog loads once it is first shown, then stays mounted (hidden) like the tree, so both keep their state
   const [blogShown, setBlogShown] = useState(section === 'blog')
   if (section === 'blog' && !blogShown) setBlogShown(true)
-  const column = mode === 'column'
   const label = SECTION_LABELS[section]
 
   function setColumnHidden(value: boolean) {
@@ -65,7 +64,7 @@ export function SidePane({ mode }: { mode: 'full' | 'column' }) {
   }
 
   // Hidden column: a strip to bring it back
-  if (column && hidden) {
+  if (hidden) {
     return (
       <div className="flex w-10 shrink-0 flex-col items-center gap-3 border-r border-slate-200 bg-white py-2">
         <IconButton label={`Show the ${label.toLowerCase()}`} onClick={() => setColumnHidden(false)}>
@@ -86,51 +85,42 @@ export function SidePane({ mode }: { mode: 'full' | 'column' }) {
     <aside
       aria-label={label}
       className={cx(
-        '@container relative flex min-h-0 shrink-0 flex-col',
-        column ? 'border-r border-slate-200 bg-white' : 'bg-slate-50',
+        '@container relative flex min-h-0 shrink-0 flex-col border-r border-slate-200 bg-white',
         !resizing && 'transition-[width] duration-300 ease-out',
       )}
-      style={{ width: column ? width : '100%' }}
+      style={{ width }}
     >
-      {column ? (
-        <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
-          <SectionTabs className="flex-1" />
-          <IconButton label={`Hide the ${label.toLowerCase()}`} onClick={() => setColumnHidden(true)}>
-            <PanelLeftClose className="size-4" />
-          </IconButton>
-        </div>
-      ) : (
-        <div className="mx-auto w-full max-w-6xl px-6 pt-6">
-          <SectionTabs />
-        </div>
-      )}
-      <SiteTreePane mode={mode} hidden={section !== 'pages'} />
+      <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
+        <SectionTabs className="flex-1" />
+        <IconButton label={`Hide the ${label.toLowerCase()}`} onClick={() => setColumnHidden(true)}>
+          <PanelLeftClose className="size-4" />
+        </IconButton>
+      </div>
+      <SiteTreePane hidden={section !== 'pages'} />
       {/* A new list per site: its category filter belongs to the site */}
       {blogShown && site?.isBlogEnabled !== false && (
-        <BlogPane key={site?.siteID ?? ''} mode={mode} hidden={section !== 'blog'} />
+        <BlogPane key={site?.siteID ?? ''} hidden={section !== 'blog'} />
       )}
-      {column && (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Width of the column"
-          aria-valuenow={width}
-          aria-valuemin={COLUMN.min}
-          aria-valuemax={COLUMN.max}
-          tabIndex={0}
-          title="Drag to resize, double-click to reset"
-          className={cx(
-            'absolute inset-y-0 -right-1 z-30 w-2 cursor-col-resize touch-none outline-none hover:bg-primary-500/30 focus-visible:bg-primary-500/40',
-            resizing && 'bg-primary-500/40',
-          )}
-          onPointerDown={startResize}
-          onPointerMove={resize}
-          onPointerUp={endResize}
-          onPointerCancel={endResize}
-          onDoubleClick={() => setColumnWidth(COLUMN.default)}
-          onKeyDown={resizeByKey}
-        />
-      )}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Width of the column"
+        aria-valuenow={width}
+        aria-valuemin={COLUMN.min}
+        aria-valuemax={COLUMN.max}
+        tabIndex={0}
+        title="Drag to resize, double-click to reset"
+        className={cx(
+          'absolute inset-y-0 -right-1 z-30 w-2 cursor-col-resize touch-none outline-none hover:bg-primary-500/30 focus-visible:bg-primary-500/40',
+          resizing && 'bg-primary-500/40',
+        )}
+        onPointerDown={startResize}
+        onPointerMove={resize}
+        onPointerUp={endResize}
+        onPointerCancel={endResize}
+        onDoubleClick={() => setColumnWidth(COLUMN.default)}
+        onKeyDown={resizeByKey}
+      />
       {/* Keeps the editor's iframe from taking the pointer while resizing */}
       {resizing && <div className="fixed inset-0 z-20 cursor-col-resize" />}
     </aside>

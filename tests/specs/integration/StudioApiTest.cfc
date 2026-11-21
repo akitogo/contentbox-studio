@@ -134,6 +134,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								expect( response.getStatusCode() ).toBe( 200, response.getMessagesString() );
 								var defaultSite = response.getData().filter( ( site ) => site.slug == "default" );
 								expect( defaultSite ).toHaveLength( 1 );
+								expect( defaultSite[ 1 ] ).toHaveKey( "homepage" );
 								expect( defaultSite[ 1 ].isBlogEnabled ).toBe(
 									getInstance( "siteService@contentbox" ).getDefaultSite().getIsBlogEnabled()
 								);

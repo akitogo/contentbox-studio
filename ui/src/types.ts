@@ -16,6 +16,8 @@ export interface Site {
   siteRoot: string
   /** Off in the site's ContentBox settings: Studio hides the blog and refuses new entries */
   isBlogEnabled: boolean
+  /** Slug of the page ContentBox shows at the site root ("cbBlog": the blog) */
+  homepage: string
 }
 
 export type PageStatus = 'published' | 'draft' | 'scheduled' | 'expired'
