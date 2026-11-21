@@ -1,6 +1,6 @@
 import { registerOverlayPortal, useGetPuck } from '@puckeditor/core'
 import { Editor } from '@tiptap/react'
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { messageOf, useStudio } from '../studio'
 import type { BlockError } from '../types'
 import { getPath, setPath } from './blocksData'
@@ -27,16 +27,26 @@ const PLACEHOLDER: CSSProperties = {
 }
 // Widget calls ({{{Name ...}}}) are expanded by ContentBox when the page is shown, not in the editor
 const WIDGET = /\{\{\{(~?)([A-Za-z][A-Za-z0-9]*)([^}]*)\}\}\}/g
+// Not stretched by the theme's layout: its own row in a grid, compact in a flex row (see widgetFlex)
 const PLACEHOLDER_INLINE =
-  'padding:10px 14px;border:1px dashed #cbd5e1;border-radius:6px;color:#64748b;background:#f8fafc;font:13px/1.4 system-ui,-apple-system,sans-serif'
+  'box-sizing:border-box;flex:0 0 auto;align-self:flex-start;grid-column:1/-1;padding:10px 14px;border:1px dashed #cbd5e1;border-radius:6px;color:#64748b;background:#f8fafc;font:13px/1.4 system-ui,-apple-system,sans-serif'
 
 /** Server-rendered block HTML with placeholders for widget calls */
 export function withWidgetPlaceholders(html: string): string {
   return html.replace(WIDGET, (_call, _nocache: string, name: string, args: string) => {
     const slug = name === 'ContentStore' ? /slug="([A-Za-z0-9_/-]+)"/.exec(args)?.[1] : undefined
     const label = slug ? `Content store item “${slug}”, shown on the page` : `Widget “${name}”, shown on the page`
-    return `<div style="${PLACEHOLDER_INLINE}">${label}</div>`
+    return `<div data-cbs-widget style="${PLACEHOLDER_INLINE}">${label}</div>`
   })
+}
+
+/**
+ * The flex value of a widget placeholder in its parent: a row of its own where a flex row wraps (a header widget in a
+ * hero, which is out of the flow on the page), null (compact, as rendered) elsewhere, so it does not squeeze columns
+ */
+export function widgetFlex(parent: { display: string; flexDirection: string; flexWrap: string }): string | null {
+  const wrappingRow = parent.display.includes('flex') && parent.flexDirection.startsWith('row') && parent.flexWrap !== 'nowrap'
+  return wrappingRow ? '0 0 100%' : null
 }
 
 /** The value of a field edited in place: its text, single-line fields without line breaks */
@@ -117,6 +127,17 @@ export function BlockPreview({ type, label, id, data }: { type: string; label: s
   }, [key, refresh])
 
   const html = withWidgetPlaceholders(result?.blocks[0]?.html ?? '')
+
+  // Widget placeholders fitted to the theme's layout before the canvas is painted
+  useLayoutEffect(() => {
+    container.current?.querySelectorAll<HTMLElement>('[data-cbs-widget]').forEach((element) => {
+      const parent = element.parentElement
+      // The canvas is an iframe: its own window computes the styles
+      const view = element.ownerDocument.defaultView
+      const flex = parent && view ? widgetFlex(view.getComputedStyle(parent)) : null
+      if (flex) element.style.flex = flex
+    })
+  }, [html])
 
   // Marked text becomes editable; overlay portals take clicks through Puck's selection overlay
   useEffect(() => {
