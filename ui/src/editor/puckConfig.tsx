@@ -2,6 +2,7 @@
  * Puck configuration from the site's block types (GET /blocks): one Puck component per block type
  */
 import { FieldLabel, type ComponentConfig, type Config, type Field } from '@puckeditor/core'
+import type { ComponentType } from 'react'
 import type { BlockDefinition, ContentDetails, FieldDefinition } from '../types'
 import { fieldLabel, isFieldVisible, itemSummary, withDefaults } from './blocksData'
 import { BlockPreview } from './BlockPreview'
@@ -26,6 +27,8 @@ export function buildConfig(
   canEditHtml: boolean,
   rootLabel = 'Page',
   contentType: ContentDetails['contentType'] = 'page',
+  /** Shown above the blocks in the canvas, e.g. a blog entry's header (CanvasHeader) */
+  Header?: ComponentType,
 ): Config {
   const components: Record<string, ComponentConfig> = {}
   const categories: Record<string, { title: string; components: string[]; visible?: boolean }> = {}
@@ -64,7 +67,16 @@ export function buildConfig(
     categories,
     // No root fields: page settings (title, slug, SEO) stay in ContentBox
     // Inline style: the canvas only has the theme's CSS
-    root: { label: rootLabel, fields: {}, render: ({ children }: { children?: React.ReactNode }) => <div style={{ padding: 24 }}>{children}</div> },
+    root: {
+      label: rootLabel,
+      fields: {},
+      render: ({ children }: { children?: React.ReactNode }) => (
+        <div style={{ padding: 24 }}>
+          {Header && <Header />}
+          {children}
+        </div>
+      ),
+    },
   } as Config
 }
 

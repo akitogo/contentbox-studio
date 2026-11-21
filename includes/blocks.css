@@ -86,3 +86,25 @@
 	font-size: 0.875em;
 	opacity: 0.75;
 }
+
+/* Header of a blog entry in the editor canvas (blocks/_canvas/entry.cfm, when the theme has none) */
+:where(.cbs-entry-header) {
+	margin: 0 0 2rem;
+}
+:where(.cbs-entry-title) {
+	margin: 0;
+	font-size: 2.25em;
+	line-height: 1.15;
+}
+:where(.cbs-entry-meta) {
+	margin: 0.5rem 0 0;
+	font-size: 0.875em;
+	opacity: 0.7;
+}
+:where(.cbs-entry-image) {
+	display: block;
+	width: 100%;
+	max-height: 28rem;
+	margin-top: 1.5rem;
+	object-fit: cover;
+}

@@ -83,6 +83,7 @@ component singleton {
 	 * versioned by ContentBox. Left unchanged if not given (like language and entry).
 	 * @language    Language code of a page or entry ("" for none); needs STUDIO_SITE_TREE, like translations
 	 * @entry       Settings of a blog entry, see EntrySettings.prepare()
+	 * @title       The content's title (required, at most 200 characters like in ContentBox; the address stays)
 	 * @showInMenu  Whether a page appears in the site's menu (pages only)
 	 *
 	 * @return { saved: true, ...load() } or { saved: false, errors: [ { blockID, field, message } ] }
@@ -98,7 +99,8 @@ component singleton {
 		struct seo,
 		string language,
 		struct entry,
-		boolean showInMenu
+		boolean showInMenu,
+		string title
 	) {
 		if ( !canEdit( arguments.content, arguments.author ) ) {
 			throw(
@@ -135,6 +137,16 @@ component singleton {
 				invalid( e.message );
 			}
 		}
+		var newTitle = "";
+		if ( !isNull( arguments.title ) ) {
+			newTitle = trim( arguments.title );
+			if ( !len( newTitle ) ) {
+				invalid( "The title cannot be empty" );
+			}
+			if ( len( newTitle ) > 200 ) {
+				invalid( "The title may have at most 200 characters" );
+			}
+		}
 		var entryUpdate = {};
 		if ( !isNull( arguments.entry ) ) {
 			if ( type != "entry" ) {
@@ -164,6 +176,9 @@ component singleton {
 						: "Edited in ContentBox Studio",
 					author    = arguments.author
 				);
+			}
+			if ( len( newTitle ) ) {
+				arguments.content.setTitle( newTitle );
 			}
 			if ( !seoUpdate.isEmpty() ) {
 				arguments.content.setHTMLTitle( seoUpdate.title );

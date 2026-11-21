@@ -54,7 +54,7 @@ describe('settingsOf', () => {
     const page = settingsOf(content({ contentType: 'page', entry: undefined }), { canSetLanguage: true, toDoc })
     expect(page.entry).toBeNull()
     const item = settingsOf(content({ contentType: 'contentStore', entry: undefined }), { canSetLanguage: true, toDoc })
-    expect(item).toEqual({ seo: null, language: null, showInMenu: null, entry: null })
+    expect(item).toEqual({ title: 'Summer', seo: null, language: null, showInMenu: null, entry: null })
   })
 
   it('has the menu setting for pages only, shown unless turned off', () => {
@@ -77,11 +77,11 @@ describe('settingsPayload', () => {
   })
 
   it('sends nothing that cannot be changed', () => {
-    expect(settingsPayload({ seo: null, language: null, showInMenu: null, entry: null })).toEqual({})
+    expect(settingsPayload({ title: ' Offer ', seo: null, language: null, showInMenu: null, entry: null })).toEqual({ title: 'Offer' })
   })
 
   it('sends the menu setting of a page, also when it is off', () => {
-    expect(settingsPayload({ seo: null, language: null, showInMenu: false, entry: null })).toEqual({ showInMenu: false })
+    expect(settingsPayload({ title: 'Offer', seo: null, language: null, showInMenu: false, entry: null })).toEqual({ title: 'Offer', showInMenu: false })
   })
 })
 

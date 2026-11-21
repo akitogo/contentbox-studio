@@ -73,8 +73,8 @@ export function EditorHeader() {
         >
           <PanelLeft className="size-4" />
         </IconButton>
-        <h1 className="ml-1 min-w-0 truncate text-sm font-semibold text-slate-900" title={content.title}>
-          {content.title}
+        <h1 className="ml-1 min-w-0 truncate text-sm font-semibold text-slate-900" title={actions.settings?.title ?? content.title}>
+          {actions.settings?.title || content.title}
         </h1>
         <Badge tone={STATUS[content.status].tone}>{STATUS[content.status].label}</Badge>
         {actions.dirty && <span className="hidden text-xs whitespace-nowrap text-amber-600 @3xl:inline">unsaved</span>}

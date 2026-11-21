@@ -1,8 +1,8 @@
 import { useEffect, type ReactNode } from 'react'
 import { useEditorContext } from './EditorContext'
 
-/** Minimal canvas styles; everything else comes from the theme */
-const CANVAS_BASE = 'body { margin: 0; background: #fff; }'
+/** Minimal canvas styles, before the theme's and without specificity: any theme rule (e.g. its editor.css) wins */
+const CANVAS_BASE = ':where(body) { margin: 0; background: #fff; }'
 
 /**
  * Puck's iframe override: puts the theme's stylesheets into the canvas, so blocks look like on the site.
@@ -13,7 +13,10 @@ export function CanvasStyles({ children, document: frame }: { children: ReactNod
 
   useEffect(() => {
     if (!frame) return
-    const added: HTMLElement[] = []
+    const base = frame.createElement('style')
+    base.textContent = CANVAS_BASE
+    frame.head.appendChild(base)
+    const added: HTMLElement[] = [base]
     for (const href of stylesheets) {
       const link = frame.createElement('link')
       link.rel = 'stylesheet'
@@ -21,10 +24,6 @@ export function CanvasStyles({ children, document: frame }: { children: ReactNod
       frame.head.appendChild(link)
       added.push(link)
     }
-    const base = frame.createElement('style')
-    base.textContent = CANVAS_BASE
-    frame.head.appendChild(base)
-    added.push(base)
     return () => added.forEach((node) => node.remove())
   }, [frame, stylesheets])
 

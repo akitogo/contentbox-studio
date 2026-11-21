@@ -55,6 +55,7 @@ component {
 			.toHandler( "translations" );
 		router.route( "/content/:contentID/blocks" ).to( "editor.save" );
 		router.route( "/content/:contentID/status" ).to( "editor.status" );
+		router.route( "/content/:contentID/header" ).to( "editor.header" );
 		router.route( "/content/:contentID/template" ).to( "editor.template" );
 		router.route( "/content/:contentID/versions/:versionID" ).to( "editor.version" );
 		router.route( "/content/:contentID/versions" ).to( "editor.versions" );

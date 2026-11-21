@@ -112,7 +112,7 @@ export function PageDetails({
           <SeoFields
             seo={settings.seo}
             onChange={(seo) => onSettingsChange({ ...settings, seo })}
-            title={content.title}
+            title={settings?.title || content.title}
             url={content.url}
             disabled={!canEdit}
           />

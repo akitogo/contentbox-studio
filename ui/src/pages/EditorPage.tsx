@@ -5,6 +5,7 @@ import { useParams } from 'react-router'
 import { ApiError } from '../api'
 import type { ParsedBlock } from '../blocks/format'
 import { fromPuckData, toPuckData, typesByName, type BlockNotice, type PuckData } from '../editor/blocksData'
+import { CanvasHeader } from '../editor/CanvasHeader'
 import { CanvasStyles } from '../editor/CanvasStyles'
 import { CONTENT_LABELS, TEMPLATE_TARGETS } from '../editor/contentLabels'
 import { sameSettings, settingsOf, settingsPayload, type ContentSettings } from '../editor/contentSettings'
@@ -138,7 +139,13 @@ function ContentEditor({ contentID }: { contentID: string }) {
     () => {
       if (!loaded) return null
       const { contentType } = loaded.editor.content
-      return buildConfig(loaded.definitions, loaded.editor.canEditHtml, CONTENT_LABELS[contentType], contentType)
+      return buildConfig(
+        loaded.definitions,
+        loaded.editor.canEditHtml,
+        CONTENT_LABELS[contentType],
+        contentType,
+        contentType === 'entry' ? CanvasHeader : undefined,
+      )
     },
     [loaded],
   )

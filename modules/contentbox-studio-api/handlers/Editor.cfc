@@ -3,12 +3,15 @@
  */
 component extends="BaseHandler" {
 	property name="editor" inject="ContentEditor@contentbox-studio";
+
+	property name="canvasHeader" inject="CanvasHeader@contentbox-studio";
 	this.allowedMethods = {
 		"show"    : "GET",
 		"save"    : "PUT",
 		"versions": "GET",
 		"version" : "GET",
 		"status"  : "PUT",
+		"header"  : "POST",
 		"template": "POST"
 	};
 
@@ -26,7 +29,7 @@ component extends="BaseHandler" {
 
 	/**
 	 * PUT /cbstudio/api/content/:contentID/blocks with JSON { blocks: [ { type, id, data } ], changelog, baseVersion,
-	 * and optionally seo: { title, description, keywords }, language, entry: { publishedDate, expireDate, categories,
+	 * and optionally title, seo: { title, description, keywords }, language, showInMenu, entry: { publishedDate, expireDate, categories,
 	 * excerpt, featuredImage, allowComments } (see ContentEditor.save()) }
 	 * Saves a new version if the blocks changed. 422 with { errors } if blocks are invalid, 400 for invalid settings,
 	 * 403 without permission, 409 on a conflict.
@@ -57,6 +60,9 @@ component extends="BaseHandler" {
 		}
 		if ( isStruct( rc.entry ?: "" ) ) {
 			args.entry = rc.entry;
+		}
+		if ( rc.keyExists( "title" ) && isSimpleValue( rc.title ) ) {
+			args.title = toString( rc.title );
 		}
 		// Not "rc.showInMenu ?: ...": Adobe ColdFusion's Elvis operator also replaces false
 		if ( rc.keyExists( "showInMenu" ) ) {
@@ -139,6 +145,29 @@ component extends="BaseHandler" {
 		} catch (ContentEditor.Forbidden e) {
 			prc.response.setErrorMessage( e.message, 403 );
 		}
+	}
+
+	/**
+	 * POST /cbstudio/api/content/:contentID/header with JSON { title, publishedDate, categories: [ names ],
+	 * featuredImage } (each optional: the values being edited): the header of a blog entry in the editor canvas, as
+	 * the theme shows it, see CanvasHeader. Returns { html } ("" for pages and content store items).
+	 */
+	function header( event, rc, prc ) {
+		var content = findContent( rc.contentID ?: "" );
+		if ( isNull( content ) ) {
+			prc.response.setErrorMessage( "Content not found", 404 );
+			return;
+		}
+		var values = {};
+		for ( var key in [ "title", "publishedDate", "featuredImage" ] ) {
+			if ( rc.keyExists( key ) && isSimpleValue( rc[ key ] ) ) {
+				values[ key ] = toString( rc[ key ] );
+			}
+		}
+		if ( isArray( rc.categories ?: "" ) ) {
+			values[ "categories" ] = rc.categories;
+		}
+		prc.response.setData( variables.canvasHeader.render( content, values ) );
 	}
 
 	/**

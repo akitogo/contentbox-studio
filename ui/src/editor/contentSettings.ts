@@ -26,6 +26,8 @@ export interface EntryEdit {
 }
 
 export interface ContentSettings {
+  /** The content's title (edited in the canvas header of blog entries) */
+  title: string
   /** null for content store items (no page of their own) */
   seo: Seo | null
   /** null when it cannot be changed here (content store items, or no STUDIO_SITE_TREE permission) */
@@ -50,6 +52,7 @@ export function settingsOf(
   const hasPage = content.contentType !== 'contentStore'
   const entry = content.entry
   return {
+    title: content.title,
     seo: hasPage ? { ...content.seo } : null,
     language: hasPage && canSetLanguage ? content.language : null,
     showInMenu: content.contentType === 'page' ? content.showInMenu !== false : null,
@@ -71,8 +74,9 @@ export const sameSettings = (a: ContentSettings, b: ContentSettings) => JSON.str
 
 /** The settings' part of the save request: only what can be changed here */
 export function settingsPayload(settings: ContentSettings) {
-  const { seo, language, showInMenu, entry } = settings
+  const { title, seo, language, showInMenu, entry } = settings
   return {
+    title: title.trim(),
     ...(seo ? { seo } : {}),
     ...(language !== null ? { language: language.trim() } : {}),
     ...(showInMenu !== null ? { showInMenu } : {}),

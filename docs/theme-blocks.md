@@ -127,10 +127,32 @@ Rules:
 - Blocks are styled by the theme's normal CSS. The editor canvas loads the stylesheets of the site's home page, so it
   shows blocks the way the site does.
 - `blocks/editor.css` in the theme is loaded in the canvas only, after the theme's stylesheets: for adjustments
-  that only the editor needs (e.g. spacing between blocks, or content that scripts would normally reveal).
+  that only the editor needs (e.g. spacing between blocks, or content that scripts would normally reveal). The canvas
+  has no layout around the blocks, so styles a layout puts on `<body>` (page background, font, text color) belong
+  here too; Studio's own canvas default (`body` white, no margin) has no specificity and yields to any theme rule.
 - The core blocks (`cbs-*` classes) come with base styles (`includes/blocks.css` of the module). All its selectors
   use `:where()`, so they have no specificity and any theme rule overrides them. Accent color: `--cbs-accent`, else
   Bootstrap's `--bs-primary`. Turn the file off with the module setting `coreBlockStyles = false`.
+
+## Header of blog entries in the editor
+
+On the site, a blog entry's title, date and image usually come from the theme's `views/entry.cfm`, around the entry's
+blocks. So that editing a post looks like the post, Studio shows that header above the blocks in the canvas: a theme
+provides it as `blocks/_canvas/entry.cfm` (a folder without `block.json`, so not a block type). Without one, Studio
+uses its own plain header.
+
+The template is rendered like a block template, with the values being edited (it changes as the entry settings do):
+
+| `args.data` | |
+|---|---|
+| `title` | The title; output it with `esc()` so it can be edited in place (saved with **Save**) |
+| `date` | The publish date, formatted like ContentBox's display dates |
+| `publishedDate` | The publish date as a date, or `""` |
+| `author` | The author's name |
+| `categories` | Category names (no links in the editor) |
+| `image` | `{ src, alt }` of the featured image (`src` is `""` without one) |
+
+Keep it alike with the header of `views/entry.cfm`.
 
 ## Blocks from modules
 
