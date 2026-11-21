@@ -6,7 +6,7 @@ export interface Me {
   name: string
   email: string
   role: string
-  permissions: { siteTree: boolean; htmlBlocks: boolean }
+  permissions: { siteTree: boolean; htmlBlocks: boolean; convert: boolean; sitesAdmin: boolean }
 }
 
 export interface Site {
@@ -18,6 +18,8 @@ export interface Site {
   isBlogEnabled: boolean
   /** Slug of the page ContentBox shows at the site root ("cbBlog": the blog) */
   homepage: string
+  /** siteID of the site this one was copied from by the conversion tool ("" for other sites) */
+  copiedFrom: string
 }
 
 export type PageStatus = 'published' | 'draft' | 'scheduled' | 'expired'
@@ -235,4 +237,74 @@ export interface TemplateInfo {
   hasBlocks: boolean
   /** ContentBox's global template of its content type: the default for new content */
   isGlobal: boolean
+}
+
+/** GET /convert: conversion profiles (models/convert/Profiles.cfc) */
+export interface ConvertProfile {
+  name: string
+  label: string
+  theme: string
+  compare: 'markup' | 'content'
+  problems: string[]
+}
+
+export interface ConvertIndex {
+  profiles: ConvertProfile[]
+  themes: { name: string; label: string }[]
+}
+
+/** One top-level section of a body and the block it became */
+export interface ConvertSection {
+  id: string
+  type: string
+  same: boolean
+  /** Why a section a rule matched stays HTML */
+  note: string
+  errors: string[]
+  /** compare "content": texts, links and images of the section the block lacks */
+  missing: string[]
+  /** compare "markup", only when it differs: canonical forms of both */
+  canonical?: { source: string; rendered: string }
+  /** Only in the report of one item */
+  source?: string
+  rendered?: string
+}
+
+export interface ConvertItem {
+  contentID: string
+  slug: string
+  title: string
+  contentType: 'Page' | 'Entry' | 'ContentStore'
+  ready: boolean
+  reason: string
+  sections: ConvertSection[]
+}
+
+/** GET /sites/:site/convert */
+export interface ConvertReport {
+  profile: Omit<ConvertProfile, 'problems'>
+  canApply: boolean
+  problems: string[]
+  items: ConvertItem[]
+  totals: { items: number; ready: number; sections: number; converted: number; same: number }
+}
+
+/** POST /sites/:site/convert */
+export interface ConvertResult {
+  saved: { contentID: string; slug: string }[]
+  skipped: { contentID: string; slug: string; reason: string }[]
+}
+
+/** POST /sites/:site/copy */
+export interface CopyResult {
+  siteID: string
+  slug: string
+  name: string
+  domain: string
+  theme: string
+  pages: number
+  entries: number
+  contentStore: number
+  reachable: boolean
+  warnings: string[]
 }

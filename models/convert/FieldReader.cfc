@@ -16,8 +16,9 @@
  * | html | the element's inner HTML as it is |
  *
  * A spec is a selector string ("p.lead"; "&" or "" is the section itself; "img @alt" or "@data-id" reads an
- * attribute) or a struct { select, attr, classes, each, fields, value }; "value" sets a fixed value. A missing element
- * gives the field's empty value. Markup a field cannot hold throws Convert.Unconvertible, so the section stays HTML
+ * attribute) or a struct { select, attr, classes, each, fields, value, ignore }; "value" sets a fixed value, "ignore"
+ * (a selector) leaves out elements the template outputs itself, like an icon in a button. A missing element gives the
+ * field's empty value. Markup a field cannot hold throws Convert.Unconvertible, so the section stays HTML
  * instead of losing something.
  *
  * The public helpers (text, lines, richText, link, image, images, classFrom, select, selectAll, unconvertible) are
@@ -84,6 +85,15 @@ component singleton {
 		var target = select( arguments.element, rule.select );
 		if ( isNull( target ) ) {
 			return emptyValue( type );
+		}
+		// Elements the template outputs itself (e.g. an icon in a button) are left out
+		if ( len( rule.ignore ) ) {
+			target = target.clone();
+			try {
+				target.select( rule.ignore ).remove();
+			} catch ( any e ) {
+				invalidSelector( rule.ignore, e );
+			}
 		}
 		switch ( type ) {
 			case "text":
@@ -298,6 +308,7 @@ component singleton {
 			throw( type = "Convert.InvalidProfile", message = "A field spec must be a selector or an object" );
 		}
 		rule[ "attr" ] = isSimpleValue( rule.attr ?: "" ) ? trim( rule.attr ?: "" ) : "";
+		rule[ "ignore" ] = isSimpleValue( rule.ignore ?: "" ) ? trim( rule.ignore ?: "" ) : "";
 		// "img @alt" or "@data-id": an attribute of the selected element
 		var at = find( "@", rule.select );
 		if ( at ) {

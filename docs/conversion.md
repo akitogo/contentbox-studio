@@ -5,6 +5,10 @@ edit. The conversion tool turns that HTML into real blocks, page by page, and re
 something. It needs the `STUDIO_CONVERT` permission (administrators); copying a site also needs ContentBox's
 `SITES_ADMIN`.
 
+The tool is **Convert** in Studio's header (`/cbstudio/convert`): pick the site and a profile, look at the dry run
+(per item and section: which block, passes or differs, and why), select the items that are ready and convert them. Copy
+the site from there too. Everything it does is also in the API (below).
+
 There are two ways:
 
 | | Same look | New look |
@@ -86,7 +90,8 @@ A field only needs a selector inside the section; how it is read follows from th
 | `html` | the element's inner HTML as it is |
 
 Selector forms: `"h2"`, `"&"` or `""` for the section itself, `"img @alt"` or `"@data-id"` for an attribute, and
-`{ "value": "dark" }` for a fixed value. Fields without a spec get their default. A missing element gives an empty
+`{ "value": "dark" }` for a fixed value. `{ "select": "a.button", "ignore": "svg" }` leaves out elements the template
+outputs itself (an icon in a button). Fields without a spec get their default. A missing element gives an empty
 value.
 
 When a section has markup its field cannot hold, the section stays an HTML block and the report says why: nothing is
@@ -120,6 +125,9 @@ component {
 `classFrom( element, map )`, `select`, `selectAll` and `unconvertible( message )` (keep the section as HTML).
 
 ## 3. Dry run and convert
+
+In Studio: the screen runs the dry run when you pick a site and a profile; expand an item for its sections and their
+HTML. API:
 
 - `GET /cbstudio/api/convert`: profiles (with their problems) and the themes a copy can use.
 - `GET /cbstudio/api/sites/:site/convert?profile=<name>`: dry run over all pages, blog entries and content store

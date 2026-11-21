@@ -149,8 +149,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 Existing pages are hand-written HTML and open as one HTML block. The conversion tool turns them into blocks with a
 **conversion profile** (CSS selectors per block field, or code for complex sections), page by page and only where
 nothing is lost: each block is rendered and compared with the section it replaces. For a new look it works on a
-**copy of the site** with another theme, so the original stays as it is. API only for now; see
-[docs/conversion.md](docs/conversion.md).
+**copy of the site** with another theme, so the original stays as it is. **Convert** in Studio's header
+(administrators) opens the tool: copy a site, pick a profile, see per page and section what becomes a block and what
+differs, convert the pages that are ready. See [docs/conversion.md](docs/conversion.md).
 
 ## Settings
 

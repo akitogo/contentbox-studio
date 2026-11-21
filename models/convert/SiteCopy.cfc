@@ -13,6 +13,14 @@ component singleton {
 
 	property name="themeService" inject="themeService@contentbox";
 
+	property name="contentService" inject="contentService@contentbox";
+
+	property name="contentVersionService" inject="contentVersionService@contentbox";
+
+	property name="authorService" inject="authorService@contentbox";
+
+	property name="populator" inject="wirebox:populator";
+
 	property name="log" inject="logbox:logger:{this}";
 
 	variables.COPY_SETTING = "cbstudio_copiedFrom";
@@ -75,6 +83,15 @@ component singleton {
 		memento[ "activeTheme" ] = themeName;
 		memento[ "isActive" ] = true;
 		memento[ "settings" ] = memento.settings.filter( ( setting ) => setting.name != variables.COPY_SETTING );
+		// ContentBox's import replaces the version collection of content it has already saved, which Hibernate refuses
+		// on Adobe ColdFusion ("A collection with cascade=all-delete-orphan was no longer referenced"): the versions
+		// are taken out here and added to the copied content afterwards
+		var versions = {};
+		for ( var key in [ "pages", "entries", "contentStore" ] ) {
+			if ( isArray( memento[ key ] ?: "" ) ) {
+				takeVersions( memento[ key ], versions );
+			}
+		}
 
 		var importLog = createObject( "java", "java.lang.StringBuilder" ).init();
 		transaction {
@@ -90,6 +107,7 @@ component singleton {
 
 		var copied = variables.siteService.findBySlug( siteSlug );
 		transaction {
+			addVersions( copied, versions );
 			renewTranslationGroups( copied );
 			var setting = variables.settingService.new();
 			setting.setName( variables.COPY_SETTING );
@@ -172,6 +190,49 @@ component singleton {
 	}
 
 	/********************************* PRIVATE *********************************/
+
+	/**
+	 * Move the versions out of content mementos (children included) into versions[ slug ]
+	 */
+	private void function takeVersions( required array items, required struct versions ) {
+		for ( var item in arguments.items ) {
+			if ( !isStruct( item ) ) {
+				continue;
+			}
+			if ( isArray( item.contentversions ?: "" ) ) {
+				arguments.versions[ item.slug ] = item.contentversions;
+				item[ "contentversions" ] = [];
+			}
+			if ( isArray( item.children ?: "" ) ) {
+				takeVersions( item.children, arguments.versions );
+			}
+		}
+	}
+
+	/**
+	 * Add the versions taken out of the mementos to the copied content, like ContentBox's import would
+	 */
+	private void function addVersions( required site, required struct versions ) {
+		for ( var slug in arguments.versions ) {
+			var content = variables.contentService.findWhere( { "slug": slug, "site": arguments.site } );
+			if ( isNull( content ) ) {
+				continue;
+			}
+			for ( var data in arguments.versions[ slug ] ) {
+				var version = variables.populator.populateFromStruct(
+					target               = variables.contentVersionService.new(),
+					memento              = data,
+					exclude              = "contentVersionID,author",
+					composeRelationships = false
+				);
+				var editor = variables.authorService.findByEmail( data.author.email ?: "" );
+				version.setAuthor( isNull( editor ) ? content.getCreator() : editor );
+				version.setRelatedContent( content );
+				content.addContentVersion( version );
+				entitySave( version );
+			}
+		}
+	}
 
 	/**
 	 * Give the copy's translation groups new ids: the import copies the custom fields, ids included

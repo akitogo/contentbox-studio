@@ -1,12 +1,15 @@
 import { LogOut } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useContext, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useStudio } from '../studio'
 import { Button, buttonClass } from '../ui'
+import { WorkspaceContext } from '../workspace/WorkspaceContext'
 
 /** Top bar of every screen; children go in the middle */
 export function Header({ children }: { children?: ReactNode }) {
   const { config, api, me } = useStudio()
+  // In the workspace, leaving goes through its navigation (which asks about unsaved changes)
+  const workspace = useContext(WorkspaceContext)
 
   async function logout() {
     try {
@@ -29,6 +32,19 @@ export function Header({ children }: { children?: ReactNode }) {
           <div className="text-sm font-medium text-slate-900">{me.name}</div>
           <div className="text-xs text-slate-500">{me.role}</div>
         </div>
+        {me.permissions.convert && (
+          <Link
+            to="/convert"
+            className={buttonClass('ghost', 'sm')}
+            onClick={(event) => {
+              if (!workspace) return
+              event.preventDefault()
+              workspace.goTo('/convert')
+            }}
+          >
+            Convert
+          </Link>
+        )}
         <a href={config.adminUrl} className={buttonClass('ghost', 'sm')}>
           Classic admin
         </a>

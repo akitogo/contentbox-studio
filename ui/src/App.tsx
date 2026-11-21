@@ -9,6 +9,7 @@ import { Workspace } from './workspace/Workspace'
 
 // The editor (Puck, TipTap) is large: load it only when content is opened
 const EditorPage = lazy(() => import('./pages/EditorPage').then((module) => ({ default: module.EditorPage })))
+const ConvertPage = lazy(() => import('./pages/ConvertPage').then((module) => ({ default: module.ConvertPage })))
 
 export function App({ config, api }: { config: StudioConfig; api: ApiClient }) {
   return (
@@ -27,6 +28,15 @@ export function App({ config, api }: { config: StudioConfig; api: ApiClient }) {
               }
             />
           </Route>
+          {/* The conversion tool, full width */}
+          <Route
+            path="convert"
+            element={
+              <Suspense fallback={<Loading />}>
+                <ConvertPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </StudioProvider>

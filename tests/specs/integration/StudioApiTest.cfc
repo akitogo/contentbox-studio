@@ -56,6 +56,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								expect( data.role ).toBe( "Administrator" );
 								expect( data.permissions.siteTree ).toBeTrue();
 								expect( data.permissions.htmlBlocks ).toBeTrue();
+								expect( data.permissions.convert ).toBeTrue();
 							}
 						);
 					}
@@ -135,6 +136,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 								var defaultSite = response.getData().filter( ( site ) => site.slug == "default" );
 								expect( defaultSite ).toHaveLength( 1 );
 								expect( defaultSite[ 1 ] ).toHaveKey( "homepage" );
+								expect( defaultSite[ 1 ].copiedFrom ).toBe( "" );
 								expect( defaultSite[ 1 ].isBlogEnabled ).toBe(
 									getInstance( "siteService@contentbox" ).getDefaultSite().getIsBlogEnabled()
 								);

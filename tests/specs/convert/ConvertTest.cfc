@@ -76,6 +76,11 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						expect( () => reader.readField( section, fieldDef( "t", "text" ), "div.rt" ) ).toThrow( "Convert.Unconvertible" );
 						expect( () => reader.readField( section, fieldDef( "r", "richtext" ), "&" ) ).toThrow( "Convert.Unconvertible" );
 						expect( () => reader.readField( section, fieldDef( "t", "text" ), "h2[" ) ).toThrow( "Convert.InvalidProfile" );
+						// Elements the template outputs itself can be left out
+						var button = element( "<a href=""/go"">Go <svg><path d=""M0""/></svg></a>" );
+						expect( () => reader.readField( button, fieldDef( "t", "text" ), "&" ) ).toThrow( "Convert.Unconvertible" );
+						expect( reader.readField( button, fieldDef( "t", "text" ), { "ignore": "svg" } ) ).toBe( "Go" );
+						expect( button.select( "svg" ).size() ).toBe( 1 );
 
 						var list = reader.readField(
 							element( "<ul><li><b>A</b><i>1</i></li><li><b>B</b></li></ul>" ),
@@ -325,6 +330,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 
 							// The copy's group has a new id and the same members; the original's is unchanged
 							var copiedGerman = getInstance( "pageService@contentbox" ).findWhere( { "slug": german.getSlug(), "site": copied } );
+							// Versions and body come along (added after the import, see SiteCopy.addVersions())
+							var originalGerman = getInstance( "pageService@contentbox" ).get( german.getContentID() );
+							expect( copiedGerman.getContentVersions().len() ).toBe( originalGerman.getContentVersions().len() );
+							expect( copiedGerman.getContent() ).toBe( originalGerman.getContent() );
 							var copiedGroup = translations.forContent( copiedGerman );
 							expect( copiedGroup.group ).notToBe( group );
 							expect( copiedGroup.members ).toHaveLength( 2 );

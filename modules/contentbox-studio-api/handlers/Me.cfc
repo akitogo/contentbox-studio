@@ -19,7 +19,9 @@ component extends="BaseHandler" {
 				"role"       : author.getRoleName(),
 				"permissions": {
 					"siteTree"  : author.hasPermission( "STUDIO_SITE_TREE" ),
-					"htmlBlocks": author.hasPermission( "STUDIO_HTML_BLOCKS" )
+					"htmlBlocks": author.hasPermission( "STUDIO_HTML_BLOCKS" ),
+					"convert"   : author.hasPermission( "STUDIO_CONVERT" ),
+					"sitesAdmin": author.hasPermission( "SITES_ADMIN" )
 				}
 			}
 		);

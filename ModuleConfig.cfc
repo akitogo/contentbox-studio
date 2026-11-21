@@ -73,6 +73,7 @@ component {
 		router.route( "/" ).to( "home.index" );
 		// Content editing (phase 3); the app handles the path
 		router.route( "/content/:contentID" ).to( "home.index" );
+		router.route( "/convert" ).to( "home.index" );
 	}
 
 	/**

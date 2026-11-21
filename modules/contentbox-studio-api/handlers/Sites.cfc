@@ -5,6 +5,8 @@ component extends="BaseHandler" {
 	property name="contentEditor" inject="ContentEditor@contentbox-studio";
 
 	property name="themeStyles" inject="ThemeStyles@contentbox-studio";
+
+	property name="siteCopy" inject="SiteCopy@contentbox-studio";
 	this.allowedMethods = {
 		"index"       : "GET",
 		"contentStore": "GET",
@@ -13,7 +15,8 @@ component extends="BaseHandler" {
 	};
 
 	/**
-	 * GET /cbstudio/api/sites: active sites, sorted by name, with whether their blog is turned on and their home page
+	 * GET /cbstudio/api/sites: active sites, sorted by name, with whether their blog is turned on, their home page and
+	 * the site they were copied from
 	 */
 	function index( event, rc, prc ) {
 		var sites = variables
@@ -29,7 +32,9 @@ component extends="BaseHandler" {
 						"siteRoot"     : site.getSiteRoot(),
 						"isBlogEnabled": site.getIsBlogEnabled(),
 						// Slug of the page ContentBox shows at the site root, or "cbBlog" for the blog
-						"homepage"     : site.getHomepage() ?: ""
+						"homepage"     : site.getHomepage() ?: "",
+						// siteID of the site this one was copied from for converting it (conversion tool), else ""
+						"copiedFrom"   : variables.siteCopy.copiedFrom( site )
 					};
 				}
 			);

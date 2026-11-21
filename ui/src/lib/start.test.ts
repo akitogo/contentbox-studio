@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { Site, TreePage } from '../types'
 import { rememberContent, rememberedContent, startContent } from './start'
 
-const site = (change: Partial<Site> = {}): Site => ({ siteID: 's1', slug: 'default', name: 'Site', siteRoot: '', isBlogEnabled: true, homepage: 'home', ...change })
+const site = (change: Partial<Site> = {}): Site => ({ siteID: 's1', slug: 'default', name: 'Site', siteRoot: '', isBlogEnabled: true, homepage: 'home', copiedFrom: '', ...change })
 const page = (contentID: string, slug: string, parentID = '', order = 1) => ({ contentID, slug, parentID, order }) as TreePage
 const pages = [page('about', 'about', '', 1), page('home', 'home', '', 2), page('team', 'about/team', 'about', 1)]
 

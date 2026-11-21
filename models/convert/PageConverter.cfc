@@ -162,7 +162,10 @@ component singleton {
 			);
 		}
 		var blockTypes = arguments.types ?: variables.registry.forSite( arguments.site );
-		problems.append( checkRules( loaded, blockTypes ), true );
+		// Against another theme's blocks every rule would fail: the theme is the one problem then
+		if ( problems.len() == loaded.problems.len() ) {
+			problems.append( checkRules( loaded, blockTypes ), true );
+		}
 		return {
 			"profile" : loaded,
 			"types"   : blockTypes,
@@ -213,7 +216,9 @@ component singleton {
 		required struct types,
 		struct readers = {}
 	) {
-		var body = arguments.content.getContent();
+		// ContentBox's getContent() fails for content without any version
+		var hasBody = !structKeyExists( arguments.content, "hasActiveContent" ) || arguments.content.hasActiveContent();
+		var body = hasBody ? arguments.content.getContent() : "";
 		var item = {
 			"contentID"  : arguments.content.getContentID(),
 			"slug"       : arguments.content.getSlug(),
@@ -370,7 +375,7 @@ component singleton {
 	/********************************* PRIVATE *********************************/
 
 	/**
-	 * Pages, blog entries and content store items of the site, by type and slug
+	 * Pages, blog entries and content store items of the site, in this order, each by slug
 	 */
 	private array function contents( required site ) {
 		var result = variables.contentService
@@ -378,9 +383,14 @@ component singleton {
 			.isEq( "site", arguments.site )
 			.list( sortOrder = "slug asc" )
 			.filter( ( content ) => listFindNoCase( variables.CONTENT_TYPES, content.getContentType() ) );
-		// sort() changes the array (its return value differs between engines)
-		result.sort( ( a, b ) => compareNoCase( a.getContentType() & "|" & a.getSlug(), b.getContentType() & "|" & b.getSlug() ) );
+		// Pages, then blog entries, then content store items; sort() changes the array (its return value differs
+		// between engines)
+		result.sort( ( a, b ) => compareNoCase( sortKey( a ), sortKey( b ) ) );
 		return result;
+	}
+
+	private string function sortKey( required content ) {
+		return listFindNoCase( variables.CONTENT_TYPES, arguments.content.getContentType() ) & "|" & arguments.content.getSlug();
 	}
 
 	private struct function htmlPart( required string source, required string note ) {
