@@ -104,7 +104,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   Everything else is edited in the fields on the right.
 - Field types get suitable inputs: rich text (TipTap, stored as a structured document), links with a page picker
   (`page:[slug]`, resolved by ContentBox), images and galleries from ContentBox's media library (with upload),
-  content store items, lists of sub-fields, and HTML (only with `STUDIO_HTML_BLOCKS`).
+  content store items, lists of sub-fields, and HTML (only with `STUDIO_HTML_BLOCKS`). The media library opens in the
+  folder of the image in use (marked "In use"); for a gallery, in the folder of its last image.
 - **Save** stores a new ContentBox version (with an optional change note); history and rollback in the classic admin
   keep working. A save based on an older version than the current one is refused, so nobody overwrites someone
   else's changes unknowingly.

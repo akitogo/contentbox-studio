@@ -2,6 +2,7 @@
  * Studio's UI building blocks (Tailwind). Every screen uses these, so the look stays consistent.
  */
 import clsx, { type ClassValue } from 'clsx'
+import { createPortal } from 'react-dom'
 import { twMerge } from 'tailwind-merge'
 import { CircleAlert, CircleCheck, Info, Loader2, X } from 'lucide-react'
 import {
@@ -233,7 +234,9 @@ export function Dialog({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  // On the body: an ancestor with CSS containment (in the editor) would otherwise become the box that `fixed` is
+  // relative to, and a tall dialog would slide under Studio's header
+  return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 p-4" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div
         ref={panel}
@@ -250,6 +253,7 @@ export function Dialog({
         <div className="min-h-0 flex-1 overflow-auto px-5 py-4">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 rounded-b-xl">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

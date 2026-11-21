@@ -94,6 +94,7 @@ export function ImageField({ value, onChange, readOnly }: { value: unknown; onCh
       <Input value={image.alt} onChange={(event) => onChange({ ...image, alt: event.target.value })} placeholder="Alternative text: what the image shows" aria-label="Alternative text" readOnly={readOnly} />
       {picking && (
         <MediaPicker
+          current={image.src}
           onClose={() => setPicking(false)}
           onSelect={(file) => {
             onChange({ ...image, src: file.url })
@@ -151,6 +152,7 @@ export function ImagesField({ value, onChange, readOnly }: { value: unknown; onC
       )}
       {picking && (
         <MediaPicker
+          near={images.at(-1)?.src}
           onClose={() => setPicking(false)}
           onSelect={(file) => {
             onChange([...images, { src: file.url, alt: '' }])

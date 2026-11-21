@@ -83,6 +83,7 @@ export function EntrySettingsFields({
       </Field>
       {picking && (
         <MediaPicker
+          current={entry.featuredImage || entry.featuredImageURL}
           onClose={() => setPicking(false)}
           onSelect={(file) => {
             set({ featuredImage: file.url, featuredImageURL: file.url })
