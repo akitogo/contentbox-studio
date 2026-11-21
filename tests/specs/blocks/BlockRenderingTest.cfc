@@ -16,7 +16,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				it(
 					"has the core block types on a site whose theme has none",
 					() => {
-						var types = registry.forSite( getDefaultSite() );
+						var types = registry.forSite( coreSite() );
 						for ( var name in [
 							"html",
 							"text",
@@ -60,7 +60,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				it(
 					"gives the editor definitions without template paths",
 					() => {
-						var list = registry.publicDefinitions( registry.forSite( getDefaultSite() ) );
+						var list = registry.publicDefinitions( registry.forSite( coreSite() ) );
 						expect( list.len() ).toBeGTE( 8 );
 						expect( list[ 1 ] ).notToHaveKey( "renderTemplate" );
 						expect( list[ 1 ] ).toHaveKey( "fields" );
@@ -83,7 +83,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"renders the core blocks",
 					() => {
 						var result = renderer.renderBlocks(
-							getDefaultSite(),
+							coreSite(),
 							[
 								{
 									"type": "heading",
@@ -194,7 +194,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"reports unknown types and field errors, and replaces missing or duplicate ids",
 					() => {
 						var result = renderer.renderBlocks(
-							getDefaultSite(),
+							coreSite(),
 							[
 								{ "type": "nope", "id": "n1", "data": {} },
 								{
@@ -227,7 +227,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					() => {
 						var types = getInstance( "BlockRegistry@contentbox-studio" ).forTheme( fixtureTheme() );
 						var result = renderer.renderBlocks(
-							getDefaultSite(),
+							coreSite(),
 							[
 								{
 									"type": "hero",
@@ -255,7 +255,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							"renders Studio blocks again and keeps legacy parts",
 							() => {
 								var stored = renderer.renderBlocks(
-									getDefaultSite(),
+									coreSite(),
 									[
 										{
 											"type": "heading",
@@ -270,12 +270,12 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 									"old-class"
 								) & chr( 10 ) & chr( 10 ) & "<p>legacy</p>";
 								// The hash no longer matches after the class change: that counts as an edit outside Studio
-								expect( renderer.rerenderBody( getDefaultSite(), stored ).skipped ).toBe(
+								expect( renderer.rerenderBody( coreSite(), stored ).skipped ).toBe(
 									"blocks changed outside Studio"
 								);
 
 								var clean = renderer.renderBlocks(
-									getDefaultSite(),
+									coreSite(),
 									[
 										{
 											"type": "heading",
@@ -284,7 +284,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 										}
 									]
 								).body & chr( 10 ) & chr( 10 ) & "<p>legacy</p>";
-								var result = renderer.rerenderBody( getDefaultSite(), clean );
+								var result = renderer.rerenderBody( coreSite(), clean );
 								expect( result.skipped ).toBe( "" );
 								expect( result.changed ).toBe( 0 );
 								var blocks = format.parse( result.body );
@@ -297,7 +297,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							"does not touch bodies without Studio blocks",
 							() => {
 								var result = renderer.rerenderBody(
-									getDefaultSite(),
+									coreSite(),
 									"<p>Written in the classic editor</p>"
 								);
 								expect( result.skipped ).toBe( "no blocks" );
@@ -323,7 +323,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"marks text from text fields in previews for the editor canvas",
 					() => {
 						var result = renderer.renderBlocks(
-							site     = getDefaultSite(),
+							site     = coreSite(),
 							blocks   = [
 								{
 									"type": "heading",
@@ -343,7 +343,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"marks rich text from rich text fields in previews",
 					() => {
 						var result = renderer.renderBlocks(
-							site     = getDefaultSite(),
+							site     = coreSite(),
 							blocks   = [
 								{
 									"type": "text",
@@ -373,7 +373,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 					"never marks HTML that is saved",
 					() => {
 						var result = renderer.renderBlocks(
-							getDefaultSite(),
+							coreSite(),
 							[
 								{
 									"type": "heading",
@@ -477,7 +477,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						format = getInstance( "BlockFormat@contentbox-studio" );
 						renderer = getInstance( "BlockRenderer@contentbox-studio" );
 						body = renderer.renderBlocks(
-							getDefaultSite(),
+							coreSite(),
 							[
 								{
 									"type": "heading",
@@ -587,8 +587,15 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 
 	/********************************* HELPERS *********************************/
 
-	private function getDefaultSite() {
-		return getInstance( "siteService@contentbox" ).getDefaultSite();
+	/**
+	 * A site whose theme has no block types of its own (ContentBox's default theme), so these specs see the core blocks
+	 * whatever theme the dev site uses. The registry and the renderer only ask a site for its theme.
+	 */
+	private function coreSite() {
+		return createStub().$( "getActiveTheme", "default" ).$(
+			"getSiteID",
+			getInstance( "siteService@contentbox" ).getDefaultSite().getSiteID()
+		);
 	}
 
 	private struct function fixtureTheme() {

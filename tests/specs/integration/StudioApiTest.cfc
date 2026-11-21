@@ -100,7 +100,8 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 
 								expect( response.getStatusCode() ).toBe( 200, response.getMessagesString() );
 								var data = response.getData();
-								expect( data.blocks[ 1 ].html ).toBe( "<h2 class=""cbs-heading"">Preview</h2>" );
+								// Any heading markup: the dev site's theme may replace the core heading block
+								expect( data.blocks[ 1 ].html ).toInclude( ">Preview</h2>" );
 								expect( data.body ).toInclude( "<!-- cb:block " );
 								expect( data.errors[ 1 ].message ).toInclude( "Unknown block type" );
 							}
