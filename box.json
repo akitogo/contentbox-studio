@@ -1,7 +1,7 @@
 {
     "name": "ContentBox Studio",
     "slug": "contentbox-studio",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "author": "Akitogo Internet and Media Applications GmbH",
     "shortDescription": "Block editor and site tree for ContentBox 7",
     "type": "modules",

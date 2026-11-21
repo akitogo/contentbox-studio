@@ -3,6 +3,14 @@
 All notable changes to ContentBox Studio. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/). Upgrading: see [docs/installation.md](docs/installation.md#upgrade).
 
+## [0.1.3] - 2026-11-21
+
+### Fixed
+
+- Editing in place in the editor canvas: a click on the editable text of a form label moved the cursor into the
+  label's input instead (e.g. the signup label of the Studio Launch theme). A click into editable text now only edits
+  it: links around it are not followed and submit buttons do not send their form.
+
 ## [0.1.2] - 2026-11-21
 
 ### Fixed
@@ -51,6 +59,7 @@ First release.
   admin.
 - Tested on BoxLang 1 and Adobe ColdFusion 2023 and 2025.
 
+[0.1.3]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.3
 [0.1.2]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.2
 [0.1.1]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.0
