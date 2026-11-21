@@ -2,8 +2,8 @@
 
 Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, running next to the classic admin at `/cbstudio`.
 
-> Status: 0.1.0 before its first release: complete for a first version and in use on a pilot site, not yet on
-> ForgeBox.
+> Status: 0.1.0, the first release, on [ForgeBox](https://forgebox.io/view/contentbox-studio). In use on a pilot
+> site.
 
 ![ContentBox Studio: the site tree, the page as it looks on the site, and the fields of the selected section](docs/images/editor.jpg)
 
