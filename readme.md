@@ -119,6 +119,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   published content keeps it published, so the change is live at once) and the status
   (draft, scheduled, published, expired) are in the editor's header, as are buttons to hide the blocks and fields
   columns. Undoing every change clears the unsaved marker.
+- The canvas shows the page in a viewport (Small 360 px, Medium 768 px, Large 1280 px, Full width), scaled down to
+  fit; it never zooms beyond that. Full width shows it at 100 % at the canvas's own width. The viewport and the hidden
+  columns are remembered per browser.
 - For blog entries, the canvas shows the entry's header above the blocks as the theme renders it on the site (title,
   date, author, categories, featured image; see [Blocks in themes](docs/theme-blocks.md)). It follows the entry
   settings as they are edited, and the title is edited right there, saved with **Save** (the address stays).

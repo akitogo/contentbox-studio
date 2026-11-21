@@ -9,7 +9,7 @@ import { CanvasHeader } from '../editor/CanvasHeader'
 import { CanvasStyles } from '../editor/CanvasStyles'
 import { CONTENT_LABELS, TEMPLATE_TARGETS } from '../editor/contentLabels'
 import { sameSettings, settingsOf, settingsPayload, type ContentSettings } from '../editor/contentSettings'
-import { EditorActionsContext, EditorFields, EditorHeader, rememberedPanels, type EditorActions } from '../editor/EditorActions'
+import { EditorActionsContext, EditorFields, EditorHeader, rememberedUi, type EditorActions } from '../editor/EditorActions'
 import { EditorContext, type EditorContextValue } from '../editor/EditorContext'
 import { openPreview, previewFields, previewUrl } from '../editor/preview'
 import { buildConfig } from '../editor/puckConfig'
@@ -64,7 +64,7 @@ function ContentEditor({ contentID }: { contentID: string }) {
   const [showVersions, setShowVersions] = useState(false)
   const [templateDialog, setTemplateDialog] = useState(false)
   const current = useRef<PuckData | null>(null)
-  const [puckUi] = useState(rememberedPanels)
+  const [puckUi] = useState(rememberedUi)
 
   // The saved blocks as a save would send them: a change is unsaved only while the blocks differ (undo ends it)
   const savedBlocks = useRef('')

@@ -5,7 +5,7 @@
  */
 import { createUsePuck } from '@puckeditor/core'
 import { Eye, History, LayoutTemplate, PanelLeft, PanelRight, Redo2, Save, Undo2 } from 'lucide-react'
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import type { ContentDetails } from '../types'
 import { STATUS } from '../workspace/status'
 import type { ContentSettings } from './contentSettings'
@@ -41,11 +41,27 @@ const ADMIN_PERMISSION: Record<ContentDetails['contentType'], string> = { page: 
 
 const usePuck = createUsePuck()
 
-/** Remembered visibility of Puck's columns, so it stays when other content is opened */
+/** Remembered per browser, so they stay when other content is opened: visibility of Puck's columns, the viewport */
 const PANELS = { left: 'cbstudio.blocksHidden', right: 'cbstudio.fieldsHidden' }
+const VIEWPORT = 'cbstudio.viewport'
 
-export function rememberedPanels() {
-  return { leftSideBarVisible: stored(PANELS.left) !== '1', rightSideBarVisible: stored(PANELS.right) !== '1' }
+/** The canvas width last chosen (a viewport's width in px, or "100%" for full width), if any */
+export function rememberedViewport(): number | '100%' | null {
+  const value = stored(VIEWPORT)
+  if (value === '100%') return value
+  const width = Number(value)
+  return Number.isInteger(width) && width > 0 ? width : null
+}
+
+/** Puck's initial UI state (its `ui` prop) with what is remembered */
+export function rememberedUi() {
+  const width = rememberedViewport()
+  return {
+    leftSideBarVisible: stored(PANELS.left) !== '1',
+    rightSideBarVisible: stored(PANELS.right) !== '1',
+    // Puck merges only the top level: the whole viewports object, as in Puck's default (it fills in the options)
+    ...(width ? { viewports: { current: { width, height: 'auto' as const }, options: [], controlsVisible: true } } : {}),
+  }
 }
 
 /** Label that is hidden when the editor is narrow (the button keeps its accessible name through aria-label) */
@@ -57,6 +73,10 @@ export function EditorHeader() {
   const dispatch = usePuck((state) => state.dispatch)
   const leftVisible = usePuck((state) => state.appState.ui.leftSideBarVisible)
   const rightVisible = usePuck((state) => state.appState.ui.rightSideBarVisible)
+  const viewportWidth = usePuck((state) => state.appState.ui.viewports.current.width)
+  useEffect(() => {
+    store(VIEWPORT, String(viewportWidth))
+  }, [viewportWidth])
   if (!actions) return <></>
   const { content } = actions
 
