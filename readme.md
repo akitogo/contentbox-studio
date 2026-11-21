@@ -112,7 +112,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - The canvas loads the stylesheets of the site's theme (the `<link rel="stylesheet">` tags of the site's home page,
   plus the theme's `blocks/editor.css` if it has one), so blocks look like on the site.
 - **Undo/redo**, **Publish/Unpublish** (`PAGES_ADMIN`, `ENTRIES_ADMIN` or `CONTENTSTORE_ADMIN`, as in the classic
-  admin: editors can save but not publish; the server enforces it) and the status
+  admin: editors can save but not publish; the server enforces it. Unlike the classic admin, an editor's save of
+  published content keeps it published, so the change is live at once) and the status
   (draft, scheduled, published, expired) are in the editor's header, as are buttons to hide the blocks and fields
   columns. Undoing every change clears the unsaved marker.
 - With no block selected, the right column shows the content's settings: address, a blog entry's settings (see
@@ -122,7 +123,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - After saving, publishing, creating, moving or linking translations, Studio announces ContentBox's
   `cbadmin_post<Type>Save` events like the classic admin: ContentBox clears its content, page, sitemap and RSS caches,
   updates menu items that point to a moved page, and sends its notifications for new pages and entries (if they are
-  on); other modules can listen too.
+  on in ContentBox's settings, also for content created in Studio); other modules can listen too.
 - **Save** only adds a version when the blocks changed; saving only settings keeps the version (ContentBox does not
   version them).
 - Opening other content with unsaved changes asks first.
