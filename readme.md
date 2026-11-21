@@ -5,7 +5,7 @@ Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, ru
 > Status: 0.1.0, the first release, on [ForgeBox](https://forgebox.io/view/contentbox-studio). In use on a pilot
 > site.
 
-![ContentBox Studio: the site tree, the page as it looks on the site, and the fields of the selected section](docs/images/editor.jpg)
+![ContentBox Studio: the site tree, the page as it looks on the site, and the fields of the selected section](https://raw.githubusercontent.com/akitogo/contentbox-studio/main/docs/images/editor.jpg)
 
 **A theme to start with:** [Studio Starter](https://github.com/akitogo/studio-starter) is a ContentBox theme with
 ready-made blocks for Studio (hero, content with image, features, pricing, call to action, blog) and switchable design
@@ -15,13 +15,13 @@ presets, built with Tailwind CSS. The screenshots here show it.
 
 | | |
 |---|---|
-| [Editing with Studio](docs/editing.md) | Guide for editors: pages, sections, saving, versions, blog |
-| [Installing, upgrading, removing](docs/installation.md) | Requirements, installation, configuration, upgrades, what removing leaves |
-| [Blocks in themes](docs/theme-blocks.md) | Adding block types to a theme (`block.json`, `render.cfm`) |
-| [Converting existing pages](docs/conversion.md) | Turning hand-written HTML into blocks, on the site or on a copy with a new theme |
-| [Block format](docs/block-format.md) | How blocks are stored in the content body |
-| [Engine notes](docs/engine-notes.md) | BoxLang and Adobe ColdFusion differences to keep in mind |
-| [Changelog](CHANGELOG.md) | What changed in each version |
+| [Editing with Studio](https://github.com/akitogo/contentbox-studio/blob/main/docs/editing.md) | Guide for editors: pages, sections, saving, versions, blog |
+| [Installing, upgrading, removing](https://github.com/akitogo/contentbox-studio/blob/main/docs/installation.md) | Requirements, installation, configuration, upgrades, what removing leaves |
+| [Blocks in themes](https://github.com/akitogo/contentbox-studio/blob/main/docs/theme-blocks.md) | Adding block types to a theme (`block.json`, `render.cfm`) |
+| [Converting existing pages](https://github.com/akitogo/contentbox-studio/blob/main/docs/conversion.md) | Turning hand-written HTML into blocks, on the site or on a copy with a new theme |
+| [Block format](https://github.com/akitogo/contentbox-studio/blob/main/docs/block-format.md) | How blocks are stored in the content body |
+| [Engine notes](https://github.com/akitogo/contentbox-studio/blob/main/docs/engine-notes.md) | BoxLang and Adobe ColdFusion differences to keep in mind |
+| [Changelog](https://github.com/akitogo/contentbox-studio/blob/main/CHANGELOG.md) | What changed in each version |
 
 ## Goals
 
@@ -46,7 +46,7 @@ box install contentbox-studio
 
 Then reinit the site and open **Content → Studio** in the classic admin (or `/cbstudio`); Studio uses the classic
 admin login. Release zips, installing from git, configuration, upgrades and removal:
-[docs/installation.md](docs/installation.md).
+[docs/installation.md](https://github.com/akitogo/contentbox-studio/blob/main/docs/installation.md).
 
 ## Permissions
 
@@ -69,10 +69,10 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 ## Blocks
 
 - A page is a sequence of blocks stored **inside the normal content body**: each block is an HTML comment with its
-  data, followed by its rendered HTML ([block format](docs/block-format.md)). Versions, search, the REST API and
+  data, followed by its rendered HTML ([block format](https://github.com/akitogo/contentbox-studio/blob/main/docs/block-format.md)). Versions, search, the REST API and
   exports keep working; on the public site Studio removes the comments.
 - Block types come from Studio (HTML, text, heading, image, gallery, button, quote, content store item), from the
-  site's theme and from other modules ([theme blocks](docs/theme-blocks.md)). For a theme with ready-made blocks, see
+  site's theme and from other modules ([theme blocks](https://github.com/akitogo/contentbox-studio/blob/main/docs/theme-blocks.md)). For a theme with ready-made blocks, see
   [Studio Starter](https://github.com/akitogo/studio-starter).
 - The server renders blocks when they are saved. Rich text is stored as a structured document and rendered by the
   server, so it cannot carry arbitrary HTML; raw HTML needs the `HTML` block and the `STUDIO_HTML_BLOCKS` permission.
@@ -81,7 +81,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 ## Site tree
 
-<img src="docs/images/site-tree.jpg" alt="The site tree: status dots, menu icons, languages" width="256" align="right">
+<img src="https://raw.githubusercontent.com/akitogo/contentbox-studio/main/docs/images/site-tree.jpg" alt="The site tree: status dots, menu icons, languages" width="256" align="right">
 
 - `/cbstudio` opens the editor right away: on the site last worked on, the page or blog entry last edited there
   (remembered per browser), else the site's home page; `?site=<slug>` picks a site. A site without pages offers to
@@ -106,7 +106,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 ## Blog
 
-![A blog entry in the editor: the entry's header on the canvas, its settings on the right](docs/images/blog.jpg)
+![A blog entry in the editor: the entry's header on the canvas, its settings on the right](https://raw.githubusercontent.com/akitogo/contentbox-studio/main/docs/images/blog.jpg)
 
 - The **Blog** tab lists the site's entries newest first, drafts, scheduled and expired ones included, with date,
   author, categories, status and language. Search (title or address) and filters for status and category (or no
@@ -153,7 +153,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   fit; it never zooms beyond that. Full width shows it at 100 % at the canvas's own width. The viewport and the hidden
   columns are remembered per browser.
 - For blog entries, the canvas shows the entry's header above the blocks as the theme renders it on the site (title,
-  date, author, categories, featured image; see [Blocks in themes](docs/theme-blocks.md)). It follows the entry
+  date, author, categories, featured image; see [Blocks in themes](https://github.com/akitogo/contentbox-studio/blob/main/docs/theme-blocks.md)). It follows the entry
   settings as they are edited, and the title is edited right there, saved with **Save** (the address stays).
 - With no block selected, the right column shows the content's settings: address, a blog entry's settings (see
   [Blog](#blog)), search engine fields (title, meta description and keywords, with length hints and a collapsible preview
@@ -169,7 +169,7 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
 
-  ![The versions of a page next to the editor](docs/images/versions.jpg)
+  ![The versions of a page next to the editor](https://raw.githubusercontent.com/akitogo/contentbox-studio/main/docs/images/versions.jpg)
 
 - **Save as template** stores the saved blocks as a ContentBox content template; new content of the same type can
   start from it (block presets). Marked as the default, it becomes ContentBox's global template of the type and is
@@ -185,9 +185,9 @@ nothing is lost: each block is rendered and compared with the section it replace
 images) can become Studio's own text, heading and image blocks without writing a profile (built-in profile
 "plain-text"). **Convert** in Studio's header
 (administrators) opens the tool: copy a site, pick a profile, see per page and section what becomes a block and what
-differs, convert the pages that are ready. See [docs/conversion.md](docs/conversion.md).
+differs, convert the pages that are ready. See [docs/conversion.md](https://github.com/akitogo/contentbox-studio/blob/main/docs/conversion.md).
 
-![The conversion tool: a dry run on a copy of a site, with the sections of one page](docs/images/convert.jpg)
+![The conversion tool: a dry run on a copy of a site, with the sections of one page](https://raw.githubusercontent.com/akitogo/contentbox-studio/main/docs/images/convert.jpg)
 
 ## Settings
 
@@ -231,7 +231,7 @@ npm run typecheck
   `npm run dev` in `ui/` and open `/cbstudio`.
 - **CFML tests (TestBox):** open `/modules_app/contentbox-studio/tests/runner.cfm` on the site. They reuse ContentBox's
   test application (`tests/Application.cfc` of a ContentBox source checkout) and the ORM dialect from `ORM_DIALECT`.
-- **Engine pitfalls:** see [docs/engine-notes.md](docs/engine-notes.md).
+- **Engine pitfalls:** see [docs/engine-notes.md](https://github.com/akitogo/contentbox-studio/blob/main/docs/engine-notes.md).
 - **CI** (`.github/workflows/ci.yml`): UI checks, then the TestBox suite in a ContentBox `development` checkout with its
   MySQL fixture on BoxLang 1 and Adobe ColdFusion 2023/2025.
 - **Releases** (`.github/workflows/release.yml`): set the version in `box.json` and a section for it in
@@ -242,4 +242,4 @@ npm run typecheck
 
 ## License
 
-Apache License 2.0, see [LICENSE](LICENSE).
+Apache License 2.0, see [LICENSE](https://github.com/akitogo/contentbox-studio/blob/main/LICENSE).
