@@ -13,7 +13,7 @@ component {
 	this.author = "Akitogo Internet and Media Applications GmbH";
 	this.webURL = "https://github.com/akitogo/contentbox-studio";
 	this.description = "Block editor and site tree for ContentBox 7";
-	this.version = "0.1.0";
+	this.version = "0.1.1";
 	this.entryPoint = "cbstudio";
 	this.modelNamespace = "contentbox-studio";
 	this.classMapping = "contentbox-studio";
