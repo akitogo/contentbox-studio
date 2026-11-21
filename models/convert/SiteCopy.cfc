@@ -147,7 +147,8 @@ component singleton {
 	/**
 	 * Delete a copy made by copy(), with its content. ContentBox's own site delete removes the content with bulk
 	 * statements on Adobe ColdFusion, which the foreign keys of versions and custom fields refuse; here content and
-	 * menus are deleted one by one, so Hibernate's cascades apply.
+	 * menus are deleted one by one, so Hibernate's cascades apply. Hit counters (cbStats) are not part of those
+	 * cascades and go first.
 	 *
 	 * @throws SiteCopy.Invalid for a site that is not a copy
 	 */
@@ -158,6 +159,11 @@ component singleton {
 		var siteID = arguments.site.getSiteID();
 		var media = variables.mediaService.getCoreMediaRoot( absolute = true ) & "/sites/" & arguments.site.getSlug();
 		transaction {
+			// Hit counters: ContentBox's content delete leaves them, and they refer to the content
+			ormExecuteQuery(
+				"delete from cbStats where relatedContent in (select c from cbContent c where c.site.siteID = :siteID)",
+				{ "siteID": siteID }
+			);
 			// Top-level content only: deleting content deletes its children
 			var roots = variables.contentService
 				.newCriteria()

@@ -387,6 +387,10 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							expect( original.group ).toBe( group );
 							expect( original.members.map( ( member ) => member.siteID ) ).toBe( [ site.getSiteID(), site.getSiteID() ] );
 
+							// Content with a hit counter (visited pages) can be deleted too
+							getInstance( "statsService@contentbox" ).save(
+								getInstance( "statsService@contentbox" ).new( { "hits": 3, "relatedContent": copiedGerman } )
+							);
 							// Only copies can be deleted this way; deleting one leaves the original as it is
 							expect( () => copier.deleteCopy( site ) ).toThrow( "SiteCopy.Invalid" );
 							ormClearSession();

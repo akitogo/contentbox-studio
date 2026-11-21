@@ -1,0 +1,78 @@
+name: Release
+
+# Push a tag v<version> (matching "version" in box.json, with a section in CHANGELOG.md) to release:
+# CI first, then the GitHub release with the zip, then ForgeBox.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Release ${{ github.ref_name }}
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the version and take its changelog section
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BOX_VERSION="$(jq -r .version box.json)"
+          if [ "$BOX_VERSION" != "$VERSION" ]; then
+            echo "::error::box.json has version $BOX_VERSION, the tag is $GITHUB_REF_NAME"
+            exit 1
+          fi
+          # From "## [<version>]" to the next "## [" (link definitions at the end left out)
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on && !/^\[[^]]*\]: / { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # The editor as CI built it
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Package
+        run: |
+          mkdir -p "$RUNNER_TEMP/package"
+          rsync -a \
+            --exclude .git --exclude ui --exclude tests --exclude .github \
+            --exclude .bxformat.json --exclude .gitignore \
+            ./ "$RUNNER_TEMP/package/"
+          test -f "$RUNNER_TEMP/package/dist/.vite/manifest.json"
+          (cd "$RUNNER_TEMP/package" && zip -qr "$GITHUB_WORKSPACE/contentbox-studio-$VERSION.zip" .)
+          unzip -l "contentbox-studio-$VERSION.zip" | tail -1
+
+      - name: GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: ${{ runner.temp }}/release-notes.md
+          files: contentbox-studio-${{ env.VERSION }}.zip
+
+      - name: Set up CommandBox
+        uses: Ortus-Solutions/setup-commandbox@v2.0.1
+        with:
+          forgeboxAPIKey: ${{ secrets.FORGEBOX_API_TOKEN }}
+
+      # ForgeBox installs the release zip (it has the built editor, which git does not)
+      - name: Publish to ForgeBox
+        run: |
+          LOCATION="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/contentbox-studio-$VERSION.zip"
+          jq --arg location "$LOCATION" '.location = $location' box.json > "$RUNNER_TEMP/box.json"
+          cp "$RUNNER_TEMP/box.json" box.json
+          box publish

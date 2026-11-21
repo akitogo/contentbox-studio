@@ -2,7 +2,22 @@
 
 Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, running next to the classic admin at `/cbstudio`.
 
-> Status: early development, not usable yet.
+> Status: 0.1.0 before its first release: complete for a first version and in use on a pilot site, not yet on
+> ForgeBox.
+
+![ContentBox Studio: the site tree, the page as it looks on the site, and the fields of the selected section](docs/images/editor.jpg)
+
+## Documentation
+
+| | |
+|---|---|
+| [Editing with Studio](docs/editing.md) | Guide for editors: pages, sections, saving, versions, blog |
+| [Installing, upgrading, removing](docs/installation.md) | Requirements, installation, configuration, upgrades, what removing leaves |
+| [Blocks in themes](docs/theme-blocks.md) | Adding block types to a theme (`block.json`, `render.cfm`) |
+| [Converting existing pages](docs/conversion.md) | Turning hand-written HTML into blocks, on the site or on a copy with a new theme |
+| [Block format](docs/block-format.md) | How blocks are stored in the content body |
+| [Engine notes](docs/engine-notes.md) | BoxLang and Adobe ColdFusion differences to keep in mind |
+| [Changelog](CHANGELOG.md) | What changed in each version |
 
 ## Goals
 
@@ -13,8 +28,11 @@ Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, ru
 
 ## Requirements
 
-- ContentBox 7
-- BoxLang, Lucee or Adobe ColdFusion as supported by ContentBox 7
+| | Supported (tested in CI) |
+|---|---|
+| ContentBox | 7 |
+| Engine | BoxLang 1, Adobe ColdFusion 2023, Adobe ColdFusion 2025 (no Lucee, like ContentBox 7) |
+| Database | what ContentBox 7 supports (CI: MySQL; development: PostgreSQL 17) |
 
 ## Installation
 
@@ -22,7 +40,9 @@ Block editor and site tree for [ContentBox](https://www.contentboxcms.org) 7, ru
 box install contentbox-studio
 ```
 
-Then reinit the site and open `/cbstudio`. Studio uses the classic admin login.
+Then reinit the site and open **Content → Studio** in the classic admin (or `/cbstudio`); Studio uses the classic
+admin login. Release zips, installing from git, configuration, upgrades and removal:
+[docs/installation.md](docs/installation.md).
 
 ## Permissions
 
@@ -56,6 +76,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 
 ## Site tree
 
+<img src="docs/images/site-tree.jpg" alt="The site tree: status dots, menu icons, languages" width="256" align="right">
+
 - `/cbstudio` opens the editor right away: on the site last worked on, the page or blog entry last edited there
   (remembered per browser), else the site's home page; `?site=<slug>` picks a site. A site without pages offers to
   create the first one. Switching sites asks about unsaved changes first.
@@ -78,6 +100,8 @@ Studio adds these permissions when it loads (only if they are missing, so your c
   `cbstudio_language` and `cbstudio_translationGroup`.
 
 ## Blog
+
+![A blog entry in the editor: the entry's header on the canvas, its settings on the right](docs/images/blog.jpg)
 
 - The **Blog** tab lists the site's entries newest first, drafts, scheduled and expired ones included, with date,
   author, categories, status and language. Search (title or address) and filters for status and category (or no
@@ -139,6 +163,9 @@ Studio adds these permissions when it loads (only if they are missing, so your c
 - Opening other content with unsaved changes asks first.
 - **Preview** renders the unsaved blocks with the site's theme and layout through ContentBox's own preview.
 - **Versions** lists the history; loading a version puts its blocks into the editor, saving makes it current.
+
+  ![The versions of a page next to the editor](docs/images/versions.jpg)
+
 - **Save as template** stores the saved blocks as a ContentBox content template; new content of the same type can
   start from it (block presets). Marked as the default, it becomes ContentBox's global template of the type and is
   preselected for new pages or entries. Templates are also listed in the classic admin.
@@ -154,6 +181,8 @@ images) can become Studio's own text, heading and image blocks without writing a
 "plain-text"). **Convert** in Studio's header
 (administrators) opens the tool: copy a site, pick a profile, see per page and section what becomes a block and what
 differs, convert the pages that are ready. See [docs/conversion.md](docs/conversion.md).
+
+![The conversion tool: a dry run on a copy of a site, with the sections of one page](docs/images/convert.jpg)
 
 ## Settings
 
@@ -200,6 +229,11 @@ npm run typecheck
 - **Engine pitfalls:** see [docs/engine-notes.md](docs/engine-notes.md).
 - **CI** (`.github/workflows/ci.yml`): UI checks, then the TestBox suite in a ContentBox `development` checkout with its
   MySQL fixture on BoxLang 1 and Adobe ColdFusion 2023/2025.
+- **Releases** (`.github/workflows/release.yml`): set the version in `box.json` and a section for it in
+  `CHANGELOG.md`, commit, then push a tag `v<version>` (e.g. `v0.1.0`). The workflow runs CI, builds the editor,
+  packs `contentbox-studio-<version>.zip` (with `dist/`, without `ui/`, `tests/` and `.github/`), creates the GitHub
+  release with that zip and the changelog section, and publishes the version to ForgeBox with the zip as its
+  location. It needs the repository secret `FORGEBOX_API_TOKEN`.
 
 ## License
 

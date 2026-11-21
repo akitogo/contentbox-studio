@@ -78,8 +78,8 @@ export function SiteTreePane({ hidden }: { hidden: boolean }) {
       })
     }
     try {
-      const result = await api.post<{ slug: string }>(`${config.studioApi}/pages/${pageID}/move`, target)
-      setMessage({ tone: 'success', text: `Moved to /${result.slug}. The old address redirects there.` })
+      const result = await api.post<{ slug: string; previousSlug: string }>(`${config.studioApi}/pages/${pageID}/move`, target)
+      setMessage({ tone: 'success', text: moveMessage(result) })
       await reload()
     } catch (error) {
       setPages(before)
@@ -414,4 +414,9 @@ export function LanguageTag({ language }: { language: string }) {
       {language}
     </span>
   )
+}
+
+/** Feedback after a move: a new address redirects from the old one; reordering among siblings keeps the address */
+export function moveMessage(result: { slug: string; previousSlug: string }): string {
+  return result.slug === result.previousSlug ? 'Order saved.' : `Moved to /${result.slug}. The old address redirects there.`
 }

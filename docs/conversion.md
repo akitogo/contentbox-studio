@@ -19,6 +19,8 @@ There are two ways:
 
 ## 1. Copy the site (recommended, required for a new look)
 
+<img src="images/copy-site.jpg" alt="Copy site: name, slug, domain and theme of the copy" width="476">
+
 `POST /cbstudio/api/sites/:site/copy` with `{ name, slug, domain, theme }` creates a new site with ContentBox's own
 export and import: pages, blog entries, content store, categories, menus, site settings, custom fields and versions.
 The original is only read. The copy
@@ -151,7 +153,12 @@ for any theme. It is always in the list; a folder `_convert/plain-text` replaces
 ## 3. Dry run and convert
 
 In Studio: the screen runs the dry run when you pick a site and a profile; expand an item for its sections and their
-HTML. API:
+HTML.
+
+![A dry run with the built-in plain-text profile on a copy: two pages written in the classic editor are ready, the sections of one are expanded](images/convert.jpg)
+
+Green chips are sections that become blocks and pass the check, grey `html` chips stay HTML, orange ones stay HTML
+because a rule (or prose) could not read them (the reason is in the details), red ones differ. API:
 
 - `GET /cbstudio/api/convert`: profiles (with their problems) and the themes a copy can use.
 - `GET /cbstudio/api/sites/:site/convert?profile=<name>`: dry run over all pages, blog entries and content store

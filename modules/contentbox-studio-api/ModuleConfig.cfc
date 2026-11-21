@@ -6,7 +6,7 @@
  */
 component {
 	this.title = "ContentBox Studio API";
-	this.author = "akitogo Internet and Media Applications GmbH";
+	this.author = "Akitogo Internet and Media Applications GmbH";
 	this.webURL = "https://github.com/akitogo/contentbox-studio";
 	this.description = "REST API of ContentBox Studio";
 	this.entryPoint = "cbstudio/api";
