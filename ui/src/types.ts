@@ -245,6 +245,8 @@ export interface ConvertProfile {
   label: string
   theme: string
   compare: 'markup' | 'content'
+  /** Plain text no rule matches becomes Studio's text, heading and image blocks */
+  prose: boolean
   problems: string[]
 }
 

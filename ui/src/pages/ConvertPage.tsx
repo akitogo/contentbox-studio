@@ -12,7 +12,7 @@ import { slugify } from '../lib/slug'
 import { rememberedSite } from '../lib/start'
 import { store, stored } from '../lib/storage'
 import { messageOf, useStudio } from '../studio'
-import type { ConvertIndex, ConvertItem, ConvertReport, ConvertResult, ConvertSection, CopyResult, Site } from '../types'
+import type { ConvertIndex, ConvertItem, ConvertProfile, ConvertReport, ConvertResult, ConvertSection, CopyResult, Site } from '../types'
 import { Alert, Badge, Button, Card, Checkbox, Dialog, Field, Input, Loading, Select, Spinner, cx } from '../ui'
 
 const PROFILE_KEY = 'cbstudio.convert.profile'
@@ -133,11 +133,7 @@ export function ConvertPage() {
                   <Field
                     label="Profile"
                     htmlFor="convert-profile"
-                    help={
-                      chosen
-                        ? `For the theme ${chosen.theme}; ${chosen.compare === 'content' ? 'new look: nothing may be lost' : 'same look: the markup must stay the same'}`
-                        : 'Profiles are in modules_app/contentbox-custom/_convert/'
-                    }
+                    help={chosen ? profileHelp(chosen) : 'Profiles are in modules_app/contentbox-custom/_convert/'}
                   >
                     <div className="flex gap-2">
                       <Select
@@ -272,6 +268,13 @@ export function ConvertPage() {
       )}
     </div>
   )
+}
+
+/** What a profile does, in one line */
+export function profileHelp(profile: ConvertProfile): string {
+  const theme = profile.theme === '*' ? 'For any theme' : `For the theme ${profile.theme}`
+  const check = profile.compare === 'content' ? 'new look: nothing may be lost' : 'same look: the markup must stay the same'
+  return `${theme}; ${check}${profile.prose ? '; plain text becomes Studio\'s text, heading and image blocks' : ''}`
 }
 
 function ResultAlert({ result, onClose }: { result: ConvertResult; onClose: () => void }) {

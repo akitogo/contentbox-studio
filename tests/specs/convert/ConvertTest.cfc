@@ -218,6 +218,48 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
+					"turns plain text into Studio's text, heading and image blocks (prose, built-in profile plain-text)",
+					() => {
+						var coreTypes = getInstance( "BlockRegistry@contentbox-studio" ).forSite( coreSite() );
+						var plain = profiles.get( "plain-text" );
+						expect( plain.prose ).toBeTrue();
+						expect( profiles.list().filter( ( profile ) => profile.name == "plain-text" ) ).toHaveLength( 1 );
+						// Any theme
+						expect( converter.prepare( coreSite(), "plain-text", coreTypes ).problems ).toBeEmpty();
+
+						var body = "<h2>Title</h2><p>One <a href=""/x"">link</a></p>" & chr( 10 ) & "<ul><li>A</li><li>B</li></ul>" &
+						"<p><img src=""/__media/i.png"" alt=""I""></p>" &
+						"<figure><a href=""/big.png""><img src=""/__media/j.png"" alt=""J""></a><figcaption>Cap</figcaption></figure>" &
+						"<div class=""box"">Keep</div><p>After <span style=""color:red"">red</span></p>" &
+						"<h3>Rich <em>head</em></h3><p>Last</p>{{{Widget}}}";
+						var item = converter.convert( contentWith( body ), plain, coreTypes );
+						expect( item.sections.map( ( section ) => section.type ) ).toBe( [ "heading", "text", "image", "image", "html", "text", "html" ] );
+						expect( item.ready ).toBeTrue( item.reason );
+						expect( item.sections[ 1 ].data ).toBe( { "text": "Title", "level": "2" } );
+						expect( item.sections[ 2 ].data.content.content.map( ( node ) => node.type ) ).toBe( [ "paragraph", "bulletList" ] );
+						expect( item.sections[ 3 ].data.image.src ).toBe( "/__media/i.png" );
+						expect( item.sections[ 4 ].data.caption ).toBe( "Cap" );
+						expect( item.sections[ 4 ].data.link.href ).toBe( "/big.png" );
+						// Markup rich text cannot hold stays HTML, with the reason; neighbouring HTML joins it
+						expect( item.sections[ 5 ].data.html ).toInclude( "Keep" );
+						expect( item.sections[ 5 ].note ).toInclude( "text: rich text with <span>" );
+						expect( item.sections[ 6 ].data.content.content.map( ( node ) => node.type ) ).toBe( [ "heading", "paragraph" ] );
+						expect( item.sections[ 6 ] ).notToHaveKey( "flow" );
+						expect( item.sections.every( ( section ) => section.same ) ).toBeTrue();
+
+						// Prose needs the content comparison
+						var directory = writeProfile( { "theme": "*", "compare": "markup", "prose": true, "rules": [] } );
+						try {
+							var problems = profiles.get( listLast( directory, "/\" ) ).problems;
+							expect( problems ).toHaveLength( 1 );
+							expect( problems[ 1 ] ).toInclude( "prose needs" );
+						} finally {
+							directoryDelete( directory, true );
+						}
+					}
+				);
+
+				it(
 					"applies only ready content, as a new version, and a new look only on a copy",
 					() => {
 						var directory = writeProfile(

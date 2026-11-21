@@ -17,6 +17,10 @@
  *
  * A rule with "reader" uses readers/<name>.cfc of the profile instead of "fields": its read( element, read ) returns
  * the block data, or nothing when the section is not this block; read is the FieldReader with its helpers.
+ *
+ * "prose": true turns sections no rule matches into Studio's text, heading and image blocks where they are plain
+ * text (paragraphs, headings, lists, quotes, images); it needs "compare": "content". "theme": "*" is any theme. The
+ * built-in profile "plain-text" does just that, without rules, for any site.
  */
 component singleton {
 	property name="controller" inject="coldbox";
@@ -24,6 +28,15 @@ component singleton {
 	property name="log" inject="logbox:logger:{this}";
 
 	variables.registered = [];
+	variables.ANY_THEME = "*";
+	variables.BUILTIN = {
+		"plain-text": {
+			"label"  : "Plain text into Studio's blocks (any theme)",
+			"theme"  : variables.ANY_THEME,
+			"compare": "content",
+			"prose"  : true
+		}
+	};
 	variables.NAME_PATTERN = "^[A-Za-z0-9_-]+$";
 	variables.COMPARE = "markup,content";
 
@@ -45,7 +58,7 @@ component singleton {
 	/**
 	 * All profiles, sorted by label
 	 *
-	 * @return [ { name, label, theme, compare, problems } ]
+	 * @return [ { name, label, theme, compare, prose, problems } ]
 	 */
 	array function list() {
 		var result = [];
@@ -62,14 +75,12 @@ component singleton {
 					continue;
 				}
 				seen[ name ] = true;
-				var profile = load( source, name );
-				result.append( {
-					"name"    : profile.name,
-					"label"   : profile.label,
-					"theme"   : profile.theme,
-					"compare" : profile.compare,
-					"problems": profile.problems
-				} );
+				result.append( summary( load( source, name ) ) );
+			}
+		}
+		for ( var name in variables.BUILTIN ) {
+			if ( !seen.keyExists( name ) ) {
+				result.append( summary( builtinProfile( name ) ) );
 			}
 		}
 		result.sort( ( a, b ) => compareNoCase( a.label, b.label ) );
@@ -79,7 +90,7 @@ component singleton {
 	/**
 	 * A profile with its rules, read from disk each time (profiles change while they are written)
 	 *
-	 * @return { name, label, theme, compare, rules: [ { block, match, fields, reader } ], problems: [], directory,
+	 * @return { name, label, theme, compare, prose, rules: [ { block, match, fields, reader } ], problems: [], directory,
 	 * invocationPath }
 	 *
 	 * @throws Convert.ProfileNotFound
@@ -91,8 +102,18 @@ component singleton {
 					return load( source, arguments.name );
 				}
 			}
+			if ( variables.BUILTIN.keyExists( arguments.name ) ) {
+				return builtinProfile( arguments.name );
+			}
 		}
 		throw( type = "Convert.ProfileNotFound", message = "No conversion profile '#arguments.name#'" );
+	}
+
+	/**
+	 * Whether a profile is for any theme ("theme": "*")
+	 */
+	boolean function anyTheme( required struct profile ) {
+		return arguments.profile.theme == variables.ANY_THEME;
 	}
 
 	/**
@@ -103,6 +124,29 @@ component singleton {
 	}
 
 	/********************************* PRIVATE *********************************/
+
+	private struct function summary( required struct profile ) {
+		return {
+			"name"    : arguments.profile.name,
+			"label"   : arguments.profile.label,
+			"theme"   : arguments.profile.theme,
+			"compare" : arguments.profile.compare,
+			"prose"   : arguments.profile.prose,
+			"problems": arguments.profile.problems
+		};
+	}
+
+	private struct function builtinProfile( required string name ) {
+		var profile = duplicate( variables.BUILTIN[ arguments.name ] );
+		profile.append( {
+			"name"          : arguments.name,
+			"rules"         : [],
+			"problems"      : [],
+			"directory"     : "",
+			"invocationPath": ""
+		} );
+		return profile;
+	}
 
 	/**
 	 * Registered folders plus contentbox-custom/_convert, if that module is loaded
@@ -127,6 +171,7 @@ component singleton {
 			"label"         : arguments.name,
 			"theme"         : "",
 			"compare"       : "markup",
+			"prose"         : false,
 			"rules"         : [],
 			"problems"      : [],
 			"directory"     : directory,
@@ -157,7 +202,18 @@ component singleton {
 				profile.problems.append( "compare must be ""markup"" or ""content""" );
 			}
 		}
-		if ( !isArray( data.rules ?: "" ) || !data.rules.len() ) {
+		if ( data.keyExists( "prose" ) ) {
+			if ( isBoolean( data.prose ) ) {
+				profile.prose = data.prose == true;
+			} else {
+				profile.problems.append( "prose must be true or false" );
+			}
+		}
+		if ( profile.prose && profile.compare != "content" ) {
+			profile.problems.append( "prose needs ""compare"": ""content"" (Studio's blocks look different from the old HTML)" );
+		}
+		// Without prose, rules are what the profile does
+		if ( !isArray( data.rules ?: "" ) || ( !data.rules.len() && !profile.prose ) ) {
 			profile.problems.append( "rules is missing or empty" );
 			return profile;
 		}

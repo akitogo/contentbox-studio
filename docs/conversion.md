@@ -68,8 +68,9 @@ folders with `Profiles@contentbox-studio`'s `registerDirectory( directory, invoc
 }
 ```
 
-- `theme`: the theme whose blocks the rules produce; it must be the site's active theme.
+- `theme`: the theme whose blocks the rules produce; it must be the site's active theme (`"*"`: any theme).
 - `compare`: `markup` (default) or `content`, see the table above.
+- `prose`: `true` to turn plain text no rule matches into Studio's text, heading and image blocks (below).
 - `rules`: tried in order for each top-level element of a body; the first rule whose `match` (a CSS selector, jsoup
   syntax, e.g. `section.intro`, `div:has(h2.title)`) fits the element and whose fields can all be read wins.
 
@@ -127,6 +128,25 @@ component {
 selector, e.g. `read.text( button, "svg" )`), `richTextOf( [ nodes ] )`, `link`, `image`, `images`,
 `classFrom( element, map )`, `select`, `selectAll` and `unconvertible( message )` (keep the section as HTML). Readers
 in one profile can share code through a component in `readers/` that they extend.
+
+### Plain text: `prose`
+
+Classic content is mostly plain text: paragraphs, headings, lists, images. With `"prose": true` a profile turns
+sections no rule matches into Studio's own blocks, where they are plain text:
+
+| Old HTML (top level) | Block |
+|---|---|
+| `p`, `ul`, `ol`, `blockquote`, `hr`, loose text, `h1`/`h5`/`h6`, headings with markup | one **text** block per run of them (rich text) |
+| `h2`–`h4` with plain text | **heading** |
+| `img`, `<a><img></a>`, a `p` with only one of those, `figure` with one and a plain `figcaption` | **image** (with link and caption) |
+| anything else (`div`, tables, embeds, widget calls), and text with markup rich text cannot hold (e.g. `<span style>`) | stays HTML, with the reason |
+
+The blocks are the site's `text`, `heading` and `image` types (a theme may override them, as long as they keep the
+core fields). Classes and inline styles of text elements are not kept, so prose needs `"compare": "content"`, and
+like any new look it only converts copies. A profile can combine rules and prose: rules first, prose for the rest.
+
+The built-in profile **plain-text** ("Plain text into Studio's blocks (any theme)") is just that: no rules, prose,
+for any theme. It is always in the list; a folder `_convert/plain-text` replaces it.
 
 ## 3. Dry run and convert
 

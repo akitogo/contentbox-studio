@@ -10,6 +10,10 @@
  * - markup: the same canonical DOM (the blocks reproduce the old HTML, e.g. a theme made from the old one)
  * - content: every text, link and image of the part is in the rendered block (a new look)
  *
+ * With "prose" in the profile, parts no rule matches become Studio's text, heading and image blocks where they are
+ * plain text: neighbouring paragraphs, lists, quotes and rules one text block, plain h2-h4 a heading, an image (alone,
+ * in a paragraph, a link or a figure with a caption) an image block.
+ *
  * A body is ready when every part passes and at least one became a block; only ready content is converted, as a new
  * version (undo: restore the previous one). Content with blocks is skipped. A new look (content) can only be applied
  * on a copy of a site (SiteCopy.cfc), so the original stays as it is.
@@ -156,7 +160,7 @@ component singleton {
 	struct function prepare( required site, required string profile, struct types ) {
 		var loaded = variables.profiles.get( arguments.profile );
 		var problems = duplicate( loaded.problems );
-		if ( len( loaded.theme ) && loaded.theme != arguments.site.getActiveTheme() ) {
+		if ( len( loaded.theme ) && !variables.profiles.anyTheme( loaded ) && loaded.theme != arguments.site.getActiveTheme() ) {
 			problems.append(
 				"The profile is for the theme '#loaded.theme#', the site uses '#arguments.site.getActiveTheme()#'"
 			);
@@ -165,6 +169,9 @@ component singleton {
 		// Against another theme's blocks every rule would fail: the theme is the one problem then
 		if ( problems.len() == loaded.problems.len() ) {
 			problems.append( checkRules( loaded, blockTypes ), true );
+			if ( loaded.prose && !len( firstField( blockTypes.text ?: {}, "richtext" ) ) ) {
+				problems.append( "prose needs a ""text"" block with a rich text field" );
+			}
 		}
 		return {
 			"profile" : loaded,
@@ -244,6 +251,12 @@ component singleton {
 				arguments.types,
 				arguments.readers
 			);
+			if ( arguments.profile.prose && matched.type == "html" && !len( matched.note ) ) {
+				var prose = proseOf( source, arguments.types );
+				if ( !prose.isEmpty() ) {
+					matched = prose;
+				}
+			}
 			var previous = item.sections.len() ? item.sections[ item.sections.len() ] : {};
 			if ( matched.type == "html" && ( previous.type ?: "" ) == "html" ) {
 				previous.source &= chr( 10 ) & source;
@@ -251,6 +264,12 @@ component singleton {
 				if ( len( matched.note ) ) {
 					previous.note = listAppend( previous.note, matched.note, chr( 10 ) );
 				}
+				continue;
+			}
+			// Paragraphs, lists and quotes next to each other: one text block
+			if ( ( matched.flow ?: false ) && ( previous.flow ?: false ) ) {
+				previous.source &= chr( 10 ) & source;
+				previous.data[ previous.field ].content.append( matched.data[ matched.field ].content, true );
 				continue;
 			}
 			matched[ "id" ] = "c#item.sections.len() + 1#";
@@ -268,6 +287,8 @@ component singleton {
 			renderedByID[ block.id ] = block.html;
 		}
 		for ( var section in item.sections ) {
+			section.delete( "flow" );
+			section.delete( "field" );
 			var sectionID = section.id;
 			section[ "rendered" ] = renderedByID[ sectionID ] ?: "";
 			section[ "errors" ] = rendered.errors
@@ -389,6 +410,180 @@ component singleton {
 		return result;
 	}
 
+	/**
+	 * A plain text part as Studio's text, heading or image block: { type, data, note, flow, field } (flow: paragraphs,
+	 * lists and quotes, which join neighbouring flow parts; field: the text block's rich text field), an HTML part with
+	 * the reason when its text has markup rich text cannot hold, or {} when it is not plain text
+	 */
+	private struct function proseOf( required string source, required struct types ) {
+		if ( reFind( "^\{\{\{", arguments.source ) ) {
+			return {};
+		}
+		var nodes = variables.html.children( variables.html.parse( arguments.source ) );
+		if ( nodes.len() != 1 ) {
+			return {};
+		}
+		var node = nodes[ 1 ];
+		var textField = firstField( arguments.types.text ?: {}, "richtext" );
+		try {
+			if ( variables.html.isText( node ) ) {
+				return flowOf( [ node ], textField );
+			}
+			var name = lCase( node.nodeName() );
+			if ( listFind( "h2,h3,h4", name ) ) {
+				var heading = headingOf( node, arguments.types );
+				if ( !heading.isEmpty() ) {
+					return heading;
+				}
+			}
+			var image = imageOf( node, arguments.types );
+			if ( !image.isEmpty() ) {
+				return image;
+			}
+			if ( listFind( "p,ul,ol,blockquote,hr,h1,h2,h3,h4,h5,h6", name ) ) {
+				return flowOf( [ node ], textField );
+			}
+		} catch ( Convert.Unconvertible e ) {
+			return htmlPart( arguments.source, "text: " & e.message );
+		}
+		return {};
+	}
+
+	private struct function flowOf( required array nodes, required string field ) {
+		if ( !len( arguments.field ) ) {
+			return {};
+		}
+		var data = {};
+		data[ arguments.field ] = variables.reader.richTextOf( arguments.nodes );
+		return {
+			"type" : "text",
+			"data" : data,
+			"note" : "",
+			"flow" : true,
+			"field": arguments.field
+		};
+	}
+
+	/**
+	 * A heading block for an h2-h4 with plain text, {} otherwise (markup in it: a heading in the text block's rich text)
+	 */
+	private struct function headingOf( required node, required struct types ) {
+		var fields = fieldsByName( arguments.types.heading ?: {} );
+		if ( ( fields.text.type ?: "" ) != "text" || ( fields.level.type ?: "" ) != "select" ) {
+			return {};
+		}
+		var level = right( lCase( arguments.node.nodeName() ), 1 );
+		if ( !hasOption( fields.level, level ) ) {
+			return {};
+		}
+		var text = "";
+		try {
+			text = variables.reader.text( arguments.node );
+		} catch ( Convert.Unconvertible e ) {
+			return {};
+		}
+		if ( !len( text ) ) {
+			return {};
+		}
+		return {
+			"type": "heading",
+			"data": { "text": text, "level": level },
+			"note": "",
+			"flow": false
+		};
+	}
+
+	/**
+	 * An image block for <img>, <a><img></a>, a paragraph with only one of those, or a figure with one and an optional
+	 * caption; {} otherwise, or when the image block cannot hold the caption or the link
+	 */
+	private struct function imageOf( required node, required struct types ) {
+		var definition = arguments.types.image ?: {};
+		var imageField = firstField( definition, "image" );
+		if ( !len( imageField ) ) {
+			return {};
+		}
+		var fields = fieldsByName( definition );
+		var inner = arguments.node;
+		var caption = "";
+		var name = lCase( inner.nodeName() );
+		if ( name == "p" || name == "figure" ) {
+			var kids = variables.html.children( inner );
+			if (
+				name == "figure" && kids.len() == 2 && !variables.html.isText( kids[ 2 ] ) &&
+				lCase( kids[ 2 ].nodeName() ) == "figcaption"
+			) {
+				caption = variables.reader.text( kids[ 2 ] );
+				kids = [ kids[ 1 ] ];
+			}
+			if ( kids.len() != 1 || variables.html.isText( kids[ 1 ] ) ) {
+				return {};
+			}
+			inner = kids[ 1 ];
+			name = lCase( inner.nodeName() );
+		}
+		var link = { "href": "", "target": "" };
+		if ( name == "a" ) {
+			var linked = variables.html.children( inner );
+			if ( linked.len() != 1 || variables.html.isText( linked[ 1 ] ) || lCase( linked[ 1 ].nodeName() ) != "img" ) {
+				return {};
+			}
+			link = variables.reader.link( inner );
+			inner = linked[ 1 ];
+			name = "img";
+		}
+		if ( name != "img" ) {
+			return {};
+		}
+		var data = {};
+		data[ imageField ] = variables.reader.image( inner );
+		if ( ( fields.caption.type ?: "" ) == "text" ) {
+			data[ "caption" ] = caption;
+		} else if ( len( caption ) ) {
+			return {};
+		}
+		if ( ( fields.link.type ?: "" ) == "link" ) {
+			data[ "link" ] = link;
+		} else if ( len( link.href ) ) {
+			return {};
+		}
+		return {
+			"type": "image",
+			"data": data,
+			"note": "",
+			"flow": false
+		};
+	}
+
+	/**
+	 * Name of a block type's first field of a type, "" if none
+	 */
+	private string function firstField( required struct definition, required string type ) {
+		for ( var field in arguments.definition.fields ?: [] ) {
+			if ( field.type == arguments.type ) {
+				return field.name;
+			}
+		}
+		return "";
+	}
+
+	private struct function fieldsByName( required struct definition ) {
+		var result = {};
+		for ( var field in arguments.definition.fields ?: [] ) {
+			result[ field.name ] = field;
+		}
+		return result;
+	}
+
+	private boolean function hasOption( required struct field, required string value ) {
+		for ( var option in arguments.field.options ?: [] ) {
+			if ( toString( isStruct( option ) ? ( option.value ?: "" ) : option ) == arguments.value ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private string function sortKey( required content ) {
 		return listFindNoCase( variables.CONTENT_TYPES, arguments.content.getContentType() ) & "|" & arguments.content.getSlug();
 	}
@@ -414,7 +609,8 @@ component singleton {
 			"name"   : arguments.profile.name,
 			"label"  : arguments.profile.label,
 			"theme"  : arguments.profile.theme,
-			"compare": arguments.profile.compare
+			"compare": arguments.profile.compare,
+			"prose"  : arguments.profile.prose
 		};
 	}
 
