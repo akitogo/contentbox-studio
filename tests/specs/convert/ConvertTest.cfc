@@ -81,6 +81,9 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 						expect( () => reader.readField( button, fieldDef( "t", "text" ), "&" ) ).toThrow( "Convert.Unconvertible" );
 						expect( reader.readField( button, fieldDef( "t", "text" ), { "ignore": "svg" } ) ).toBe( "Go" );
 						expect( button.select( "svg" ).size() ).toBe( 1 );
+						expect( reader.text( button, "svg" ) ).toBe( "Go" );
+						var paragraphs = tree.selectAll( element( "<div><h2>Not this</h2><p>One</p><p>Two</p></div>" ), "p" );
+						expect( reader.richTextOf( paragraphs ).content.map( ( node ) => node.type ) ).toBe( [ "paragraph", "paragraph" ] );
 
 						var list = reader.readField(
 							element( "<ul><li><b>A</b><i>1</i></li><li><b>B</b></li></ul>" ),
@@ -282,7 +285,7 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 				);
 
 				it(
-					"copies a site with its own translation groups, leaving the original as it is",
+					"copies a site with its own translation groups and deletes the copy again, leaving the original as it is",
 					() => {
 						var copier = getInstance( "SiteCopy@contentbox-studio" );
 						var translations = getInstance( "Translations@contentbox-studio" );
@@ -341,14 +344,20 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							var original = translations.forContent( getInstance( "pageService@contentbox" ).get( german.getContentID() ) );
 							expect( original.group ).toBe( group );
 							expect( original.members.map( ( member ) => member.siteID ) ).toBe( [ site.getSiteID(), site.getSiteID() ] );
+
+							// Only copies can be deleted this way; deleting one leaves the original as it is
+							expect( () => copier.deleteCopy( site ) ).toThrow( "SiteCopy.Invalid" );
+							ormClearSession();
+							copier.deleteCopy( siteService().get( copy.siteID ) );
+							ormClearSession();
+							expect( siteService().get( id = copy.siteID, returnNew = false ) ).toBeNull();
+							expect( siteService().get( site.getSiteID() ).getNumberOfPages() ).toBe( source.getNumberOfPages() );
+							expect( directoryExists( getInstance( "mediaService@contentbox" ).getCoreMediaRoot( absolute = true ) & "/sites/" & slug ) ).toBeFalse();
 						} finally {
-							if ( copy.keyExists( "siteID" ) ) {
-								ormClearSession();
-								siteService().delete( siteService().get( copy.siteID ) );
-								var media = getInstance( "mediaService@contentbox" ).getCoreMediaRoot( absolute = true ) & "/sites/" & slug;
-								if ( directoryExists( media ) ) {
-									directoryDelete( media, true );
-								}
+							// If the spec failed before deleting the copy
+							ormClearSession();
+							if ( copy.keyExists( "siteID" ) && !isNull( siteService().get( id = copy.siteID, returnNew = false ) ) ) {
+								copier.deleteCopy( siteService().get( copy.siteID ) );
 							}
 							ormClearSession();
 						}
@@ -377,6 +386,15 @@ component extends="cbstudioTests.resources.StudioBaseTest" {
 							params = { "x-auth-token": token, "name": "Copy", "slug": "Bad Slug", "domain": "x.localhost", "theme": "default" }
 						).getResponse();
 						expect( response.getStatusCode() ).toBe( 400 );
+
+						// The original is not a copy: it cannot be deleted here
+						setup();
+						response = delete(
+							route  = "/cbstudio/api/sites/default/copy",
+							params = { "x-auth-token": token }
+						).getResponse();
+						expect( response.getStatusCode() ).toBe( 400 );
+						expect( getInstance( "siteService@contentbox" ).findBySlug( "default" ) ).notToBeNull();
 
 						withTemporaryAuthor(
 							[ "STUDIO_ACCESS" ],

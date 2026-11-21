@@ -30,7 +30,9 @@ The original is only read. The copy
 ContentBox serves the first site (by name) whose domain pattern matches a URL. If another site's pattern also matches
 the new domain (e.g. a pattern `localhost` without anchors), the result says the copy is not reachable there yet:
 change that site's pattern in the classic admin (Sites) or pick another domain. When the copy is done, switch the
-domains over in the classic admin.
+domains over in the classic admin. To start over, delete the copy in the tool (**Delete copy**, or
+`DELETE /cbstudio/api/sites/:site/copy`, needs `SITES_ADMIN`; only for copies): ContentBox's own site delete fails on
+Adobe ColdFusion for sites with content.
 
 ## 2. Write a profile
 
@@ -121,8 +123,10 @@ component {
 }
 ```
 
-`element` is a jsoup element; `read` has the helpers `text`, `lines`, `richText`, `link`, `image`, `images`,
-`classFrom( element, map )`, `select`, `selectAll` and `unconvertible( message )` (keep the section as HTML).
+`element` is a jsoup element; `read` has the helpers `text`, `lines`, `richText` (each with an optional `ignore`
+selector, e.g. `read.text( button, "svg" )`), `richTextOf( [ nodes ] )`, `link`, `image`, `images`,
+`classFrom( element, map )`, `select`, `selectAll` and `unconvertible( message )` (keep the section as HTML). Readers
+in one profile can share code through a component in `readers/` that they extend.
 
 ## 3. Dry run and convert
 

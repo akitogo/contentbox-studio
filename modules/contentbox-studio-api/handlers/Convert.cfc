@@ -13,8 +13,9 @@ component extends="BaseHandler" {
 	this.allowedMethods = {
 		"index" : "GET",
 		"report": "GET",
-		"apply" : "POST",
-		"copy"  : "POST"
+		"apply"     : "POST",
+		"copy"      : "POST",
+		"deleteCopy": "DELETE"
 	};
 
 	/**
@@ -112,6 +113,27 @@ component extends="BaseHandler" {
 					theme  = text( rc.theme ?: "" )
 				)
 			);
+		} catch ( SiteCopy.Invalid e ) {
+			prc.response.setErrorMessage( e.message, 400 );
+		}
+	}
+
+	/**
+	 * DELETE /cbstudio/api/sites/:site/copy: delete a site made by copy, with its content (only copies)
+	 */
+	function deleteCopy( event, rc, prc ) secured="STUDIO_CONVERT" {
+		if ( !hasAnyPermission( "SITES_ADMIN" ) ) {
+			prc.response.setErrorMessage( "Deleting a site needs SITES_ADMIN", 403 );
+			return;
+		}
+		var site = findSite( rc.site ?: "" );
+		if ( isNull( site ) || !len( rc.site ?: "" ) ) {
+			prc.response.setErrorMessage( "Site not found", 404 );
+			return;
+		}
+		try {
+			variables.siteCopy.deleteCopy( site );
+			prc.response.setData( { "deleted": true } );
 		} catch ( SiteCopy.Invalid e ) {
 			prc.response.setErrorMessage( e.message, 400 );
 		}

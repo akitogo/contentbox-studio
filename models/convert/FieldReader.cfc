@@ -21,8 +21,9 @@
  * field's empty value. Markup a field cannot hold throws Convert.Unconvertible, so the section stays HTML
  * instead of losing something.
  *
- * The public helpers (text, lines, richText, link, image, images, classFrom, select, selectAll, unconvertible) are
- * also what code readers of a profile get.
+ * The public helpers (text, lines, richText, richTextOf, link, image, images, classFrom, select, selectAll,
+ * unconvertible) are also what code readers of a profile get; text, lines and richText take an optional ignore
+ * selector.
  */
 component singleton {
 	property name="html" inject="HtmlTree@contentbox-studio";
@@ -87,14 +88,7 @@ component singleton {
 			return emptyValue( type );
 		}
 		// Elements the template outputs itself (e.g. an icon in a button) are left out
-		if ( len( rule.ignore ) ) {
-			target = target.clone();
-			try {
-				target.select( rule.ignore ).remove();
-			} catch ( any e ) {
-				invalidSelector( rule.ignore, e );
-			}
-		}
+		target = without( target, rule.ignore );
 		switch ( type ) {
 			case "text":
 			case "contentStore":
@@ -171,13 +165,15 @@ component singleton {
 
 	/**
 	 * Text of an element without markup inside, whitespace collapsed ("" for none)
+	 *
+	 * @ignore Selector of elements to leave out (e.g. "svg" for an icon the template outputs itself)
 	 */
-	string function text( element ) {
+	string function text( element, string ignore = "" ) {
 		if ( isNull( arguments.element ) ) {
 			return "";
 		}
 		var value = "";
-		for ( var node in variables.html.nodesOf( arguments.element ) ) {
+		for ( var node in variables.html.nodesOf( without( arguments.element, arguments.ignore ) ) ) {
 			var name = node.nodeName();
 			if ( name == "##text" ) {
 				value &= node.getWholeText();
@@ -191,12 +187,12 @@ component singleton {
 	/**
 	 * Text with <br> as line breaks, for textarea fields; other markup is not convertible
 	 */
-	string function lines( element ) {
+	string function lines( element, string ignore = "" ) {
 		if ( isNull( arguments.element ) ) {
 			return "";
 		}
 		var value = "";
-		for ( var node in variables.html.nodesOf( arguments.element ) ) {
+		for ( var node in variables.html.nodesOf( without( arguments.element, arguments.ignore ) ) ) {
 			var name = node.nodeName();
 			if ( name == "##text" ) {
 				value &= reReplace( node.getWholeText(), variables.SPACE, " ", "all" );
@@ -216,12 +212,19 @@ component singleton {
 	/**
 	 * Rich text document (ProseMirror JSON, like the editor's) from the content of an element
 	 */
-	struct function richText( element ) {
+	struct function richText( element, string ignore = "" ) {
 		var doc = { "type": "doc", "content": [] };
 		if ( !isNull( arguments.element ) ) {
-			doc.content = blocksOf( variables.html.nodesOf( arguments.element ) );
+			doc.content = blocksOf( variables.html.nodesOf( without( arguments.element, arguments.ignore ) ) );
 		}
 		return doc;
+	}
+
+	/**
+	 * Rich text document from several nodes, e.g. the paragraphs of a column without its heading
+	 */
+	struct function richTextOf( required array nodes ) {
+		return { "type": "doc", "content": blocksOf( arguments.nodes ) };
 	}
 
 	/**
@@ -316,6 +319,22 @@ component singleton {
 			rule.select = at > 1 ? trim( left( rule.select, at - 1 ) ) : "";
 		}
 		return rule;
+	}
+
+	/**
+	 * A copy of the element without the elements matching a selector (the element itself if there is none)
+	 */
+	private function without( required element, string ignore = "" ) {
+		if ( !len( arguments.ignore ) ) {
+			return arguments.element;
+		}
+		var copy = arguments.element.clone();
+		try {
+			copy.select( arguments.ignore ).remove();
+		} catch ( any e ) {
+			invalidSelector( arguments.ignore, e );
+		}
+		return copy;
 	}
 
 	private any function emptyValue( required string type ) {

@@ -45,7 +45,10 @@ component {
 			.route( "/sites/:site/convert" )
 			.withAction( { "GET": "report", "POST": "apply" } )
 			.toHandler( "convert" );
-		router.route( "/sites/:site/copy" ).to( "convert.copy" );
+		router
+			.route( "/sites/:site/copy" )
+			.withAction( { "POST": "copy", "DELETE": "deleteCopy" } )
+			.toHandler( "convert" );
 		router
 			.route( "/sites/:site/entries" )
 			.withAction( { "GET": "index", "POST": "create" } )

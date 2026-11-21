@@ -4,7 +4,8 @@
  * a new name, slug, domain and theme.
  *
  * The copy gets its own translation groups (new ids, so the original's groups stay as they are) and remembers where
- * it came from (site setting cbstudio_copiedFrom), which allows converting it to a new look.
+ * it came from (site setting cbstudio_copiedFrom), which allows converting it to a new look. deleteCopy() removes a
+ * copy again.
  */
 component singleton {
 	property name="siteService" inject="siteService@contentbox";
@@ -18,6 +19,10 @@ component singleton {
 	property name="contentVersionService" inject="contentVersionService@contentbox";
 
 	property name="authorService" inject="authorService@contentbox";
+
+	property name="menuService" inject="menuService@contentbox";
+
+	property name="mediaService" inject="mediaService@contentbox";
 
 	property name="populator" inject="wirebox:populator";
 
@@ -137,6 +142,45 @@ component singleton {
 			"reachable"   : reachable,
 			"warnings"    : warnings
 		};
+	}
+
+	/**
+	 * Delete a copy made by copy(), with its content. ContentBox's own site delete removes the content with bulk
+	 * statements on Adobe ColdFusion, which the foreign keys of versions and custom fields refuse; here content and
+	 * menus are deleted one by one, so Hibernate's cascades apply.
+	 *
+	 * @throws SiteCopy.Invalid for a site that is not a copy
+	 */
+	void function deleteCopy( required site ) {
+		if ( !isCopy( arguments.site ) ) {
+			invalid( "Only copies made by the conversion tool can be deleted here" );
+		}
+		var siteID = arguments.site.getSiteID();
+		var media = variables.mediaService.getCoreMediaRoot( absolute = true ) & "/sites/" & arguments.site.getSlug();
+		transaction {
+			// Top-level content only: deleting content deletes its children
+			var roots = variables.contentService
+				.newCriteria()
+				.isEq( "site", arguments.site )
+				.isNull( "parent" )
+				.list();
+			for ( var content in roots ) {
+				variables.contentService.delete( content );
+			}
+			var menus = variables.menuService
+				.newCriteria()
+				.isEq( "site", arguments.site )
+				.list();
+			for ( var menu in menus ) {
+				variables.menuService.delete( menu );
+			}
+		}
+		ormClearSession();
+		variables.siteService.delete( variables.siteService.get( siteID ) );
+		// The empty media folder ContentBox made for the copy
+		if ( directoryExists( media ) && !directoryList( media ).len() ) {
+			directoryDelete( media );
+		}
 	}
 
 	/**

@@ -3,7 +3,7 @@
  * with a conversion profile. Copy the site first to convert it to a new look without touching the original.
  * Server side: models/convert/, docs/conversion.md.
  */
-import { ChevronDown, ChevronRight, Copy, ExternalLink, Play } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, ExternalLink, Play, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Header } from '../components/Header'
@@ -32,6 +32,7 @@ export function ConvertPage() {
   const [result, setResult] = useState<ConvertResult | null>(null)
   const [converting, setConverting] = useState(false)
   const [copying, setCopying] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const allowed = me.permissions.convert
 
   useEffect(() => {
@@ -164,7 +165,15 @@ export function ConvertPage() {
                 {site &&
                   (original || site.copiedFrom ? (
                     <Alert tone="success">
-                      A copy of {original?.name ?? 'another site'}: converting changes only this copy.
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex-1">A copy of {original?.name ?? 'another site'}: converting changes only this copy.</span>
+                        {me.permissions.sitesAdmin && (
+                          <Button size="sm" variant="ghost" onClick={() => setDeleting(true)}>
+                            <Trash2 className="size-3.5" />
+                            Delete copy…
+                          </Button>
+                        )}
+                      </div>
                     </Alert>
                   ) : (
                     <Alert tone="info">
@@ -244,6 +253,14 @@ export function ConvertPage() {
           )}
         </div>
       </main>
+      {deleting && site && (
+        <DeleteCopyDialog
+          site={site}
+          original={original}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => window.location.assign(`${basePath(config)}/convert?site=${encodeURIComponent(original?.slug ?? '')}`)}
+        />
+      )}
       {copying && site && index && (
         <CopyDialog
           site={site}
@@ -451,6 +468,49 @@ function Code({ title, text }: { title: string; text: string }) {
       <p className="mb-1 text-xs font-medium text-slate-500">{title}</p>
       <pre className="max-h-72 overflow-auto rounded bg-slate-900 p-2 text-[11px] leading-relaxed text-slate-100">{text}</pre>
     </div>
+  )
+}
+
+/** Delete a copy made by the tool, with its content (the original stays as it is) */
+function DeleteCopyDialog({ site, original, onClose, onDeleted }: { site: Site; original?: Site; onClose: () => void; onDeleted: () => void }) {
+  const { config, api } = useStudio()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function remove() {
+    setBusy(true)
+    setError('')
+    try {
+      await api.delete(`${config.studioApi}/sites/${encodeURIComponent(site.siteID)}/copy`)
+      onDeleted()
+    } catch (reason) {
+      setError(messageOf(reason))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Dialog
+      title={`Delete ${site.name}?`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="danger" onClick={() => void remove()} disabled={busy}>
+            {busy && <Spinner className="text-white" />}
+            Delete copy
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-3 text-sm text-slate-700">
+        <p>
+          This deletes the site {site.name} with all its pages, blog entries, content store items, menus and versions. It cannot be undone.{' '}
+          {original ? `${original.name} stays as it is.` : 'The site it was copied from stays as it is.'}
+        </p>
+        {error && <Alert tone="danger">{error}</Alert>}
+      </div>
+    </Dialog>
   )
 }
 
