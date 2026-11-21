@@ -241,10 +241,10 @@ export function SiteTreePane({ mode, hidden }: { mode: 'full' | 'column'; hidden
             >
               {page.title}
             </a>
+            <MenuIndicator inMenu={page.showInMenu} />
             <span className="hidden truncate font-mono text-xs text-slate-400 @md:inline">/{page.slug}</span>
             {isCollapsed && <span className="shrink-0 text-xs text-slate-400">{node.children.length}</span>}
           </div>
-          <MenuIndicator inMenu={page.showInMenu} />
           <div className="hidden shrink-0 items-center gap-1.5 @3xl:flex">
             <Badge tone={status.tone}>{status.label}</Badge>
             {page.hasBlocks && <Badge tone="primary">Blocks</Badge>}
@@ -467,7 +467,7 @@ function DropLine({ left, edge }: { left: number; edge: 'top' | 'bottom' }) {
 function MenuIndicator({ inMenu }: { inMenu: boolean }) {
   const label = inMenu ? "In the site's menu" : "Not in the site's menu"
   return (
-    <span className="relative inline-flex shrink-0" title={label}>
+    <span className="relative inline-flex shrink-0 self-center" title={label}>
       <Menu className={cx('size-3.5', inMenu ? 'text-slate-500' : 'text-slate-300')} aria-hidden />
       {!inMenu && <span className="absolute top-1/2 left-1/2 h-px w-4.5 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-slate-400" aria-hidden />}
       <span className="sr-only">{label}</span>
