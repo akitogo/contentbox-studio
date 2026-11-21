@@ -3,7 +3,7 @@
 All notable changes to ContentBox Studio. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/). Upgrading: see [docs/installation.md](docs/installation.md#upgrade).
 
-## [Unreleased]
+## [0.1.2] - 2026-11-21
 
 ### Fixed
 
@@ -51,5 +51,6 @@ First release.
   admin.
 - Tested on BoxLang 1 and Adobe ColdFusion 2023 and 2025.
 
+[0.1.2]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.2
 [0.1.1]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/akitogo/contentbox-studio/releases/tag/v0.1.0
